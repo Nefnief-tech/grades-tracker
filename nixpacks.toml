@@ -1,0 +1,12 @@
+[phases.build]
+cmds = ['pnpm build']
+dependsOn = ['install']
+
+[phases.setup]
+nixPkgs = ['nodejs_20', 'openssl']
+
+[variables]
+NODE_OPTIONS = '--max-old-space-size=4096'
+
+[start]
+cmd = 'pnpm start'

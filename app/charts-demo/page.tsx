@@ -1,70 +1,95 @@
 "use client";
 
+import { ThemeProvider } from "next-themes";
 import React from "react";
-import { GradeHistoryChart } from "@/components/GradeHistoryChart";
-import { DebugGradeData } from "@/components/DebugGradeData";
-import { Button } from "@/components/ui/button";
-import { useTheme } from "@/components/ThemeProvider";
-import SimpleChartTest from "@/components/SimpleChartTest";
+import dynamic from "next/dynamic";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// Sample data for testing
-const sampleGrades = [
-  { id: "1", subject: "Math", grade: 2, date: "2023-01-05" },
-  { id: "2", subject: "Math", grade: 3, date: "2023-02-10" },
-  { id: "3", subject: "Math", grade: 1.5, date: "2023-03-15" },
-  { id: "4", subject: "Math", grade: 4, date: "2023-04-20" },
-  { id: "5", subject: "Math", grade: 2.5, date: "2023-05-25" },
+// Dynamically import charts components to avoid SSR issues
+const ChartComponents = dynamic(() => import("@/components/ChartComponents"), {
+  ssr: false, // This will disable Server Side Rendering for these components
+  loading: () => (
+    <div className="flex items-center justify-center h-[300px]">
+      Loading charts...
+    </div>
+  ),
+});
+
+// Sample data for demonstration
+const data = [
+  { name: "Jan", value: 3.2 },
+  { name: "Feb", value: 4.1 },
+  { name: "Mar", value: 2.5 },
+  { name: "Apr", value: 3.8 },
+  { name: "May", value: 4.2 },
+  { name: "Jun", value: 5.0 },
 ];
 
 export default function ChartsDemo() {
-  const [chartType, setChartType] = React.useState<"line" | "bar">("line");
-  const { theme, setTheme } = useTheme();
+  const [chartType, setChartType] = React.useState("line");
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Charts Demo</h1>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-          >
-            Toggle Theme ({theme})
-          </Button>
+    // Wrap everything in ThemeProvider to fix the build error
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <div className="container mx-auto p-4">
+        <h1 className="text-3xl font-bold mb-8">Grades Charts Demo</h1>
+
+        <div className="mb-4">
+          <Select value={chartType} onValueChange={setChartType}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Chart Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="line">Line Chart</SelectItem>
+              <SelectItem value="bar">Bar Chart</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Progress Over Time</CardTitle>
+              <CardDescription>View your grade progression</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              <ChartComponents
+                data={data}
+                type={chartType}
+                chartId="progress"
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Subject Comparison</CardTitle>
+              <CardDescription>Compare grades across subjects</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              <ChartComponents
+                data={data}
+                type={chartType}
+                chartId="comparison"
+                color="#82ca9d"
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      <div className="mb-4 flex space-x-2">
-        <Button
-          variant={chartType === "line" ? "default" : "outline"}
-          onClick={() => setChartType("line")}
-        >
-          Line Chart
-        </Button>
-        <Button
-          variant={chartType === "bar" ? "default" : "outline"}
-          onClick={() => setChartType("bar")}
-        >
-          Bar Chart
-        </Button>
-      </div>
-
-      {/* Testing with a simple chart to verify Recharts works */}
-      <SimpleChartTest />
-
-      <div className="border p-4 rounded-lg mb-6 bg-card">
-        <h2 className="text-xl font-semibold mb-4 text-card-foreground">
-          Grade History Chart
-        </h2>
-        <GradeHistoryChart
-          grades={sampleGrades}
-          height={300}
-          chartType={chartType}
-          className="mb-6"
-        />
-      </div>
-
-      <DebugGradeData grades={sampleGrades} title="Sample Grades Data" />
-    </div>
+    </ThemeProvider>
   );
 }
