@@ -5,13 +5,15 @@ FROM base AS deps
 WORKDIR /app
 
 # Install pnpm with proper configuration
-RUN npm install -g pnpm
+RUN npm config set prefix "/root/.npm" && \
+    npm install -g pnpm && \
+    export PATH="/root/.npm/bin:$PATH"
 
 # Copy package.json and lock file
 COPY package.json pnpm-lock.yaml* ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN PATH="/root/.npm/bin:$PATH" pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -21,10 +23,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build the project
+# Install pnpm and build
 ENV NEXT_TELEMETRY_DISABLED 1
-RUN npm install -g pnpm
-RUN pnpm build
+RUN npm config set prefix "/root/.npm" && \
+    npm install -g pnpm && \
+    export PATH="/root/.npm/bin:$PATH" && \
+    PATH="/root/.npm/bin:$PATH" pnpm build
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -33,14 +37,10 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Install only production dependencies
-RUN npm install -g pnpm
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files from builder
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./
 
 # Set the correct permission for prerender cache
 RUN mkdir -p .next
@@ -50,6 +50,7 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 
 # For standalone output
+COPY --from=builder /app/next.config.js ./
 RUN if [ -d "/app/.next/standalone" ]; then \
       cp -r /app/.next/standalone/* /app/ && \
       cp -r /app/.next/static /app/.next/ ; \
