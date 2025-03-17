@@ -1,17 +1,16 @@
 [phases.setup]
-nixPkgs = ['nodejs_20', 'openssl']
-cmds = ['npm install -g pnpm && export PATH="/root/.npm/bin:$PATH" && npm config set prefix "/root/.npm"']
+nixPkgs = ['nodejs_20', 'openssl', 'gcc', 'python3']
+cmds = ['npm config set prefix "/usr/local" && npm install -g pnpm']
 
 [phases.install]
-cmds = ['export PATH="/root/.npm/bin:$PATH" && which pnpm && pnpm install --frozen-lockfile']
+cmds = ['pnpm install --frozen-lockfile']
 
 [phases.build]
-cmds = ['export PATH="/root/.npm/bin:$PATH" && pnpm build']
+cmds = ['pnpm build']
 dependsOn = ['install']
 
 [variables]
 NODE_OPTIONS = '--max-old-space-size=4096'
-PATH = "/root/.npm/bin:${PATH}"
 
 [start]
 cmd = 'pnpm start'

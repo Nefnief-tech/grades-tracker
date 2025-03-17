@@ -1,8 +1,9 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
+buildCommand = "docker build -t app ."
 
 [deploy]
-startCommand = "node server.js"
+startCommand = "docker run -p 3000:3000 app"
 restartPolicyType = "ON_FAILURE"
 numReplicas = 1
