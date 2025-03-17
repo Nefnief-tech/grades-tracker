@@ -1,9 +1,13 @@
+[phases.setup]
+nixPkgs = ['nodejs_20', 'openssl']
+cmds = ['npm install -g pnpm']
+
+[phases.install]
+cmds = ['pnpm install --frozen-lockfile']
+
 [phases.build]
 cmds = ['pnpm build']
 dependsOn = ['install']
-
-[phases.setup]
-nixPkgs = ['nodejs_20', 'openssl']
 
 [variables]
 NODE_OPTIONS = '--max-old-space-size=4096'
