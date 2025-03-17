@@ -4,7 +4,7 @@ FROM node:20-alpine AS base
 FROM base AS deps
 WORKDIR /app
 
-# Install pnpm
+# Install pnpm with proper configuration
 RUN npm install -g pnpm
 
 # Copy package.json and lock file
@@ -17,17 +17,13 @@ RUN pnpm install --frozen-lockfile
 FROM base AS builder
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
-
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-
-# Copy all files
 COPY . .
 
 # Build the project
 ENV NEXT_TELEMETRY_DISABLED 1
+RUN npm install -g pnpm
 RUN pnpm build
 
 # Production image, copy all the files and run next
@@ -37,18 +33,27 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Install only production dependencies
+RUN npm install -g pnpm
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Copy necessary files from builder
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.js ./
 
 # Set the correct permission for prerender cache
-RUN mkdir .next
+RUN mkdir -p .next
 RUN chown nextjs:nodejs .next
 
-# Automatically leverage output traces to reduce image size
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy .next directory with proper permissions
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+
+# For standalone output
+RUN if [ -d "/app/.next/standalone" ]; then \
+      cp -r /app/.next/standalone/* /app/ && \
+      cp -r /app/.next/static /app/.next/ ; \
+    fi
 
 USER nextjs
 
