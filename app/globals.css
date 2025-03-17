@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 250 30% 98%;
+    --foreground: 250 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 250 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 250 10% 3.9%;
+    --primary: 255 85% 65%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 250 20% 95%;
+    --secondary-foreground: 250 10% 10%;
+    --muted: 250 20% 95%;
+    --muted-foreground: 250 10% 46%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 250 10% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 255 92% 57%;
+    --radius: 1rem;
+
+    /* Sidebar specific colors */
+    --sidebar: 255 85% 65%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 291 70% 50%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 255 85% 60%;
+    --sidebar-ring: 262 83% 58%;
+
+    /* Chart colors */
+    --chart-1: 255 92% 57%;
+    --chart-2: 262 83% 58%;
+    --chart-3: 291 70% 50%;
+    --chart-4: 322 75% 46%;
+
+    /* Success, warning, info colors */
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 217 91% 60%;
+    --sidebar-background: 0 0% 98%;
+  }
+
+  .dark {
+    --background: 250 30% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 250 30% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 250 30% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 255 85% 65%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 250 20% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 250 20% 15.9%;
+    --muted-foreground: 250 10% 64.9%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 255 92% 57%;
+
+    /* Sidebar specific colors */
+    --sidebar: 262 83% 20%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 255 85% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 291 70% 30%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 262 83% 25%;
+    --sidebar-ring: 255 85% 65%;
+
+    /* Chart colors */
+    --chart-1: 255 92% 57%;
+    --chart-2: 262 83% 58%;
+    --chart-3: 291 70% 50%;
+    --chart-4: 322 75% 46%;
+
+    /* Success, warning, info colors */
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 217 91% 60%;
+    --sidebar-background: 240 5.9% 10%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

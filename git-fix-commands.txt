@@ -1,0 +1,21 @@
+# Remove the large file from Git tracking but keep it on your disk
+git rm --cached grades.zip
+
+# Create or update .gitignore to prevent tracking the file in the future
+echo "grades.zip" >> .gitignore
+
+# Add the updated .gitignore file
+git add .gitignore
+
+# Commit these changes
+git commit -m "Remove large grades.zip file and add to gitignore"
+
+# Push to GitHub
+git push origin main
+
+# If you still see history issues (because the file was in previous commits)
+# you may need these additional commands:
+# git filter-branch --force --index-filter "git rm --cached --ignore-unmatch grades.zip" --prune-empty --tag-name-filter cat -- --all
+# git reflog expire --expire=now --all
+# git gc --prune=now
+# git push origin --force
