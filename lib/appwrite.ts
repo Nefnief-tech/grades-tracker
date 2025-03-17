@@ -3,6 +3,9 @@ import { Client, Account, Databases, ID, Query } from "appwrite";
 // Feature flag to enable/disable cloud features
 export const ENABLE_CLOUD_FEATURES = true; // Set to true to enable cloud features
 
+// Feature flag to enable/disable encryption
+export const ENABLE_ENCRYPTION = true; // Set to true to enable encryption
+
 // Flag to track if we've already shown the network error
 let hasShownNetworkError = false;
 
@@ -23,6 +26,109 @@ let databases: Databases | null = null;
 
 // Function to check if we're in a browser environment
 const isBrowser = typeof window !== "undefined";
+
+// Encryption utilities
+const getEncryptionKey = async (userId: string): Promise<CryptoKey> => {
+  // Derive a key from the userId using PBKDF2
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(userId),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits", "deriveKey"]
+  );
+
+  // Use a fixed salt (you could also store a unique salt per user)
+  const salt = encoder.encode("GradesAppSalt");
+
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+};
+
+const encrypt = async (userId: string, data: any): Promise<string> => {
+  if (!ENABLE_ENCRYPTION || !isBrowser) {
+    return JSON.stringify(data);
+  }
+
+  try {
+    const key = await getEncryptionKey(userId);
+    const encoder = new TextEncoder();
+    const dataToEncrypt = encoder.encode(JSON.stringify(data));
+
+    // Generate a random IV
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+
+    const encryptedData = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      dataToEncrypt
+    );
+
+    // Combine IV and encrypted data
+    const combined = new Uint8Array(iv.length + encryptedData.byteLength);
+    combined.set(iv, 0);
+    combined.set(new Uint8Array(encryptedData), iv.length);
+
+    // Convert to base64 for storage
+    return btoa(String.fromCharCode(...combined));
+  } catch (error) {
+    console.error("Encryption error:", error);
+    // Fall back to unencrypted if encryption fails
+    return JSON.stringify(data);
+  }
+};
+
+const decrypt = async (
+  userId: string,
+  encryptedString: string
+): Promise<any> => {
+  if (!ENABLE_ENCRYPTION || !isBrowser) {
+    return JSON.parse(encryptedString);
+  }
+
+  try {
+    // Convert from base64
+    const binary = atob(encryptedString);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    const key = await getEncryptionKey(userId);
+
+    // Extract IV (first 12 bytes)
+    const iv = bytes.slice(0, 12);
+    const encryptedData = bytes.slice(12);
+
+    const decryptedData = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      key,
+      encryptedData
+    );
+
+    const decoder = new TextDecoder();
+    return JSON.parse(decoder.decode(decryptedData));
+  } catch (error) {
+    console.error("Decryption error:", error);
+    // Try to parse as unencrypted if decryption fails
+    try {
+      return JSON.parse(encryptedString);
+    } catch {
+      return null;
+    }
+  }
+};
 
 // Function to show a network error toast (only once)
 const showNetworkErrorOnce = () => {
@@ -319,6 +425,12 @@ export const syncSubjectsToCloud = async (userId: string, subjects: any[]) => {
 
     // Then, create new subject documents
     for (const subject of subjects) {
+      // Encrypt the average grade if encryption is enabled
+      const encryptedAverageGrade = await encrypt(
+        userId,
+        subject.averageGrade || 0
+      );
+
       await databases.createDocument(
         DATABASE_ID,
         SUBJECTS_COLLECTION_ID,
@@ -327,7 +439,8 @@ export const syncSubjectsToCloud = async (userId: string, subjects: any[]) => {
           userId: userId,
           subjectid: subject.id,
           name: subject.name,
-          averageGrade: subject.averageGrade || 0,
+          averageGrade: encryptedAverageGrade,
+          // Remove isEncrypted field as it's not in the database schema
         }
       );
 
@@ -379,6 +492,9 @@ export const syncGradesToCloud = async (
 
     // Then, create new grade documents
     for (const grade of grades) {
+      // Encrypt the grade value if encryption is enabled
+      const encryptedValue = await encrypt(userId, grade.value);
+
       await databases.createDocument(
         DATABASE_ID,
         GRADES_COLLECTION_ID,
@@ -386,10 +502,11 @@ export const syncGradesToCloud = async (
         {
           userId: userId,
           subjectid: subjectid,
-          value: grade.value, // Changed from gradeValue to value to match expected schema
+          value: encryptedValue,
           type: grade.type,
           date: grade.date,
           weight: grade.weight || 1.0,
+          // Remove isEncrypted field as it's not in the database schema
         }
       );
     }
@@ -403,82 +520,6 @@ export const syncGradesToCloud = async (
       return false;
     } else {
       return false;
-    }
-  }
-};
-
-export const getSubjectsFromCloud = async (userId: string) => {
-  if (!ENABLE_CLOUD_FEATURES || !databases) {
-    console.warn("Cloud features are disabled or database is not initialized");
-    return [];
-  }
-
-  try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      SUBJECTS_COLLECTION_ID,
-      [Query.equal("userId", userId)]
-    );
-
-    if (!response.documents || response.documents.length === 0) {
-      console.warn("No subjects found in cloud storage");
-      return [];
-    }
-
-    // Process the documents to extract subject data
-    const result = await Promise.all(
-      response.documents.map(async (subjectDoc) => {
-        try {
-          // Get grades for this subject
-          const grades = await databases.listDocuments(
-            DATABASE_ID,
-            GRADES_COLLECTION_ID,
-            [
-              Query.equal("userId", userId),
-              Query.equal("subjectid", subjectDoc.subjectid),
-            ]
-          );
-
-          const formattedGrades = grades.documents.map((grade) => ({
-            value: grade.value, // Using value instead of gradeValue
-            type: grade.type,
-            date: grade.date,
-            weight: grade.weight || 1.0,
-          }));
-
-          return {
-            id: subjectDoc.subjectid, // Using subjectid (lowercase) to match database schema
-            name: subjectDoc.name,
-            grades: formattedGrades,
-            averageGrade: subjectDoc.averageGrade || 0,
-          };
-        } catch (gradeError) {
-          console.error(
-            `Error fetching grades for subject ${subjectDoc.subjectid}:`,
-            gradeError
-          );
-          return {
-            id: subjectDoc.subjectid,
-            name: subjectDoc.name,
-            grades: [],
-            averageGrade: 0,
-          };
-        }
-      })
-    );
-
-    return result.filter(Boolean);
-  } catch (error: any) {
-    console.error("Error getting subjects from cloud:", error);
-
-    if (error.message && error.message.includes("NetworkError")) {
-      showNetworkErrorOnce();
-      console.warn(
-        "Network error when fetching cloud subjects. Using local data."
-      );
-      return [];
-    } else {
-      return [];
     }
   }
 };
@@ -736,6 +777,113 @@ export const deleteAccount = async (userId: string) => {
       );
     } else {
       throw error;
+    }
+  }
+};
+
+export const getSubjectsFromCloud = async (userId: string) => {
+  if (!ENABLE_CLOUD_FEATURES || !databases) {
+    console.warn("Cloud features are disabled or database is not initialized");
+    return null; // Return null instead of empty array to indicate "no data" rather than "empty data"
+  }
+
+  try {
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      SUBJECTS_COLLECTION_ID,
+      [Query.equal("userId", userId)]
+    );
+
+    if (!response.documents || response.documents.length === 0) {
+      console.warn("No subjects found in cloud storage");
+      return null; // Return null instead of empty array
+    }
+
+    // Process the documents to extract subject data
+    const result = await Promise.all(
+      response.documents.map(async (subjectDoc) => {
+        try {
+          // Get grades for this subject
+          const grades = await databases.listDocuments(
+            DATABASE_ID,
+            GRADES_COLLECTION_ID,
+            [
+              Query.equal("userId", userId),
+              Query.equal("subjectid", subjectDoc.subjectid),
+            ]
+          );
+
+          const formattedGrades = await Promise.all(
+            grades.documents.map(async (grade) => {
+              // Always try to decrypt the value when encryption is enabled
+              let value = grade.value;
+              if (ENABLE_ENCRYPTION) {
+                try {
+                  value = await decrypt(userId, grade.value);
+                } catch (error) {
+                  console.error("Error decrypting grade value:", error);
+                  // Use the original value as a fallback
+                }
+              }
+
+              return {
+                value: value,
+                type: grade.type,
+                date: grade.date,
+                weight: grade.weight || 1.0,
+              };
+            })
+          );
+
+          // Always try to decrypt the average grade when encryption is enabled
+          let averageGrade = subjectDoc.averageGrade || 0;
+          if (ENABLE_ENCRYPTION) {
+            try {
+              averageGrade = await decrypt(userId, subjectDoc.averageGrade);
+            } catch (error) {
+              console.error("Error decrypting average grade:", error);
+              // Use the original value as a fallback
+            }
+          }
+
+          return {
+            id: subjectDoc.subjectid,
+            name: subjectDoc.name,
+            grades: formattedGrades,
+            averageGrade: averageGrade,
+          };
+        } catch (gradeError) {
+          console.error(
+            `Error fetching grades for subject ${subjectDoc.subjectid}:`,
+            gradeError
+          );
+          return {
+            id: subjectDoc.subjectid,
+            name: subjectDoc.name,
+            grades: [],
+            averageGrade: 0,
+          };
+        }
+      })
+    );
+
+    // Only return non-empty results, never an empty array
+    if (result.filter(Boolean).length > 0) {
+      return result.filter(Boolean);
+    } else {
+      return null; // Return null if no valid subjects were found
+    }
+  } catch (error: any) {
+    console.error("Error getting subjects from cloud:", error);
+
+    if (error.message && error.message.includes("NetworkError")) {
+      showNetworkErrorOnce();
+      console.warn(
+        "Network error when fetching cloud subjects. Using local data."
+      );
+      return null; // Return null instead of empty array
+    } else {
+      return null; // Return null instead of empty array
     }
   }
 };

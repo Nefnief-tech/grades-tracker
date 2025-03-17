@@ -1,0 +1,429 @@
+/* Theme Override - Refined for better aesthetics and readability */
+
+:root {
+  /* Refined color palette with better contrast */
+  --theme-primary: #1a1a1a;
+  --theme-primary-light: #454545;
+  --theme-primary-dark: #000000;
+  --theme-accent: #4a6fa5; /* Soft blue accent */
+  --theme-accent-light: #6d8cbf;
+  --theme-accent-dark: #395782;
+
+  /* Background colors - improved for eye comfort */
+  --theme-bg-light: #f8f9fa;
+  --theme-bg-dark: #121212;
+
+  /* Text colors - enhanced contrast */
+  --theme-text-light: #f8f9fa;
+  --theme-text-dark: #1a1a1a;
+
+  /* Border colors - more refined */
+  --theme-border-light: #d0d5dd;
+  --theme-border-dark: #374151;
+}
+
+/* Minimal overrides to ensure we're not affecting the original styling too much */
+/* Reset most aggressive styles from our previous override */
+
+/* Remove forced colors on elements */
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+a,
+button,
+input,
+select,
+textarea {
+  color: inherit;
+  background-color: inherit;
+}
+
+.dark body,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: inherit;
+}
+
+a,
+.dark a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+a:hover,
+.dark a:hover {
+  color: inherit;
+}
+
+button,
+.btn,
+[type="button"],
+[type="submit"] {
+  background-color: inherit;
+  color: inherit;
+  border: inherit;
+}
+
+button:hover,
+.btn:hover,
+[type="button"]:hover,
+[type="submit"]:hover {
+  background-color: inherit;
+}
+
+/* Reset form elements */
+input,
+select,
+textarea,
+.dark input,
+.dark select,
+.dark textarea {
+  border-color: inherit;
+  background-color: inherit;
+  color: inherit;
+}
+
+/* Reset containers */
+.card,
+.container,
+.box,
+.panel,
+[class*="bg-card"],
+[data-card],
+div[class*="rounded"] {
+  background-color: hsl(var(--background)) !important;
+  border-color: hsl(var(--border)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.dark .card,
+.dark .container,
+.dark .box,
+.dark .panel,
+.dark [class*="bg-card"],
+.dark [data-card],
+.dark div[class*="rounded"] {
+  background-color: hsl(var(--background)) !important;
+  border-color: hsl(var(--border)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Target shadcn specific card components */
+[class*="rounded-lg"],
+[class*="shadow"],
+[class*="border"] {
+  background-color: hsl(var(--background)) !important;
+}
+
+/* Ensure all card-like components match the background */
+div[class*="p-4"],
+div[class*="p-6"],
+div[class*="m-4"],
+div[class*="m-6"],
+section {
+  background-color: hsl(var(--background)) !important;
+}
+
+/* Make all background colors match */
+.bg-card,
+.bg-background,
+.bg-muted,
+.bg-popover {
+  background-color: hsl(var(--background)) !important;
+}
+
+/* Reset header elements */
+nav,
+header,
+.dark nav,
+.dark header {
+  background-color: inherit;
+  color: inherit;
+}
+
+/* Reset chart styles but keep some essential overrides for visibility */
+.recharts-wrapper text {
+  fill: currentColor !important;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: currentColor !important;
+  opacity: 0.2 !important;
+}
+
+/* Ensure recharts components match the theme */
+.recharts-wrapper rect.recharts-tooltip-cursor {
+  fill: hsl(var(--background)) !important;
+}
+
+.recharts-surface,
+.recharts-default-tooltip {
+  background-color: hsl(var(--background)) !important;
+}
+
+/* Ensuring SVG icons get proper color */
+svg {
+  fill: currentColor;
+  color: inherit;
+}
+
+/* Reset sidebar colors */
+.sidebar,
+aside,
+[role="complementary"] {
+  background-color: inherit;
+  color: inherit;
+}
+
+/* Reset tooltip styling */
+[role="tooltip"],
+.tooltip,
+.popover,
+.dark [role="tooltip"],
+.dark .tooltip,
+.dark .popover {
+  background-color: inherit !important;
+  color: inherit !important;
+  border-color: inherit !important;
+}
+
+/* This will negate our previous Shadcn UI overrides */
+:root {
+  /* Let the original theme variables take precedence */
+}
+
+.dark:root {
+  /* Let the original dark theme variables take precedence */
+}
+
+/* Theme Override - Making borders more visible */
+
+/* Make borders larger and more visible on rounded elements */
+.card,
+.container,
+.box,
+.panel,
+[class*="bg-card"],
+[data-card],
+div[class*="rounded"],
+[class*="rounded-lg"],
+[class*="rounded-md"],
+[class*="shadow"],
+div[class*="border"] {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+/* Add stronger border to specific rounded elements */
+div[class*="rounded-lg"],
+div[class*="rounded-md"],
+div[class*="rounded-xl"],
+.card,
+.container {
+  border-width: 2px !important;
+  box-shadow: 0 0 0 1px hsl(var(--border)) !important;
+}
+
+/* Ensure rounded corners don't hide the borders */
+[class*="rounded"] {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure contrast between background and border */
+.dark div[class*="rounded"],
+.dark .card,
+.dark .container,
+.dark .box,
+.dark .panel,
+.dark [class*="shadow"] {
+  border-color: hsl(var(--border)) !important;
+  box-shadow: 0 0 0 1px hsl(var(--border)) !important;
+}
+
+/* Theme Override - Enhanced Design with Grade Color Coding */
+
+/* Allow color coding for grades to work properly */
+[class*="bg-green-"],
+[class*="bg-yellow-"],
+[class*="bg-orange-"],
+[class*="bg-red-"],
+[class*="text-green-"],
+[class*="text-yellow-"],
+[class*="text-orange-"],
+[class*="text-red-"] {
+  /* Override our previous overrides to allow grade coloring to work */
+  background-color: unset !important;
+  color: unset !important;
+  border-color: unset !important;
+}
+
+/* Grade-specific colors (restore and enhance them) */
+.bg-green-500 {
+  background-color: #10b981 !important; /* Emerald 500 */
+}
+
+.bg-yellow-500 {
+  background-color: #f59e0b !important; /* Slightly darker amber for better visibility */
+}
+
+.bg-orange-500 {
+  background-color: #ea580c !important; /* Deeper orange */
+}
+
+.bg-red-500 {
+  background-color: #dc2626 !important; /* More vibrant red */
+}
+
+.text-green-500 {
+  color: #059669 !important; /* Slightly darker emerald for text */
+}
+
+.text-yellow-500 {
+  color: #b45309 !important; /* Darker amber for text legibility */
+}
+
+.text-orange-500 {
+  color: #c2410c !important; /* Darker orange for text */
+}
+
+.text-red-500 {
+  color: #b91c1c !important; /* Darker red for text */
+}
+
+/* Design refinements */
+.card,
+.container,
+.box,
+.panel {
+  border-radius: 0.75rem !important;
+  padding: 1.25rem !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Add subtle hover effects for interactive elements */
+.card:hover,
+.container:hover,
+button:hover,
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15),
+    0 4px 10px -4px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Make buttons more prominent */
+button,
+.btn,
+[type="button"],
+[type="submit"] {
+  border-radius: 0.5rem !important;
+  font-weight: 600 !important;
+  padding: 0.625rem 1.25rem !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* More design refinements */
+h1,
+h2,
+h3 {
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1.2 !important;
+}
+
+/* Complete reimplementation of graph styling for grades */
+.recharts-wrapper {
+  font-family: inherit !important;
+  margin: 1rem 0 !important;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: currentColor !important;
+  opacity: 0.1 !important; /* Subtle grid lines */
+  stroke-dasharray: 3 3 !important; /* Dotted lines */
+}
+
+.recharts-cartesian-axis-line {
+  stroke: currentColor !important;
+  opacity: 0.3 !important;
+}
+
+.recharts-cartesian-axis-tick-line {
+  stroke: currentColor !important;
+  opacity: 0.3 !important;
+}
+
+.recharts-text.recharts-cartesian-axis-tick-value {
+  fill: currentColor !important;
+  font-size: 0.75rem !important;
+}
+
+/* Improved tooltips for the graph */
+.recharts-default-tooltip {
+  background-color: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.5rem !important;
+  padding: 0.75rem !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.recharts-tooltip-label {
+  font-weight: 600 !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.recharts-tooltip-item {
+  display: flex !important;
+  align-items: center !important;
+  padding: 0.25rem 0 !important;
+}
+
+/* Grade-specific styling for graph elements */
+.recharts-area.grade-green path,
+.recharts-line.grade-green path {
+  stroke: #059669 !important;
+  fill: rgba(16, 185, 129, 0.1) !important;
+}
+
+.recharts-area.grade-yellow path,
+.recharts-line.grade-yellow path {
+  stroke: #b45309 !important;
+  fill: rgba(245, 158, 11, 0.1) !important;
+}
+
+.recharts-area.grade-orange path,
+.recharts-line.grade-orange path {
+  stroke: #c2410c !important;
+  fill: rgba(234, 88, 12, 0.1) !important;
+}
+
+.recharts-area.grade-red path,
+.recharts-line.grade-red path {
+  stroke: #b91c1c !important;
+  fill: rgba(220, 38, 38, 0.1) !important;
+}
+
+/* Enhanced dots on the graph for better visibility */
+.recharts-dot {
+  stroke-width: 2px !important;
+  r: 4 !important; /* Slightly larger dots */
+}
+
+/* Active/hover state for graph elements */
+.recharts-active-dot {
+  r: 6 !important;
+  stroke-width: 2px !important;
+}
