@@ -20,11 +20,13 @@ RUN npm install -g pnpm && \
 # Copy application code
 COPY . .
 
-# Skip TypeScript checks and build with Next.js strict mode disabled
+# Build with CSS optimization enabled
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV NEXT_STRICT_MODE=false
 ENV NEXT_TYPECHECK=false
+ENV NEXT_PUBLIC_OPTIMIZE_CSS=true
+ENV NEXT_PUBLIC_OPTIMIZE_FONTS=true
 RUN pnpm build
 
 # Production stage
@@ -40,6 +42,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV ARCH=arm64
+ENV NEXT_PUBLIC_OPTIMIZE_CSS=true 
+ENV NEXT_PUBLIC_OPTIMIZE_FONTS=true
 
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
@@ -52,6 +56,10 @@ RUN npm install -g pnpm && \
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.js ./next.config.js
+
+# Copy important CSS/style related directories explicitly
+COPY --from=builder /app/styles ./styles
+COPY --from=builder /app/app ./app
 
 # Expose the port
 EXPOSE 3000
