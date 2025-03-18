@@ -27,42 +27,68 @@ let databases: Databases | null = null;
 // Function to check if we're in a browser environment
 const isBrowser = typeof window !== "undefined";
 
-// Encryption utilities
-const getEncryptionKey = async (userId: string): Promise<CryptoKey> => {
-  // Derive a key from the userId using PBKDF2
-  const encoder = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(userId),
-    { name: "PBKDF2" },
-    false,
-    ["deriveBits", "deriveKey"]
-  );
-
-  // Use a fixed salt (you could also store a unique salt per user)
-  const salt = encoder.encode("GradesAppSalt");
-
-  return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: salt,
-      iterations: 100000,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
+// Function to check if Web Crypto API is available and compatible
+const isCryptoAvailable = () => {
+  return (
+    isBrowser &&
+    typeof crypto !== "undefined" &&
+    typeof crypto.subtle !== "undefined" &&
+    typeof crypto.subtle.importKey === "function" &&
+    typeof crypto.subtle.deriveKey === "function" &&
+    typeof crypto.subtle.encrypt === "function"
   );
 };
 
+// Encryption utilities
+const getEncryptionKey = async (userId: string): Promise<CryptoKey | null> => {
+  if (!isCryptoAvailable()) {
+    console.warn("Web Crypto API not available on this platform");
+    return null;
+  }
+
+  try {
+    // Derive a key from the userId using PBKDF2
+    const encoder = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(userId),
+      { name: "PBKDF2" },
+      false,
+      ["deriveBits", "deriveKey"]
+    );
+
+    // Use a fixed salt (you could also store a unique salt per user)
+    const salt = encoder.encode("GradesAppSalt");
+
+    return await crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256",
+      },
+      keyMaterial,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt", "decrypt"]
+    );
+  } catch (error) {
+    console.error("Error generating encryption key:", error);
+    return null;
+  }
+};
+
 const encrypt = async (userId: string, data: any): Promise<string> => {
-  if (!ENABLE_ENCRYPTION || !isBrowser) {
+  if (!ENABLE_ENCRYPTION || !isCryptoAvailable()) {
     return JSON.stringify(data);
   }
 
   try {
     const key = await getEncryptionKey(userId);
+    if (!key) {
+      return JSON.stringify(data);
+    }
+
     const encoder = new TextEncoder();
     const dataToEncrypt = encoder.encode(JSON.stringify(data));
 
@@ -81,7 +107,7 @@ const encrypt = async (userId: string, data: any): Promise<string> => {
     combined.set(new Uint8Array(encryptedData), iv.length);
 
     // Convert to base64 for storage
-    return btoa(String.fromCharCode(...combined));
+    return btoa(String.fromCharCode.apply(null, Array.from(combined)));
   } catch (error) {
     console.error("Encryption error:", error);
     // Fall back to unencrypted if encryption fails
@@ -93,7 +119,7 @@ const decrypt = async (
   userId: string,
   encryptedString: string
 ): Promise<any> => {
-  if (!ENABLE_ENCRYPTION || !isBrowser) {
+  if (!ENABLE_ENCRYPTION || !isCryptoAvailable()) {
     return JSON.parse(encryptedString);
   }
 
@@ -106,6 +132,9 @@ const decrypt = async (
     }
 
     const key = await getEncryptionKey(userId);
+    if (!key) {
+      return JSON.parse(encryptedString);
+    }
 
     // Extract IV (first 12 bytes)
     const iv = bytes.slice(0, 12);
@@ -143,22 +172,31 @@ const showNetworkErrorOnce = () => {
       <span>Network error connecting to cloud. Using local storage instead.</span>
       <button class="ml-auto text-destructive-foreground/70 hover:text-destructive-foreground">×</button>
     `;
-    document.body.appendChild(toast);
 
-    // Remove the toast after 5 seconds
-    setTimeout(() => {
-      toast.classList.add("opacity-0", "transition-opacity", "duration-300");
+    try {
+      document.body.appendChild(toast);
+
+      // Remove the toast after 5 seconds
       setTimeout(() => {
-        document.body.removeChild(toast);
-      }, 300);
-    }, 5000);
+        toast.classList.add("opacity-0", "transition-opacity", "duration-300");
+        setTimeout(() => {
+          if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+          }
+        }, 300);
+      }, 5000);
 
-    // Add click event to close button
-    const closeButton = toast.querySelector("button");
-    if (closeButton) {
-      closeButton.addEventListener("click", () => {
-        document.body.removeChild(toast);
-      });
+      // Add click event to close button
+      const closeButton = toast.querySelector("button");
+      if (closeButton) {
+        closeButton.addEventListener("click", () => {
+          if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Failed to show network error toast:", error);
     }
   }
 };
