@@ -9,15 +9,18 @@ export const ENABLE_ENCRYPTION = true; // Set to true to enable encryption
 // Flag to track if we've already shown the network error
 let hasShownNetworkError = false;
 
-// Appwrite configuration
-const appwriteEndpoint = "https://appwrite.nief.tech/v1";
-const appwriteProjectId = "67d6ea990025fa097964"; // Replace with your actual project ID
+// Appwrite configuration from environment variables
+const appwriteEndpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "";
+const appwriteProjectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "";
 
-// Database configuration
-export const DATABASE_ID = "67d6b079002144822b5e";
-export const USERS_COLLECTION_ID = "67d6b0ac000fc4ecaaaf";
-export const SUBJECTS_COLLECTION_ID = "67d6b0be003d69d6d863";
-export const GRADES_COLLECTION_ID = "67d6b0c600002e7b01f5";
+// Database configuration from environment variables
+export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "";
+export const USERS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID || "";
+export const SUBJECTS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID || "";
+export const GRADES_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID || "";
 
 // Initialize Appwrite client only if cloud features are enabled
 let appwriteClient: Client | null = null;
