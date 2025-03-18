@@ -10,13 +10,15 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+      # Load from .env file by default, but also allow direct environment variable overrides
       - NEXT_PUBLIC_APPWRITE_ENDPOINT=${NEXT_PUBLIC_APPWRITE_ENDPOINT}
       - NEXT_PUBLIC_APPWRITE_PROJECT_ID=${NEXT_PUBLIC_APPWRITE_PROJECT_ID}
       - NEXT_PUBLIC_APPWRITE_DATABASE_ID=${NEXT_PUBLIC_APPWRITE_DATABASE_ID}
       - NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID=${NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID}
       - NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID=${NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID}
       - NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID=${NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID}
-      # Add other environment variables as needed
+      # For testing without Appwrite connection
+      - NEXT_PUBLIC_FORCE_LOCAL_MODE=${NEXT_PUBLIC_FORCE_LOCAL_MODE:-false}
     volumes:
       - grades_data:/app/data # For data persistence
     networks:

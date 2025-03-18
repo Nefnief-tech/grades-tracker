@@ -6,8 +6,16 @@ export const ENABLE_CLOUD_FEATURES = true; // Set to true to enable cloud featur
 // Feature flag to enable/disable encryption
 export const ENABLE_ENCRYPTION = true; // Set to true to enable encryption
 
+// Add a local mode flag that can be controlled at runtime
+export let FORCE_LOCAL_MODE = false;
+
 // Flag to track if we've already shown the network error
 let hasShownNetworkError = false;
+
+// Enhanced logging
+function logAppwriteInfo(message: string, ...args: any[]) {
+  console.log(`[Appwrite] ${message}`, ...args);
+}
 
 // Appwrite configuration from environment variables
 const appwriteEndpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "";
@@ -206,40 +214,90 @@ const showNetworkErrorOnce = () => {
 
 // Validate the Appwrite endpoint URL before attempting to use it
 function validateAppwriteEndpoint(endpoint: string): boolean {
-  if (!endpoint) return false;
+  if (!endpoint) {
+    logAppwriteInfo("No Appwrite endpoint provided");
+    return false;
+  }
 
   try {
     // Check if it's a valid URL with protocol
-    new URL(endpoint);
+    const url = new URL(endpoint);
+    logAppwriteInfo(`Validated Appwrite endpoint: ${url.toString()}`);
     return true;
   } catch (e) {
-    console.error("Invalid Appwrite endpoint URL:", endpoint, e);
+    logAppwriteInfo("Invalid Appwrite endpoint URL:", endpoint, e);
     return false;
   }
 }
 
+// Function to enable local mode only
+export function enableLocalModeOnly() {
+  FORCE_LOCAL_MODE = true;
+  logAppwriteInfo(
+    "Local-only mode has been enabled. All cloud features are disabled."
+  );
+}
+
+// Clear initialization errors for tests
+if (typeof window !== "undefined") {
+  // Add a global function to manually enable local mode (for debugging)
+  (window as any).enableLocalModeOnly = enableLocalModeOnly;
+}
+
 // Try to initialize Appwrite client
-if (ENABLE_CLOUD_FEATURES && isBrowser) {
+if (ENABLE_CLOUD_FEATURES && isBrowser && !FORCE_LOCAL_MODE) {
   try {
     // Only initialize if we have valid configuration
     if (validateAppwriteEndpoint(appwriteEndpoint) && appwriteProjectId) {
-      console.log(
-        "Initializing Appwrite client with endpoint:",
-        appwriteEndpoint
-      );
-      appwriteClient = new Client()
-        .setEndpoint(appwriteEndpoint)
-        .setProject(appwriteProjectId);
+      logAppwriteInfo("Initializing Appwrite client with:", {
+        endpoint: appwriteEndpoint,
+        projectId: appwriteProjectId ? "[HIDDEN FOR SECURITY]" : undefined,
+        databaseId: DATABASE_ID ? "[HIDDEN FOR SECURITY]" : undefined,
+      });
+
+      appwriteClient = new Client();
+
+      // Set the endpoint first, then the project ID
+      try {
+        appwriteClient.setEndpoint(appwriteEndpoint);
+        logAppwriteInfo("Endpoint set successfully");
+      } catch (endpointError) {
+        logAppwriteInfo("Failed to set endpoint:", endpointError);
+        throw endpointError;
+      }
+
+      try {
+        appwriteClient.setProject(appwriteProjectId);
+        logAppwriteInfo("Project ID set successfully");
+      } catch (projectError) {
+        logAppwriteInfo("Failed to set project ID:", projectError);
+        throw projectError;
+      }
+
+      // Create account and databases instances
       account = new Account(appwriteClient);
       databases = new Databases(appwriteClient);
+      logAppwriteInfo("Appwrite client initialized successfully");
     } else {
-      console.warn(
+      logAppwriteInfo(
         "Appwrite configuration is invalid or missing. Cloud features will be disabled."
       );
+      enableLocalModeOnly();
     }
   } catch (error) {
-    console.error("Failed to initialize Appwrite client:", error);
+    logAppwriteInfo("Failed to initialize Appwrite client:", error);
     showNetworkErrorOnce();
+    enableLocalModeOnly();
+  }
+} else {
+  if (FORCE_LOCAL_MODE) {
+    logAppwriteInfo("Local-only mode is active. Cloud features are disabled.");
+  } else if (!ENABLE_CLOUD_FEATURES) {
+    logAppwriteInfo("Cloud features are disabled in configuration.");
+  } else if (!isBrowser) {
+    logAppwriteInfo(
+      "Not in browser environment, skipping Appwrite initialization."
+    );
   }
 }
 
@@ -249,7 +307,7 @@ export const createAccount = async (
   password: string,
   name: string
 ) => {
-  if (!ENABLE_CLOUD_FEATURES || !account || !databases) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !account || !databases) {
     showNetworkErrorOnce();
     throw new Error("Cloud features are unavailable. Please try again later.");
   }
@@ -296,7 +354,7 @@ export const createAccount = async (
 };
 
 export const login = async (email: string, password: string) => {
-  if (!ENABLE_CLOUD_FEATURES || !account) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !account) {
     showNetworkErrorOnce();
     throw new Error("Cloud features are unavailable. Please try again later.");
   }
@@ -320,7 +378,7 @@ export const login = async (email: string, password: string) => {
 };
 
 export const logout = async () => {
-  if (!ENABLE_CLOUD_FEATURES || !account) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !account) {
     return { success: true };
   }
 
@@ -339,7 +397,7 @@ export const logout = async () => {
 };
 
 export const getCurrentUser = async () => {
-  if (!ENABLE_CLOUD_FEATURES || !account || !databases) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !account || !databases) {
     return null;
   }
 
@@ -420,7 +478,7 @@ export const updateUserSyncPreference = async (
   userId: string,
   syncEnabled: boolean
 ) => {
-  if (!ENABLE_CLOUD_FEATURES || !databases) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
     showNetworkErrorOnce();
     throw new Error("Cloud features are unavailable. Please try again later.");
   }
@@ -463,7 +521,7 @@ export const syncSubjectsToCloud = async (userId: string, subjects: any[]) => {
     ...subject,
     id: subject.id || ID.unique(),
   }));
-  if (!ENABLE_CLOUD_FEATURES || !databases) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
     return false;
   }
 
@@ -532,7 +590,7 @@ export const syncGradesToCloud = async (
   subjectid: string,
   grades: any[]
 ) => {
-  if (!ENABLE_CLOUD_FEATURES || !databases) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
     return false;
   }
 
@@ -595,7 +653,7 @@ export const deleteSubjectFromCloud = async (
   userId: string,
   subjectId: string
 ) => {
-  if (!ENABLE_CLOUD_FEATURES || !databases) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
     return false;
   }
 
@@ -658,7 +716,7 @@ export const deleteGradeFromCloud = async (
   subjectId: string,
   gradeToDelete: Grade
 ) => {
-  if (!ENABLE_CLOUD_FEATURES || !databases) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
     return false;
   }
 
@@ -701,7 +759,7 @@ export const deleteGradeFromCloud = async (
 
 // Delete all cloud data for a user but keep their account
 export const deleteAllCloudData = async (userId: string) => {
-  if (!ENABLE_CLOUD_FEATURES || !databases) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
     showNetworkErrorOnce();
     throw new Error("Cloud features are unavailable. Please try again later.");
   }
@@ -764,7 +822,7 @@ export const deleteAllCloudData = async (userId: string) => {
 
 // Delete user account
 export const deleteAccount = async (userId: string) => {
-  if (!ENABLE_CLOUD_FEATURES || !account || !databases) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !account || !databases) {
     showNetworkErrorOnce();
     throw new Error("Cloud features are unavailable. Please try again later.");
   }
@@ -848,7 +906,7 @@ export const deleteAccount = async (userId: string) => {
 };
 
 export const getSubjectsFromCloud = async (userId: string) => {
-  if (!ENABLE_CLOUD_FEATURES || !databases) {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
     console.warn("Cloud features are disabled or database is not initialized");
     return null; // Return null instead of empty array to indicate "no data" rather than "empty data"
   }
