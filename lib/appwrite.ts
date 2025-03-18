@@ -204,14 +204,39 @@ const showNetworkErrorOnce = () => {
   }
 };
 
+// Validate the Appwrite endpoint URL before attempting to use it
+function validateAppwriteEndpoint(endpoint: string): boolean {
+  if (!endpoint) return false;
+
+  try {
+    // Check if it's a valid URL with protocol
+    new URL(endpoint);
+    return true;
+  } catch (e) {
+    console.error("Invalid Appwrite endpoint URL:", endpoint, e);
+    return false;
+  }
+}
+
 // Try to initialize Appwrite client
 if (ENABLE_CLOUD_FEATURES && isBrowser) {
   try {
-    appwriteClient = new Client()
-      .setEndpoint(appwriteEndpoint)
-      .setProject(appwriteProjectId);
-    account = new Account(appwriteClient);
-    databases = new Databases(appwriteClient);
+    // Only initialize if we have valid configuration
+    if (validateAppwriteEndpoint(appwriteEndpoint) && appwriteProjectId) {
+      console.log(
+        "Initializing Appwrite client with endpoint:",
+        appwriteEndpoint
+      );
+      appwriteClient = new Client()
+        .setEndpoint(appwriteEndpoint)
+        .setProject(appwriteProjectId);
+      account = new Account(appwriteClient);
+      databases = new Databases(appwriteClient);
+    } else {
+      console.warn(
+        "Appwrite configuration is invalid or missing. Cloud features will be disabled."
+      );
+    }
   } catch (error) {
     console.error("Failed to initialize Appwrite client:", error);
     showNetworkErrorOnce();
