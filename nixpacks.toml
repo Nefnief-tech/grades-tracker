@@ -3,11 +3,10 @@ nixPkgs = ['nodejs_20', 'openssl', 'gcc', 'python3']
 cmds = ['npm config set prefix "/usr/local" && npm install -g pnpm']
 
 [phases.install]
-cmds = ['pnpm install --frozen-lockfile']
+cmds = ['npm install -g pnpm && pnpm install --frozen-lockfile']
 
 [phases.build]
 cmds = ['pnpm build']
-dependsOn = ['install']
 
 [variables]
 NODE_OPTIONS = '--max-old-space-size=4096'
