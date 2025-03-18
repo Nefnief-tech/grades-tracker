@@ -1,68 +1,82 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 import { SidebarInset } from "@/components/ui/sidebar";
-import type { Subject } from "../types/grades";
-import { getSubjectsFromStorage } from "../utils/storageUtils";
+import { Card } from "@/components/ui/card";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
 import { SubjectForm } from "../components/SubjectForm";
-import { BookOpen, ArrowRight, LineChart, Info } from "lucide-react";
-import { GradeHistoryChart } from "../components/GradeHistoryChart";
 import { SubjectList } from "../components/SubjectList";
 import { AverageGradeBanner } from "../components/AverageGradeBanner";
+import { BookOpen, Info } from "lucide-react";
+import { useSubjects } from "@/hooks/useSubjects";
+import { LoadingSubjects } from "@/components/LoadingSubjects";
+import { FetchCounter } from "@/components/FetchCounter"; // Add this import
 
-function getGradeColor(grade: number): string {
-  if (grade <= 1.5) return "bg-green-500";
-  if (grade <= 2.5) return "bg-yellow-500";
-  if (grade <= 3.5) return "bg-orange-500";
-  return "bg-red-500";
-}
+// Add a global counter for page mounts to track excessive re-renders
+let mountCount = 0;
 
 export default function Home() {
-  const { user } = useAuth();
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
+  const { subjects, isLoading, refreshSubjects } = useSubjects();
+  const mountCountRef = useRef(0);
 
-  const loadSubjects = async () => {
-    const savedSubjects = await getSubjectsFromStorage(
-      user?.id,
-      user?.syncEnabled
-    );
-    setSubjects(savedSubjects);
-    setIsLoading(false);
-  };
-
+  // Redirect to landing page if not authenticated
   useEffect(() => {
-    loadSubjects();
-  }, [user]);
+    if (!authLoading && !user) {
+      router.push("/landing");
+    }
+  }, [user, authLoading, router]);
 
   // Listen for sync preference changes
   useEffect(() => {
     const handleSyncChange = () => {
-      loadSubjects();
+      refreshSubjects();
     };
 
     window.addEventListener("syncPreferenceChanged", handleSyncChange);
     return () => {
       window.removeEventListener("syncPreferenceChanged", handleSyncChange);
     };
+  }, [refreshSubjects]);
+
+  // Track mount count to detect excessive rerenders
+  useEffect(() => {
+    mountCount++;
+    mountCountRef.current = mountCount;
+    console.log(`Dashboard mounted ${mountCount} time(s)`);
+
+    return () => {
+      console.log(
+        `Dashboard unmounted after ${mountCountRef.current} mount(s)`
+      );
+    };
   }, []);
 
-  if (isLoading) {
+  // Format the current date
+  const currentDate = format(new Date(), "EEEE, MMMM d, yyyy");
+
+  // Show loading state while checking authentication
+  if (authLoading) {
     return (
       <SidebarInset className="w-full">
         <div className="flex items-center justify-center h-screen">
-          Loading...
+          <LoadingSkeleton />
+        </div>
+      </SidebarInset>
+    );
+  }
+
+  // If no user and not loading, the redirect will happen via the useEffect
+  if (!user) {
+    return (
+      <SidebarInset className="w-full">
+        <div className="flex items-center justify-center h-screen">
+          Redirecting...
         </div>
       </SidebarInset>
     );
@@ -70,11 +84,12 @@ export default function Home() {
 
   return (
     <SidebarInset className="w-full">
-      {/* This container will fill the entire available space */}
       <div className="w-full">
-        {/* Inner container with max-width to center content on large screens */}
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Add the Average Grade Banner at the top */}
+          <div className="text-muted-foreground text-sm mb-4">
+            Today is {currentDate}
+          </div>
+
           {subjects.length > 0 && <AverageGradeBanner subjects={subjects} />}
 
           <div className="space-y-6 md:space-y-8 w-full py-6">
@@ -99,17 +114,16 @@ export default function Home() {
                     grades (6).
                   </p>
                   <p>
-                    <span className="font-medium">Important:</span> The At the
-                    current moment, u are not able to delete subjects, so name
+                    <span className="font-medium">Important:</span> At the
+                    current moment, you are not able to delete subjects, so name
                     them carefully
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Add Subject Form */}
             <div className="mb-4 md:mb-8">
-              <SubjectForm onSubjectAdded={loadSubjects} />
+              <SubjectForm onSubjectAdded={refreshSubjects} />
             </div>
 
             <div className="space-y-2 md:space-y-4">
@@ -122,10 +136,12 @@ export default function Home() {
               </p>
             </div>
 
-            {subjects.length > 0 ? (
+            {isLoading ? (
+              <LoadingSubjects />
+            ) : subjects.length > 0 ? (
               <SubjectList
                 subjects={subjects}
-                onSubjectDeleted={loadSubjects}
+                onSubjectDeleted={refreshSubjects}
               />
             ) : (
               <Card className="bg-card border-border p-6 text-center">
@@ -136,7 +152,29 @@ export default function Home() {
             )}
           </div>
         </div>
+        {/* Add the fetch counter in development */}
+        {process.env.NODE_ENV === "development" && <FetchCounter />}
       </div>
     </SidebarInset>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="w-full max-w-screen-xl mx-auto px-4 animate-pulse">
+      <div className="h-4 w-48 bg-muted rounded mb-8"></div>
+      <div className="h-24 bg-muted/50 rounded-lg mb-8"></div>
+      <div className="space-y-4">
+        <div className="h-8 w-64 bg-muted rounded"></div>
+        <div className="h-4 w-96 bg-muted rounded"></div>
+        <div className="h-20 bg-muted/30 rounded"></div>
+        <div className="h-12 bg-muted rounded"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-32 bg-muted rounded"></div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

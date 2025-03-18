@@ -1,4 +1,5 @@
 import { Client, Account, Databases, ID, Query } from "appwrite";
+import { rateLimitHandler } from "./rate-limit-handler";
 
 // Feature flag to enable/disable cloud features
 export const ENABLE_CLOUD_FEATURES = true; // Set to true to enable cloud features
@@ -525,52 +526,58 @@ export const syncSubjectsToCloud = async (userId: string, subjects: any[]) => {
     return false;
   }
 
-  const timestamp = new Date().toISOString();
-
   try {
     // First, delete all existing subjects for this user
     try {
+      // Get all subjects in a single query without throttling
       const existingSubjects = await databases.listDocuments(
         DATABASE_ID,
         SUBJECTS_COLLECTION_ID,
-        [Query.equal("userId", userId)]
+        [Query.equal("userId", userId), Query.limit(1000)]
       );
 
-      for (const doc of existingSubjects.documents) {
-        await databases.deleteDocument(
+      // Delete all subjects in parallel for maximum speed
+      await Promise.all(
+        existingSubjects.documents.map((doc) =>
+          databases!.deleteDocument(
+            DATABASE_ID,
+            SUBJECTS_COLLECTION_ID,
+            doc.$id
+          )
+        )
+      );
+    } catch (error) {
+      console.error("Error handling existing subjects:", error);
+    }
+
+    // Process subjects in parallel for maximum speed
+    await Promise.all(
+      subjects.map(async (subject) => {
+        // Encrypt the average grade if encryption is enabled
+        const encryptedAverageGrade = await encrypt(
+          userId,
+          subject.averageGrade || 0
+        );
+
+        // Create subject document
+        await databases!.createDocument(
           DATABASE_ID,
           SUBJECTS_COLLECTION_ID,
-          doc.$id
+          ID.unique(),
+          {
+            userId: userId,
+            subjectid: subject.id,
+            name: subject.name,
+            averageGrade: encryptedAverageGrade,
+          }
         );
-      }
-    } catch (error) {
-      console.error("Error deleting existing subjects:", error);
-    }
 
-    // Then, create new subject documents
-    for (const subject of subjects) {
-      // Encrypt the average grade if encryption is enabled
-      const encryptedAverageGrade = await encrypt(
-        userId,
-        subject.averageGrade || 0
-      );
-
-      await databases.createDocument(
-        DATABASE_ID,
-        SUBJECTS_COLLECTION_ID,
-        ID.unique(),
-        {
-          userId: userId,
-          subjectid: subject.id,
-          name: subject.name,
-          averageGrade: encryptedAverageGrade,
-          // Remove isEncrypted field as it's not in the database schema
+        // Sync grades for this subject with parallel processing
+        if (subject.grades && subject.grades.length > 0) {
+          await syncGradesToCloud(userId, subject.id, subject.grades || []);
         }
-      );
-
-      // Sync grades for this subject
-      await syncGradesToCloud(userId, subject.id, subject.grades || []);
-    }
+      })
+    );
 
     return true;
   } catch (error: any) {
@@ -597,43 +604,52 @@ export const syncGradesToCloud = async (
   try {
     // First, delete all existing grades for this subject
     try {
+      // Get all grades in a single request
       const existingGrades = await databases.listDocuments(
         DATABASE_ID,
         GRADES_COLLECTION_ID,
-        [Query.equal("userId", userId), Query.equal("subjectid", subjectid)]
+        [
+          Query.equal("userId", userId),
+          Query.equal("subjectid", subjectid),
+          Query.limit(1000),
+        ]
       );
 
-      for (const doc of existingGrades.documents) {
-        await databases.deleteDocument(
-          DATABASE_ID,
-          GRADES_COLLECTION_ID,
-          doc.$id
-        );
-      }
+      // Delete all grades in parallel for maximum speed
+      await Promise.all(
+        existingGrades.documents.map((doc) =>
+          databases!.deleteDocument(DATABASE_ID, GRADES_COLLECTION_ID, doc.$id)
+        )
+      );
     } catch (error) {
       console.error("Error deleting existing grades:", error);
     }
 
-    // Then, create new grade documents
-    for (const grade of grades) {
-      // Encrypt the grade value if encryption is enabled
-      const encryptedValue = await encrypt(userId, grade.value);
+    // Remove any potential duplicates before syncing
+    const uniqueGrades = removeDuplicateGrades(grades);
 
-      await databases.createDocument(
-        DATABASE_ID,
-        GRADES_COLLECTION_ID,
-        ID.unique(),
-        {
-          userId: userId,
-          subjectid: subjectid,
-          value: encryptedValue,
-          type: grade.type,
-          date: grade.date,
-          weight: grade.weight || 1.0,
-          // Remove isEncrypted field as it's not in the database schema
-        }
-      );
-    }
+    // Process all grades in parallel for maximum speed
+    await Promise.all(
+      uniqueGrades.map(async (grade) => {
+        // Encrypt the grade value if encryption is enabled
+        const encryptedValue = await encrypt(userId, grade.value);
+
+        // Create grade document
+        await databases!.createDocument(
+          DATABASE_ID,
+          GRADES_COLLECTION_ID,
+          ID.unique(),
+          {
+            userId: userId,
+            subjectid: subjectid,
+            value: encryptedValue,
+            type: grade.type,
+            date: grade.date,
+            weight: grade.weight || 1.0,
+          }
+        );
+      })
+    );
 
     return true;
   } catch (error: any) {
@@ -647,6 +663,17 @@ export const syncGradesToCloud = async (
     }
   }
 };
+
+// Helper function to remove duplicate grades
+function removeDuplicateGrades(grades: any[]): any[] {
+  const seen = new Set();
+  return grades.filter((grade) => {
+    const key = `${grade.value}-${grade.type}-${grade.date}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 // Delete a subject and all its grades from cloud
 export const deleteSubjectFromCloud = async (

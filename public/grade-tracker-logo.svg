@@ -1,0 +1,11 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simplified Bar Chart - Just two key bars -->
+  <rect x="30" y="50" width="12" height="30" rx="2" fill="#4f46e5" />
+  <rect x="60" y="30" width="12" height="50" rx="2" fill="#8b5cf6" />
+  
+  <!-- Minimal Trend Line -->
+  <path d="M20 60L40 40L60 50L80 25" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Simplified Grade Mark - Just an angle bracket resembling "A" -->
+  <path d="M50 25L65 75H35L50 25Z" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+</svg>

@@ -20,10 +20,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Subject } from "@/types/grades";
 import { GradeHistoryChart } from "./GradeHistoryChart";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { ChevronRight } from "lucide-react";
 
 interface SubjectListProps {
-  subjects: Subject[];
-  onSubjectDeleted: () => void;
+  subjects: Array<{
+    id: string;
+    name: string;
+    averageGrade: number;
+    grades: Array<any>;
+  }>;
+  onSubjectDeleted?: (id: string) => void;
 }
 
 export function SubjectList({ subjects, onSubjectDeleted }: SubjectListProps) {
@@ -68,63 +76,68 @@ export function SubjectList({ subjects, onSubjectDeleted }: SubjectListProps) {
     return "bg-red-500";
   }
 
+  // Sort subjects alphabetically
+  const sortedSubjects = [...subjects].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {subjects.map((subject) => (
-          <Card
-            key={subject.id}
-            className="bg-card border-border overflow-hidden hover:shadow-lg transition-all duration-300 group rounded-2xl relative"
-          >
-            <CardHeader className="p-6 pb-3">
-              <div className="flex justify-between items-center">
-                <CardTitle
-                  className="text-lg md:text-xl cursor-pointer hover:text-primary"
-                  onClick={() => router.push(`/subjects/${subject.id}`)}
-                >
-                  {subject.name}
-                </CardTitle>
-                {subject.averageGrade !== undefined &&
-                  subject.averageGrade > 0 && (
-                    <Badge
-                      className={`${getGradeColor(
-                        subject.averageGrade
-                      )} text-white`}
-                    >
-                      {subject.averageGrade.toFixed(1)}
-                    </Badge>
-                  )}
-              </div>
-              <div className="flex justify-between items-center mt-2">
-                <div className="text-xs text-muted-foreground">
-                  {subject.grades.length}{" "}
-                  {subject.grades.length === 1 ? "grade" : "grades"}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:bg-destructive/10"
-                  onClick={() => confirmDelete(subject.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
+        {sortedSubjects.map((subject) => {
+          // Generate a unique key combining id with a hash of the name
+          const uniqueKey = `${subject.id}-${hashString(subject.name)}`;
 
-            {/* Add small graph chart */}
-            <CardContent className="pb-4 pt-1">
-              <div className="h-24 w-full">
-                <GradeHistoryChart
-                  grades={subject.grades}
-                  height={80}
-                  showAxis={false}
-                  showGrid={false}
-                  className="h-full"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+          return (
+            <Link href={`/subjects/${subject.id}`} key={uniqueKey}>
+              <Card
+                className={cn(
+                  "h-full transition-all hover:border-primary/50 hover:shadow-md cursor-pointer",
+                  "bg-card"
+                )}
+              >
+                <CardContent className="p-6 flex flex-col justify-between h-full">
+                  <div>
+                    <h3 className="text-lg font-semibold truncate mb-1">
+                      {subject.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {subject.grades.length} grades
+                    </p>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-4">
+                    <div
+                      className={cn(
+                        "text-2xl font-bold",
+                        subject.averageGrade <= 1.5
+                          ? "text-green-600 dark:text-green-400"
+                          : subject.averageGrade <= 2.5
+                          ? "text-blue-600 dark:text-blue-400"
+                          : subject.averageGrade <= 3.5
+                          ? "text-yellow-600 dark:text-yellow-400"
+                          : subject.averageGrade <= 4.5
+                          ? "text-orange-600 dark:text-orange-400"
+                          : "text-red-600 dark:text-red-400"
+                      )}
+                    >
+                      {subject.averageGrade
+                        ? subject.averageGrade.toFixed(1)
+                        : "N/A"}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
 
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
@@ -150,4 +163,15 @@ export function SubjectList({ subjects, onSubjectDeleted }: SubjectListProps) {
       </AlertDialog>
     </>
   );
+}
+
+// Helper function to create a simple hash from a string
+function hashString(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36).substring(0, 6);
 }

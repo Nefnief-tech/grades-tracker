@@ -24,6 +24,8 @@ import {
   BarChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -33,6 +35,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+
+  // Memoize the children to prevent unnecessary re-renders
+  const memoizedChildren = React.useMemo(() => children, [children]);
 
   return (
     <SidebarProvider defaultCollapsed={true}>
@@ -90,10 +95,16 @@ export function AppLayout({ children }: AppLayoutProps) {
           <header className="h-14 border-b px-4 sm:px-6 flex items-center">
             <div className="flex items-center justify-between w-full">
               <MainNav />
-              <UserNav />
+              <div className="flex items-center gap-4">
+                <SyncStatusIndicator />
+                <ThemeToggle />
+                <UserNav />
+              </div>
             </div>
           </header>
-          <main className="flex-1 overflow-auto w-full">{children}</main>
+          <main className="flex-1 overflow-auto w-full">
+            {memoizedChildren}
+          </main>
         </div>
       </div>
     </SidebarProvider>
