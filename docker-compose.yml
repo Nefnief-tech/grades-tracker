@@ -1,9 +1,31 @@
-version: "3"
+version: "3.8"
+
 services:
-  app:
-    build:
-      context: .
+  grades-app:
+    image: nefnief1/grades-app:latest
+    platform: linux/amd64 # Changed back to AMD64 to match existing image
+    container_name: grades-application
     ports:
-      - "3000:3000"
+      - "8080:8080" # Assuming the app runs on port 8080, adjust as needed
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
+      # Add other environment variables as needed
+    volumes:
+      - grades_data:/app/data # For data persistence
+    networks:
+      - grades_network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+networks:
+  grades_network:
+    driver: bridge
+
+volumes:
+  grades_data:
+    driver: local

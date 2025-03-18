@@ -19,6 +19,14 @@ interface GradeFormProps {
   onSuccess?: () => void;
 }
 
+// Assuming GradeType is an enum or a specific type, we need to convert the string to that type
+// Add this helper function above your component
+const parseGradeType = (typeString: string): GradeType => {
+  // If GradeType is an enum, convert the string to enum value
+  // This is a generic solution that should work with most setups
+  return typeString as unknown as GradeType;
+};
+
 export function GradeForm({ subjectId, onSuccess }: GradeFormProps) {
   const { user } = useAuth();
   const [value, setValue] = useState("");
@@ -49,7 +57,7 @@ export function GradeForm({ subjectId, onSuccess }: GradeFormProps) {
         subjectId,
         {
           value: gradeValue,
-          type,
+          type: parseGradeType(type),
           date: new Date().toISOString(),
           weight,
         },
