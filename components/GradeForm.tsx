@@ -17,25 +17,9 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { saveGradeToSubject } from "@/utils/storageUtils";
 import { format } from "date-fns";
+import type { GradeType, Grade } from "@/types/grades"; // Import from types/grades.ts
 
-// Import or define the GradeType enum to match what's expected in your Grade interface
-export enum GradeType {
-  EXAM = "exam",
-  QUIZ = "quiz",
-  HOMEWORK = "homework",
-  PROJECT = "project",
-  OTHER = "other",
-}
-
-// Define a Grade interface that matches what saveGradeToSubject expects
-interface Grade {
-  id: string;
-  value: number;
-  type: GradeType; // Use the GradeType enum instead of string
-  date: string;
-  weight: number;
-}
-
+// Define a proper Grade interface that matches what's in types/grades.ts
 interface GradeFormProps {
   subjectId: string;
   onGradeAdded: () => void;
@@ -44,7 +28,7 @@ interface GradeFormProps {
 export function GradeForm({ subjectId, onGradeAdded }: GradeFormProps) {
   const { user } = useAuth();
   const [value, setValue] = useState<number | "">("");
-  const [type, setType] = useState<GradeType>(GradeType.EXAM); // Use GradeType enum
+  const [type, setType] = useState<GradeType>("Test"); // Use the imported GradeType
   const [weight, setWeight] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +48,7 @@ export function GradeForm({ subjectId, onGradeAdded }: GradeFormProps) {
       const newGrade: Grade = {
         id: Math.random().toString(36).substring(2, 9),
         value: Number(value),
-        type: type, // This is now of type GradeType
+        type: type, // Now this is compatible with types/grades.ts
         date: format(new Date(), "yyyy-MM-dd"),
         weight: Number(weight),
       };
@@ -78,7 +62,7 @@ export function GradeForm({ subjectId, onGradeAdded }: GradeFormProps) {
 
       // Clear form after successful submission
       setValue("");
-      setType(GradeType.EXAM);
+      setType("Test"); // Update to match imported GradeType
       setWeight(1);
 
       // Notify parent component
@@ -133,11 +117,10 @@ export function GradeForm({ subjectId, onGradeAdded }: GradeFormProps) {
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={GradeType.EXAM}>Exam</SelectItem>
-              <SelectItem value={GradeType.QUIZ}>Quiz</SelectItem>
-              <SelectItem value={GradeType.HOMEWORK}>Homework</SelectItem>
-              <SelectItem value={GradeType.PROJECT}>Project</SelectItem>
-              <SelectItem value={GradeType.OTHER}>Other</SelectItem>
+              <SelectItem value="Test">Test</SelectItem>
+              <SelectItem value="Oral Exam">Oral Exam</SelectItem>
+              <SelectItem value="Homework">Homework</SelectItem>
+              <SelectItem value="Project">Project</SelectItem>
             </SelectContent>
           </Select>
         </div>
