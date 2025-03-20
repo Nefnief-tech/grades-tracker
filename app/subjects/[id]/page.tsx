@@ -16,7 +16,7 @@ import { GradeForm } from "@/components/GradeForm";
 import { GradeHistoryChart } from "@/components/GradeHistoryChart";
 import { ArrowLeft, BarChart2, Award } from "lucide-react";
 import Link from "next/link";
-import { getSubjectById } from "@/utils/storageUtils";
+import { getSubjectById, debugSubjects } from "@/utils/storageUtils";
 import { DebugPanel } from "@/components/DebugPanel";
 
 export default function SubjectPage() {
@@ -28,92 +28,158 @@ export default function SubjectPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const subjectId = params.id as string;
-  const previousSubject = useRef<any>(null);
 
-  // Function to load subject data with debouncing
+  // Define refs at the component level
+  const previousSubject = useRef<any>(null);
+  const componentId = useRef(`subject-${subjectId}-${Date.now()}`);
+  const lastProcessedTime = useRef(0);
+  const refreshInProgress = useRef(false);
+  const processedEvents = useRef(new Set<string>());
+  const isRefreshingRef = useRef(false);
+  const fetchCountRef = useRef(0);
+
+  // Function to load subject data with critical anti-loop fixes
   const loadSubject = useCallback(async () => {
     if (!user || !subjectId) {
       router.push("/landing");
       return;
     }
 
+    // CRITICAL FIX: Add a counter to prevent excessive fetches
+    fetchCountRef.current += 1;
+    const currentFetchCount = fetchCountRef.current;
+
+    if (currentFetchCount > 10) {
+      console.error("Too many fetches detected, breaking potential loop");
+      return;
+    }
+
+    // Prevent loading again if already loading
+    if (isLoading) {
+      console.log("Already loading subject, skipping duplicate load");
+      return;
+    }
+
+    console.log(`Loading subject data (${currentFetchCount}):`, subjectId);
     setIsLoading(true);
+
     try {
+      // Always force refresh to get the most recent data
       const fetchedSubject = await getSubjectById(
         subjectId,
         user.id,
-        user.syncEnabled
+        user.syncEnabled,
+        true // Always force refresh
       );
 
       if (!fetchedSubject) {
+        console.error("Subject not found, redirecting to home");
         router.push("/");
         return;
       }
 
-      // Keep previous data during refresh to prevent UI jumps
-      if (isRefreshing && previousSubject.current) {
-        // Only update the grades and average, keep the rest
-        previousSubject.current.grades = fetchedSubject.grades;
-        previousSubject.current.averageGrade = fetchedSubject.averageGrade;
-        setSubject({ ...previousSubject.current });
-      } else {
-        setSubject(fetchedSubject);
-        previousSubject.current = fetchedSubject;
-      }
+      console.log(
+        `Loaded subject "${fetchedSubject.name}" with ${
+          fetchedSubject.grades?.length || 0
+        } grades`
+      );
+      setSubject(fetchedSubject);
+      previousSubject.current = fetchedSubject;
     } catch (error) {
       console.error("Error loading subject:", error);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+
+      // Reset fetch counter after successful load
+      setTimeout(() => {
+        fetchCountRef.current = 0;
+      }, 5000);
     }
-  }, [user, subjectId, router, isRefreshing]);
-
-  // Initial load and refresh on refresh key change
-  useEffect(() => {
-    if (user) {
-      loadSubject();
-    }
-  }, [user, loadSubject, refreshKey]);
-
-  // Add listener for subject updates with debouncing
-  useEffect(() => {
-    const debouncedRefresh = debounce(() => {
-      setIsRefreshing(true);
-      setRefreshKey((prev) => prev + 1);
-    }, 300);
-
-    const handleSubjectsUpdated = () => {
-      debouncedRefresh();
-    };
-
-    window.addEventListener("subjectsUpdated", handleSubjectsUpdated);
-    window.addEventListener("gradeAdded", handleSubjectsUpdated);
-
-    return () => {
-      window.removeEventListener("subjectsUpdated", handleSubjectsUpdated);
-      window.removeEventListener("gradeAdded", handleSubjectsUpdated);
-    };
-  }, []);
-
-  // Add a refresh lock to prevent multiple refreshes
-  const isRefreshingRef = useRef(false);
+  }, [user, subjectId, router, isLoading]);
 
   // Function to refresh subject data
   const refreshSubject = useCallback(() => {
-    // Prevent multiple refreshes in quick succession
     if (isRefreshingRef.current) return;
 
     isRefreshingRef.current = true;
     setIsRefreshing(true);
     setRefreshKey((prev) => prev + 1);
 
-    // Reset the refresh lock after a delay
     setTimeout(() => {
       isRefreshingRef.current = false;
     }, 500);
   }, []);
 
-  // Helper function to determine grade color
+  // Force refresh function
+  const forceRefresh = useCallback(() => {
+    if (user) {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set("refresh", "true");
+      window.history.replaceState({}, "", currentUrl.toString());
+
+      setIsRefreshing(true);
+      setRefreshKey((prev) => prev + 1);
+
+      setTimeout(() => {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("refresh");
+        window.history.replaceState({}, "", cleanUrl.toString());
+      }, 500);
+    }
+  }, [user]);
+
+  // Debug function
+  const debugData = useCallback(() => {
+    if (user) {
+      debugSubjects(user.id);
+    }
+  }, [user]);
+
+  // Initial load effect
+  // CRITICAL: Only load on user change, not on refreshKey!
+  useEffect(() => {
+    if (user) {
+      loadSubject();
+    }
+  }, [user, loadSubject]); // Remove refreshKey from dependencies
+
+  // Add a separate effect for refresh key changes
+  useEffect(() => {
+    if (refreshKey > 0 && user) {
+      // Only refresh if we're not already loading and not exceeding fetch count
+      if (!isLoading && fetchCountRef.current < 5) {
+        console.log(`Refresh key changed (${refreshKey}), loading subject`);
+        loadSubject();
+      }
+    }
+  }, [refreshKey, user, isLoading, loadSubject]);
+
+  // Event listeners effect - highly simplified
+  useEffect(() => {
+    // Simplify event handling for grade added - ONLY care about this in the subject page
+    const handleGradeAdded = (event: CustomEvent) => {
+      if (event.detail?.subjectId !== subjectId) return;
+
+      console.log(`Grade added for ${subjectId}, refreshing subject`);
+
+      // Just set the refresh key - let the other effect handle loading
+      setRefreshKey((prev) => prev + 1);
+    };
+
+    // Only listen for grade added events - ignore subjectsUpdated
+    console.log(`Setting up grade added listener for subject ${subjectId}`);
+    window.addEventListener("gradeAdded", handleGradeAdded as EventListener);
+
+    return () => {
+      window.removeEventListener(
+        "gradeAdded",
+        handleGradeAdded as EventListener
+      );
+    };
+  }, [subjectId]);
+
+  // Helper functions
   const getGradeColor = (grade: number): string => {
     if (grade <= 1.5) return "text-green-600 dark:text-green-400";
     if (grade <= 2.5) return "text-blue-600 dark:text-blue-400";
@@ -122,7 +188,6 @@ export default function SubjectPage() {
     return "text-red-600 dark:text-red-400";
   };
 
-  // Helper function to get grade badge color
   const getGradeBadgeColor = (grade: number): string => {
     if (grade <= 1.5) return "bg-green-500/10";
     if (grade <= 2.5) return "bg-blue-500/10";
@@ -136,9 +201,10 @@ export default function SubjectPage() {
     return <SubjectSkeleton />;
   }
 
+  // Render component
   return (
     <div className="container py-8">
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <Link
           href="/"
           className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
@@ -146,6 +212,55 @@ export default function SubjectPage() {
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back to dashboard
         </Link>
+
+        {/* Add a refresh button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={forceRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-1"
+        >
+          {isRefreshing ? (
+            <>
+              <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
+              Refreshing...
+            </>
+          ) : (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mr-1"
+              >
+                <path d="M21 2v6h-6"></path>
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+                <path d="M3 22v-6h6"></path>
+                <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+              </svg>
+              Refresh from Cloud
+            </>
+          )}
+        </Button>
+
+        {/* Add a debug button in development mode */}
+        {process.env.NODE_ENV === "development" && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={debugData}
+            className="ml-2"
+          >
+            Debug Data
+          </Button>
+        )}
       </div>
 
       {/* Enhanced Subject Header with Large Average */}

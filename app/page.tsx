@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarInset } from "@/components/ui/sidebar";
@@ -24,6 +24,8 @@ export default function Home() {
   const { user, isLoading: authLoading } = useAuth();
   const { subjects, isLoading, refreshSubjects } = useSubjects();
   const mountCountRef = useRef(0);
+  const [refreshing, setRefreshing] = useState(false); // Add state for refresh button
+  const [forceRefreshKey, setForceRefreshKey] = useState(0); // Add a state to force refresh from outside hooks
 
   // Redirect to landing page if not authenticated
   useEffect(() => {
@@ -56,6 +58,45 @@ export default function Home() {
       );
     };
   }, []);
+
+  // Force a complete refresh of data by forcing useSubjects to reinitialize
+  useEffect(() => {
+    if (forceRefreshKey > 0) {
+      refreshSubjects();
+    }
+  }, [forceRefreshKey, refreshSubjects]);
+
+  // Add a force refresh function with direct cloud fetch
+  const forceRefresh = useCallback(() => {
+    if (user) {
+      // Add a query parameter to force cache bypass
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set("refresh", "true");
+      window.history.replaceState({}, "", currentUrl.toString());
+
+      // Now refresh
+      setRefreshing(true); // Use our local state
+
+      // Clear any cached data
+      localStorage.removeItem("lastBgFetchTime");
+      localStorage.removeItem("lastCloudFetchTime");
+
+      // Force a complete refresh by incrementing the refresh key
+      setForceRefreshKey((prev) => prev + 1);
+
+      // Remove the query parameter after a short delay
+      setTimeout(() => {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("refresh");
+        window.history.replaceState({}, "", cleanUrl.toString());
+
+        // Refresh once more to ensure UI is updated
+        refreshSubjects();
+
+        setRefreshing(false); // Reset our local state
+      }, 1000);
+    }
+  }, [user, refreshSubjects]);
 
   // Format the current date
   const currentDate = format(new Date(), "EEEE, MMMM d, yyyy");
@@ -94,9 +135,51 @@ export default function Home() {
 
           <div className="space-y-6 md:space-y-8 w-full py-6">
             <div className="space-y-2">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-                German Grade Calculator
-              </h1>
+              <div className="flex justify-between items-center">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+                  German Grade Calculator
+                </h1>
+
+                {user && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={forceRefresh}
+                    disabled={isLoading || refreshing}
+                    className="flex items-center gap-1"
+                  >
+                    {isLoading || refreshing ? (
+                      <>
+                        <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="mr-1"
+                        >
+                          <path d="M21 2v6h-6"></path>
+                          {/* Fix the incorrect SVG path that has negative values */}
+                          <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+                          <path d="M3 22v-6h6"></path>
+                          <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+                        </svg>
+                        Refresh from Cloud
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+
               <p className="text-sm md:text-base text-muted-foreground">
                 Track and calculate your grades using the German grading system
                 (1-6)
