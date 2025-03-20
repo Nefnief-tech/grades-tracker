@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,10 @@ import {
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { saveGradeToSubject } from "@/utils/storageUtils";
+import { saveGradeToSubject, debugSubjects } from "@/utils/storageUtils";
 import { format } from "date-fns";
-import type { GradeType, Grade } from "@/types/grades"; // Import from types/grades.ts
+import type { GradeType, Grade } from "@/types/grades";
 
-// Define a proper Grade interface that matches what's in types/grades.ts
 interface GradeFormProps {
   subjectId: string;
   onGradeAdded: () => void;
@@ -28,8 +27,7 @@ interface GradeFormProps {
 export function GradeForm({ subjectId, onGradeAdded }: GradeFormProps) {
   const { user } = useAuth();
   const [value, setValue] = useState<number | "">("");
-  const [type, setType] = useState<GradeType>("Test"); // Use the imported GradeType
-  const [weight, setWeight] = useState<number>(1);
+  const [type, setType] = useState<GradeType>("Test");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,17 +40,32 @@ export function GradeForm({ subjectId, onGradeAdded }: GradeFormProps) {
       return;
     }
 
+    // Use fixed weights only
+    const weight = type === "Test" ? 2.0 : 1.0;
+
     setIsLoading(true);
 
     try {
-      const newGrade: Grade = {
-        id: Math.random().toString(36).substring(2, 9),
+      console.log("Creating new grade:", {
         value: Number(value),
-        type: type, // Now this is compatible with types/grades.ts
+        type,
+        weight,
+      });
+
+      // Generate a truly unique ID
+      const randomId = `grade_${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(2, 9)}`;
+
+      const newGrade: Grade = {
+        id: randomId,
+        value: Number(value),
+        type: type,
         date: format(new Date(), "yyyy-MM-dd"),
-        weight: Number(weight),
+        weight: weight,
       };
 
+      // Save the grade
       await saveGradeToSubject(
         subjectId,
         newGrade,
@@ -60,18 +73,17 @@ export function GradeForm({ subjectId, onGradeAdded }: GradeFormProps) {
         user?.syncEnabled
       );
 
-      // Clear form after successful submission
+      console.log("Grade saved successfully:", newGrade);
+
+      // Clear form
       setValue("");
-      setType("Test"); // Update to match imported GradeType
-      setWeight(1);
+      setType("Test");
 
-      // Notify parent component
-      onGradeAdded();
-
-      // Dispatch event for listeners
-      window.dispatchEvent(
-        new CustomEvent("gradeAdded", { detail: { subjectId } })
-      );
+      // Force a refresh
+      setTimeout(() => {
+        onGradeAdded();
+        console.log("Grade add callback triggered");
+      }, 100);
     } catch (err: any) {
       console.error("Error saving grade:", err);
       setError("Failed to save grade. Please try again.");
@@ -117,27 +129,24 @@ export function GradeForm({ subjectId, onGradeAdded }: GradeFormProps) {
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Test">Test</SelectItem>
-              <SelectItem value="Oral Exam">Oral Exam</SelectItem>
-              <SelectItem value="Homework">Homework</SelectItem>
-              <SelectItem value="Project">Project</SelectItem>
+              <SelectItem value="Test">Test (Weight: 2.0)</SelectItem>
+              <SelectItem value="Oral Exam">Oral Exam (Weight: 1.0)</SelectItem>
+              <SelectItem value="Homework">Homework (Weight: 1.0)</SelectItem>
+              <SelectItem value="Project">Project (Weight: 1.0)</SelectItem>
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground">
+            Tests are weighted 2.0, all other assignments 1.0
+          </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="grade-weight">Weight</Label>
-          <Input
-            id="grade-weight"
-            type="number"
-            min="0.1"
-            max="10"
-            step="0.1"
-            placeholder="1.0"
-            value={weight}
-            onChange={(e) => setWeight(Number(e.target.value))}
-            required
-          />
+        <div className="p-3 bg-muted/20 rounded-md">
+          <div className="text-sm flex justify-between">
+            <span>Selected Weight:</span>
+            <span className="font-medium">
+              {type === "Test" ? "2.0" : "1.0"}
+            </span>
+          </div>
         </div>
       </CardContent>
 

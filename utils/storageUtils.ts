@@ -26,9 +26,19 @@ function logStorage(operation: string, data?: any): void {
 /**
  * Notifies components that subjects have been updated
  */
-export function notifySubjectsUpdated(): void {
+export function notifySubjectsUpdated(eventId?: string): void {
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("subjectsUpdated"));
+    console.log(
+      "Dispatching subjectsUpdated event",
+      eventId ? `(ID: ${eventId})` : ""
+    );
+
+    // Use CustomEvent to allow passing data
+    const event = eventId
+      ? new CustomEvent("subjectsUpdated", { detail: { eventId } })
+      : new Event("subjectsUpdated");
+
+    window.dispatchEvent(event);
   }
 }
 
@@ -95,6 +105,25 @@ function validateSubjects(subjects: Subject[]): Subject[] {
 }
 
 /**
+ * Gets data from localStorage
+ */
+function getFromLocalStorage(): Subject[] {
+  try {
+    const localSubjectsJson = localStorage.getItem(STORAGE_KEY);
+
+    if (!localSubjectsJson) {
+      return initializeSubjects();
+    }
+
+    const localSubjects = JSON.parse(localSubjectsJson);
+    return validateSubjects(localSubjects);
+  } catch (error) {
+    console.error("Error reading from localStorage:", error);
+    return initializeSubjects();
+  }
+}
+
+/**
  * Saves subjects to localStorage and optionally to cloud
  */
 export async function saveSubjectsToStorage(
@@ -153,15 +182,64 @@ export async function saveSubjectsToStorage(
  */
 export async function getSubjectsFromStorage(
   userId?: string,
-  syncEnabled?: boolean
+  syncEnabled?: boolean,
+  forceRefresh?: boolean
 ): Promise<Subject[]> {
   const cacheKey = `subjects-${userId || "anonymous"}`;
 
+  // Allow force refresh by checking URL parameter
+  const forceRefreshParam =
+    typeof window !== "undefined" &&
+    window.location.search.includes("refresh=true");
+
+  if (forceRefresh || forceRefreshParam) {
+    // When force refreshing, clear cached data
+    memoryCache.delete(cacheKey);
+    logStorage("force refresh requested - cleared cache");
+  }
+
   // Try memory cache first (fastest) with longer cache validity
   const cachedSubjects = getFromCache<Subject[]>(cacheKey);
-  if (cachedSubjects) {
+  if (cachedSubjects && !forceRefresh) {
     logStorage("using cached subjects", { count: cachedSubjects.length });
     return cachedSubjects;
+  }
+
+  // If cloud is enabled and we're doing a force refresh, try to get data from cloud first
+  if (ENABLE_CLOUD_FEATURES && userId && syncEnabled && forceRefresh) {
+    try {
+      logStorage("force fetching from cloud", { userId });
+      const cloudSubjects = await getSubjectsFromCloud(userId);
+
+      if (
+        cloudSubjects &&
+        Array.isArray(cloudSubjects) &&
+        cloudSubjects.length > 0
+      ) {
+        const validatedCloudSubjects = validateSubjects(cloudSubjects);
+
+        logStorage("got cloud subjects", {
+          count: validatedCloudSubjects.length,
+        });
+
+        // Save to localStorage
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(validatedCloudSubjects)
+        );
+        localStorage.setItem("lastSyncTimestamp", new Date().toISOString());
+
+        // Update the cache
+        setInCache(cacheKey, validatedCloudSubjects);
+
+        // Notify about the update
+        notifySubjectsUpdated();
+
+        return validatedCloudSubjects;
+      }
+    } catch (error) {
+      console.error("Error force fetching from cloud:", error);
+    }
   }
 
   // Then try localStorage (fast)
@@ -445,22 +523,37 @@ export async function deleteGradeFromSubject(
 export async function getSubjectById(
   subjectId: string,
   userId?: string,
-  syncEnabled?: boolean
+  syncEnabled?: boolean,
+  forceRefresh?: boolean
 ): Promise<Subject | null> {
   const cacheKey = `subject-${subjectId}-${userId || "anonymous"}`;
 
-  // Try memory cache first
-  const cachedSubject = getFromCache<Subject | null>(cacheKey);
+  // Clear cache if force refresh is requested
+  if (forceRefresh) {
+    memoryCache.delete(cacheKey);
+  }
+
+  // Try memory cache first if not forcing refresh
+  const cachedSubject = !forceRefresh
+    ? getFromCache<Subject | null>(cacheKey)
+    : null;
   if (cachedSubject !== null) {
     return cachedSubject;
   }
 
   try {
-    const subjects = await getSubjectsFromStorage(userId, syncEnabled);
+    // Always fetch fresh data from storage
+    const subjects = await getSubjectsFromStorage(
+      userId,
+      syncEnabled,
+      forceRefresh
+    );
     const subject = subjects.find((s) => s.id === subjectId) || null;
 
-    // Cache the result
-    setInCache(cacheKey, subject);
+    if (subject) {
+      // Cache the result for future quick access
+      setInCache(cacheKey, subject);
+    }
 
     return subject;
   } catch (error) {
@@ -620,87 +713,116 @@ export const saveGradeToSubject = async (
   syncEnabled?: boolean
 ): Promise<void> => {
   try {
-    logStorage("saving grade", { subjectId, grade });
+    const operationId = `grade-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2, 9)}`;
+    console.log(`[${operationId}] SAVING GRADE - START`, {
+      subjectId,
+      gradeId: grade.id,
+    });
 
-    // Use cached subjects when possible to reduce storage reads
-    const cacheKey = `subjects-${userId || "anonymous"}`;
-    let subjects: Subject[] = [];
+    // IMPORTANT: Force weight to be either 1.0 or 2.0 based on type
+    grade.weight = grade.type === "Test" ? 2.0 : 1.0;
 
-    // Try memory cache first for better performance
-    const cachedSubjects = getFromCache<Subject[]>(cacheKey);
-    if (cachedSubjects) {
-      subjects = cachedSubjects;
-    } else {
-      subjects = await getSubjectsFromStorage(userId, false); // Don't trigger cloud sync yet
+    // CRITICAL FIX: Get subjects directly from localStorage to avoid any caching issues
+    const localStorageData = localStorage.getItem(STORAGE_KEY);
+    if (!localStorageData) {
+      console.error(`[${operationId}] No local storage data found`);
+      throw new Error("No subjects found in local storage");
     }
 
-    const subjectIndex = subjects.findIndex((s) => s.id === subjectId);
-
-    if (subjectIndex === -1) {
-      throw new Error(`Subject not found with ID: ${subjectId}`);
+    let parsedSubjects: Subject[];
+    try {
+      parsedSubjects = JSON.parse(localStorageData);
+    } catch (e) {
+      console.error(
+        `[${operationId}] Failed to parse subjects from localStorage:`,
+        e
+      );
+      parsedSubjects = [];
     }
 
-    const subject = { ...subjects[subjectIndex] };
+    if (!Array.isArray(parsedSubjects)) {
+      console.error(
+        `[${operationId}] Parsed subjects is not an array:`,
+        parsedSubjects
+      );
+      parsedSubjects = [];
+    }
 
-    // Check for existing grade with same ID or properties
-    const existingIndex = subject.grades.findIndex(
-      (g) =>
-        g.id === grade.id ||
-        (g.value === grade.value &&
-          g.type === grade.type &&
-          g.date === grade.date)
+    console.log(
+      `[${operationId}] Found ${parsedSubjects.length} subjects in localStorage`
     );
 
-    if (existingIndex !== -1) {
-      // Update existing grade
-      subject.grades = [
-        ...subject.grades.slice(0, existingIndex),
-        grade,
-        ...subject.grades.slice(existingIndex + 1),
-      ];
+    // Find the subject
+    const subjectIndex = parsedSubjects.findIndex((s) => s.id === subjectId);
+    if (subjectIndex === -1) {
+      console.error(`[${operationId}] Subject with ID ${subjectId} not found`);
+      throw new Error(`Subject with ID ${subjectId} not found`);
+    }
+
+    // Get a reference to the subject
+    const subject = parsedSubjects[subjectIndex];
+
+    // Ensure grades array exists
+    if (!subject.grades) {
+      subject.grades = [];
+    }
+
+    // Add or update the grade
+    const existingIndex = subject.grades.findIndex((g) => g.id === grade.id);
+    if (existingIndex >= 0) {
+      console.log(
+        `[${operationId}] Updating existing grade at index ${existingIndex}`
+      );
+      subject.grades[existingIndex] = grade;
     } else {
-      // Add new grade
-      subject.grades = [...subject.grades, grade];
+      console.log(`[${operationId}] Adding new grade to subject`);
+      subject.grades.push(grade);
     }
 
     // Recalculate average
     subject.averageGrade = calculateAverage(subject.grades);
 
-    // Update subjects array
-    const updatedSubjects = [...subjects];
-    updatedSubjects[subjectIndex] = subject;
+    console.log(
+      `[${operationId}] Subject now has ${subject.grades.length} grades with average ${subject.averageGrade}`
+    );
 
-    // Update memory cache immediately for optimistic UI
-    setInCache(cacheKey, updatedSubjects);
+    // Save back to localStorage immediately
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedSubjects));
 
-    // Update subject cache for optimistic UI
-    const subjectCacheKey = `subject-${subjectId}-${userId || "anonymous"}`;
-    setInCache(subjectCacheKey, subject);
+    // Clear memory cache to force fresh data on next read
+    console.log(`[${operationId}] Clearing all cache to force fresh data`);
+    memoryCache.clear();
 
-    // Notify UI for immediate feedback
-    window.dispatchEvent(new Event("subjectsUpdated"));
+    // CRITICAL FIX: Only dispatch the gradeAdded event, not the subjects updated event
+    // This prevents the feedback loop that causes infinite fetches
+    console.log(`[${operationId}] Dispatching grade added event`);
+    window.dispatchEvent(
+      new CustomEvent("gradeAdded", {
+        detail: {
+          subjectId,
+          grade,
+          eventId: operationId,
+          timestamp: Date.now(),
+        },
+      })
+    );
 
-    // Save to localStorage without waiting - this happens in the background
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSubjects));
-
-    // Then start the cloud sync in the background if enabled
+    // For cloud sync, do it silently without triggering events
     if (ENABLE_CLOUD_FEATURES && userId && syncEnabled) {
-      // This runs in the background - don't await it
-      syncSubjectsToCloud(userId, updatedSubjects).catch((e) => {
-        console.error("Background sync failed:", e);
-      });
+      console.log(`[${operationId}] Starting silent cloud sync for grade`);
+      try {
+        await syncSubjectsToCloud(userId, parsedSubjects);
+        console.log(`[${operationId}] Silent cloud sync complete`);
+      } catch (e) {
+        console.error(`[${operationId}] Silent cloud sync failed:`, e);
+      }
     }
 
-    // Dispatch additional event with a small delay to ensure UI is updated
-    setTimeout(() => {
-      window.dispatchEvent(
-        new CustomEvent("gradeAdded", {
-          detail: { subjectId, grade },
-        })
-      );
-    }, 100);
+    console.log(`[${operationId}] SAVING GRADE - COMPLETE`);
   } catch (error) {
-    console.error("Error saving grade:", error);
+    console.error("ERROR SAVING GRADE:", error);
     throw error;
   }
 };
@@ -726,4 +848,53 @@ export function clearAllGradesData(): void {
   localStorage.removeItem("lastSyncTimestamp");
   memoryCache.clear();
   logStorage("cleared all data");
+}
+
+/**
+ * Clears cache for a specific subject
+ */
+export function clearSubjectCache(userId?: string, subjectId?: string): void {
+  if (userId && subjectId) {
+    // Clear cache for specific subject
+    const subjectCacheKey = `subject-${subjectId}-${userId || "anonymous"}`;
+    memoryCache.delete(subjectCacheKey);
+    logStorage("cleared cache for subject", { subjectId });
+  }
+}
+
+/**
+ * Clear cache specifically for forcing refresh
+ */
+export function clearCacheForRefresh(): void {
+  // Clear all memory cache
+  memoryCache.clear();
+
+  // Clear timestamp records to force fresh fetch
+  localStorage.removeItem("lastBgFetchTime");
+  localStorage.removeItem("lastCloudFetchTime");
+
+  logStorage("cleared cache for refresh");
+}
+
+/**
+ * Debug function to check subjects and grades
+ */
+export function debugSubjects(userId?: string): void {
+  const cacheKey = `subjects-${userId || "anonymous"}`;
+  const subjects = getFromCache<Subject[]>(cacheKey);
+
+  console.log("=== SUBJECTS DEBUG ===");
+  console.log("From cache:", subjects);
+
+  try {
+    const localStorageSubjects = localStorage.getItem(STORAGE_KEY);
+    console.log(
+      "From localStorage:",
+      localStorageSubjects ? JSON.parse(localStorageSubjects) : "No data"
+    );
+  } catch (e) {
+    console.error("Error reading from localStorage:", e);
+  }
+
+  console.log("=== END DEBUG ===");
 }

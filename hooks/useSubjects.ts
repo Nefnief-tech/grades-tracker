@@ -1,184 +1,165 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { getSubjectsFromStorage } from "@/utils/storageUtils";
+import {
+  getSubjectsFromStorage,
+  clearCacheForRefresh,
+} from "@/utils/storageUtils";
 import { useAuth } from "@/contexts/AuthContext";
-import { throttle, markExecuted } from "@/lib/throttle";
-
-// Create a shared data cache for faster access across instances
-const globalSubjectsCache = {
-  subjects: [] as any[],
-  timestamp: 0,
-};
+import type { Subject } from "@/types/grades";
 
 export function useSubjects() {
   const { user } = useAuth();
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Keep track of mounted state to prevent updates after unmount
-  const isMounted = useRef(true);
-
-  // Keep track of fetch count to prevent excessive fetching
-  const fetchCountRef = useRef(0);
   const lastFetchTimeRef = useRef(0);
+  // Use a ref to track in-flight fetches to prevent loops
+  const fetchInProgressRef = useRef(false);
+  // Keep track of event handlers to avoid duplicates
+  const eventBoundRef = useRef(false);
 
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-      // Clear any pending timeout on unmount
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Create a throttled key using userId
-  const getThrottleKey = useCallback(() => {
-    return `subjects-fetch-${user?.id || "anonymous"}`;
-  }, [user?.id]);
-
-  // Fetcher function with local caching and optimizations
+  // Function to fetch subjects with optional force refresh
   const fetchSubjects = useCallback(
     async (forceRefresh = false) => {
-      if (!user) return [];
+      // IMPORTANT: Prevent fetch loops by checking if already in progress
+      if (fetchInProgressRef.current && !forceRefresh) {
+        console.log("Fetch already in progress, skipping");
+        return;
+      }
 
-      // Extreme throttling for non-forced fetches - only fetch every 30 seconds
-      const throttleInterval = 30000; // 30 seconds
+      if (!user) {
+        setSubjects([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Maximum throttle - 30 seconds between fetches unless forced
       const now = Date.now();
-
-      if (!forceRefresh) {
-        // Use a simple time-based throttle as a backup
-        if (now - lastFetchTimeRef.current < throttleInterval) {
-          console.log(
-            `Throttling fetch - last fetch was ${
-              (now - lastFetchTimeRef.current) / 1000
-            }s ago`
-          );
-          return globalSubjectsCache.subjects.length > 0
-            ? globalSubjectsCache.subjects
-            : subjects;
-        }
+      if (!forceRefresh && now - lastFetchTimeRef.current < 30000) {
+        // 30 seconds
+        console.log(
+          "HARD THROTTLE - Skipping fetch, last fetch was only",
+          ((now - lastFetchTimeRef.current) / 1000).toFixed(1) + "s ago"
+        );
+        return;
       }
-
-      const throttleKey = getThrottleKey();
-
-      // Use global cache if recent and not forced refresh - with a longer validity period of 10 seconds
-      if (
-        !forceRefresh &&
-        globalSubjectsCache.subjects.length > 0 &&
-        now - globalSubjectsCache.timestamp < 10000
-      ) {
-        if (isMounted.current) {
-          setSubjects(globalSubjectsCache.subjects);
-          setIsLoading(false);
-        }
-        return globalSubjectsCache.subjects;
-      }
-
-      // Only allow fetch once every 30 seconds unless forced
-      if (!forceRefresh && !throttle(throttleKey, throttleInterval, false)) {
-        console.log("Fetch throttled - using cached data");
-        return globalSubjectsCache.subjects.length > 0
-          ? globalSubjectsCache.subjects
-          : subjects;
-      }
-
-      // Track fetch count and time
-      fetchCountRef.current += 1;
-      lastFetchTimeRef.current = now;
-
-      console.log(`Fetching subjects (count: ${fetchCountRef.current})`);
-
-      if (isMounted.current) setIsLoading(true);
-
-      // Mark as executed at the start
-      markExecuted(throttleKey);
 
       try {
+        // Set fetch in progress flag BEFORE any async operations
+        fetchInProgressRef.current = true;
+        lastFetchTimeRef.current = now;
+
+        // Track operation with a unique ID to help debug
+        const fetchId = `fetch-${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2, 9)}`;
+        console.log(`Starting subject fetch (ID: ${fetchId})`);
+
+        setIsLoading(true);
+
+        if (forceRefresh) {
+          console.log(`Force refresh requested (ID: ${fetchId})`);
+          clearCacheForRefresh();
+        }
+
         const fetchedSubjects = await getSubjectsFromStorage(
           user.id,
-          user.syncEnabled
+          user.syncEnabled,
+          forceRefresh
         );
 
-        // Update global cache
-        globalSubjectsCache.subjects = fetchedSubjects;
-        globalSubjectsCache.timestamp = now;
-
-        if (isMounted.current) {
-          setSubjects(fetchedSubjects);
-          setIsLoading(false);
+        // Check if we're still relevant (no newer fetch started)
+        if (lastFetchTimeRef.current !== now) {
+          console.log(
+            `Fetch ${fetchId} superseded by newer fetch, discarding results`
+          );
+          return;
         }
-        return fetchedSubjects;
+
+        console.log(
+          `Fetch completed (ID: ${fetchId}) with ${fetchedSubjects.length} subjects`
+        );
+        setSubjects(fetchedSubjects);
+        setError(null);
       } catch (err) {
         console.error("Error fetching subjects:", err);
-        if (isMounted.current) {
-          setError(err as Error);
-          setIsLoading(false);
-        }
-        return [];
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        // Use a MUCH longer delay to prevent fetch loops - 15 seconds minimum
+        setTimeout(() => {
+          console.log("Unlocking fetch after extended cooldown period");
+          fetchInProgressRef.current = false;
+        }, 15000); // 15 seconds
+        setIsLoading(false);
       }
     },
-    [user, getThrottleKey, subjects]
+    [user]
   );
 
-  // Initial data loading and event listeners - with improved debouncing
-  useEffect(() => {
-    // Only fetch if we don't already have subjects in the cache
-    if (globalSubjectsCache.subjects.length === 0) {
-      fetchSubjects();
-    } else if (globalSubjectsCache.subjects.length > 0 && isMounted.current) {
-      // Use cached subjects immediately to avoid loading state
-      setSubjects(globalSubjectsCache.subjects);
-      setIsLoading(false);
-    }
-
-    const handleUpdates = () => {
-      // Use a longer debounce (1 second) to avoid multiple rapid refreshes
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-      }
-
-      fetchTimeoutRef.current = setTimeout(() => {
-        // Only force refresh for significant events
-        fetchSubjects(true);
-      }, 1000);
-    };
-
-    window.addEventListener("syncPreferenceChanged", handleUpdates);
-    window.addEventListener("subjectsUpdated", handleUpdates);
-
-    return () => {
-      window.removeEventListener("syncPreferenceChanged", handleUpdates);
-      window.removeEventListener("subjectsUpdated", handleUpdates);
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-      }
-    };
+  // Refresh subjects function for external components
+  const refreshSubjects = useCallback(() => {
+    fetchSubjects(true);
   }, [fetchSubjects]);
 
-  // Refresh function that respects loading state and uses less aggressive forcing
-  const refreshSubjects = useCallback(() => {
-    if (isLoading) return Promise.resolve(subjects);
-
-    // Current time - for throttling even manual refreshes
-    const now = Date.now();
-    // Only allow manual refresh every 5 seconds
-    if (now - lastFetchTimeRef.current < 5000) {
-      console.log("Manual refresh throttled");
-      return Promise.resolve(subjects);
+  // Fetch on component mount and user change - ONCE only
+  useEffect(() => {
+    if (user && !fetchInProgressRef.current) {
+      console.log("Initial fetch from useEffect");
+      fetchSubjects(true); // Force refresh on initial load
     }
+  }, [user, fetchSubjects]);
 
-    lastFetchTimeRef.current = now;
-    return fetchSubjects(true);
-  }, [fetchSubjects, isLoading, subjects]);
+  // CRITICAL FIX: Only listen for specific events with clean handling
+  useEffect(() => {
+    // Only set up listener if we don't already have one and the user is logged in
+    if (eventBoundRef.current || !user) return;
+    eventBoundRef.current = true;
+
+    console.log("Setting up subject update event listener");
+
+    // Track when we last processed an event
+    let lastEventProcessedTime = 0;
+
+    // Handle subjects updated events with strong throttling
+    const handleEvent = () => {
+      const now = Date.now();
+
+      // 15 second cooldown between event processing
+      if (now - lastEventProcessedTime < 15000) {
+        console.log("Ignoring event - too soon after previous (15s cooldown)");
+        return;
+      }
+
+      lastEventProcessedTime = now;
+
+      // If fetch is already in progress, don't trigger another one
+      if (fetchInProgressRef.current) {
+        console.log("Fetch already in progress, not triggering from event");
+        return;
+      }
+
+      console.log("Processing subjects updated event, scheduling fetch");
+
+      // Schedule a refresh with a delay
+      setTimeout(() => {
+        if (!fetchInProgressRef.current) {
+          fetchSubjects(false); // Don't force refresh to use cache when possible
+        }
+      }, 2000); // 2 second delay
+    };
+
+    // Only listen for subjectsUpdated events
+    window.addEventListener("subjectsUpdated", handleEvent);
+
+    return () => {
+      window.removeEventListener("subjectsUpdated", handleEvent);
+      eventBoundRef.current = false;
+    };
+  }, [user, fetchSubjects]);
 
   return {
     subjects,
     isLoading,
     error,
     refreshSubjects,
-    mutate: refreshSubjects,
   };
 }
