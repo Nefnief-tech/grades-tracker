@@ -19,10 +19,15 @@ export type User = {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (
+    email: string,
+    password: string,
+    rememberMe?: boolean
+  ) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUserState: (updatedUser: User) => void;
+  updateUserState: (updatedUser: Partial<User>) => void;
+  isOffline: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,9 +35,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isOffline, setIsOffline] = useState(false);
 
-  const updateUserState = (updatedUser: User) => {
-    setUser(updatedUser);
+  const updateUserState = (updatedUser: Partial<User>) => {
+    setUser((prevUser) => ({ ...prevUser, ...updatedUser }));
   };
 
   // Check if user is logged in on mount
@@ -56,7 +62,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    // Check initial state
+    setIsOffline(!navigator.onLine);
+
+    // Add event listeners
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Clean up
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  const login = async (
+    email: string,
+    password: string,
+    rememberMe?: boolean
+  ) => {
     setIsLoading(true);
     try {
       await appwriteLogin(email, password);
@@ -104,6 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         updateUserState,
+        isOffline,
       }}
     >
       {children}

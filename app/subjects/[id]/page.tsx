@@ -254,16 +254,19 @@ export default function SubjectPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <GradeTable
-                grades={subject.grades}
-                subjectId={subject.id}
-                onGradeDeleted={refreshSubject} // Reuse the same handler for deletions
+              <div
                 className={
                   isRefreshing
                     ? "opacity-80 transition-opacity duration-200"
                     : ""
                 }
-              />
+              >
+                <GradeTable
+                  grades={subject.grades}
+                  subjectId={subject.id}
+                  onGradeDeleted={refreshSubject} // Reuse the same handler for deletions
+                />
+              </div>
             </CardContent>
           </Card>
         </div>

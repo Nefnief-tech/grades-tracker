@@ -3,7 +3,7 @@ import {
   BookOpen,
   BarChart3, // Updated from BarChart to BarChart3 which is the correct name in lucide-react
   Clock,
-  CloudSync,
+  Cloud, // Use Cloud instead as CloudSync isn't available
   Shield,
   Moon,
   Smartphone, // Changed from DeviceMobile to Smartphone which is the correct name
@@ -47,7 +47,7 @@ const features: Feature[] = [
     bg: "bg-amber-500/10",
   },
   {
-    icon: CloudSync,
+    icon: Cloud,
     title: "Optional Sync",
     description:
       "Use locally or enable cloud sync to access grades across devices",
