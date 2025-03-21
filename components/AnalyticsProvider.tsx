@@ -1,26 +1,31 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { trackPageView } from "@/utils/analytics";
 
 export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  // Track page views
+  // Only use searchParams on the client side
+  const [url, setUrl] = useState<string | null>(null);
+  
   useEffect(() => {
-    // Only track when pathname is available
+    // This effect will only run on the client
     if (pathname) {
-      // Include search parameters if present
-      let url = pathname;
-      const search = searchParams?.toString();
-      if (search) url += `?${search}`;
-
-      // Track page view
-      trackPageView(url);
+      try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const search = searchParams.toString();
+        const fullUrl = search ? `${pathname}?${search}` : pathname;
+        
+        setUrl(fullUrl);
+        trackPageView(fullUrl);
+      } catch (error) {
+        console.error("Error tracking page view:", error);
+        // Fallback to just pathname
+        trackPageView(pathname);
+      }
     }
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   return <>{children}</>;
 }
