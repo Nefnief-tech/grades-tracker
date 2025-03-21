@@ -526,6 +526,28 @@ export async function getSubjectById(
   syncEnabled?: boolean,
   forceRefresh?: boolean
 ): Promise<Subject | null> {
+  console.log(`Looking up subject: ${subjectId}`);
+
+  // CRITICAL FIX: FIRST try direct localStorage access for immediate response
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      const localStorageData = localStorage.getItem(STORAGE_KEY);
+      if (localStorageData) {
+        const allSubjects = JSON.parse(localStorageData);
+        if (Array.isArray(allSubjects)) {
+          const directSubject = allSubjects.find((s) => s.id === subjectId);
+          if (directSubject) {
+            console.log(`Found subject directly: ${directSubject.name}`);
+            return directSubject;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Direct localStorage lookup failed:", e);
+    }
+  }
+
+  // If direct lookup failed, use the cached version or fetch
   const cacheKey = `subject-${subjectId}-${userId || "anonymous"}`;
 
   // Clear cache if force refresh is requested
@@ -537,25 +559,35 @@ export async function getSubjectById(
   const cachedSubject = !forceRefresh
     ? getFromCache<Subject | null>(cacheKey)
     : null;
+
   if (cachedSubject !== null) {
+    console.log(`Found subject in cache: ${cachedSubject.name}`);
     return cachedSubject;
   }
 
   try {
-    // Always fetch fresh data from storage
+    // Force fresh data from storage
+    console.log("Getting fresh subjects data from storage");
     const subjects = await getSubjectsFromStorage(
       userId,
       syncEnabled,
       forceRefresh
     );
+
+    console.log(
+      `Got ${subjects.length} subjects, looking for ID: ${subjectId}`
+    );
     const subject = subjects.find((s) => s.id === subjectId) || null;
 
     if (subject) {
+      console.log(`Found subject in retrieved data: ${subject.name}`);
       // Cache the result for future quick access
       setInCache(cacheKey, subject);
+      return subject;
+    } else {
+      console.error(`Subject with ID ${subjectId} not found in subjects list`);
+      return null;
     }
-
-    return subject;
   } catch (error) {
     console.error("Error getting subject by ID:", error);
     return null;
@@ -704,7 +736,7 @@ export async function deleteSubject(
 }
 
 /**
- * Saves a grade to a subject with optimistic UI updates
+ * ENHANCED CRITICAL PATH: Saves a grade to a subject directly
  */
 export const saveGradeToSubject = async (
   subjectId: string,
@@ -712,117 +744,130 @@ export const saveGradeToSubject = async (
   userId?: string,
   syncEnabled?: boolean
 ): Promise<void> => {
+  const operationId = `grade-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 9)}`;
+  console.log(`[${operationId}] GRADE SAVE OPERATION STARTED`);
+
   try {
-    const operationId = `grade-${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 9)}`;
-    console.log(`[${operationId}] SAVING GRADE - START`, {
-      subjectId,
-      gradeId: grade.id,
-    });
-
-    // IMPORTANT: Force weight to be either 1.0 or 2.0 based on type
-    grade.weight = grade.type === "Test" ? 2.0 : 1.0;
-
-    // CRITICAL FIX: Get subjects directly from localStorage to avoid any caching issues
-    const localStorageData = localStorage.getItem(STORAGE_KEY);
-    if (!localStorageData) {
-      console.error(`[${operationId}] No local storage data found`);
-      throw new Error("No subjects found in local storage");
-    }
-
-    let parsedSubjects: Subject[];
+    // 1. DIRECT STORAGE FIRST - most reliable method
+    let directSaveSuccess = false;
     try {
-      parsedSubjects = JSON.parse(localStorageData);
-    } catch (e) {
-      console.error(
-        `[${operationId}] Failed to parse subjects from localStorage:`,
-        e
-      );
-      parsedSubjects = [];
+      // Get current data
+      const storageData = localStorage.getItem(STORAGE_KEY);
+
+      if (storageData) {
+        const allSubjects = JSON.parse(storageData);
+
+        if (Array.isArray(allSubjects)) {
+          const subjectIndex = allSubjects.findIndex((s) => s.id === subjectId);
+
+          if (subjectIndex >= 0) {
+            // Initialize or get grades array
+            if (!allSubjects[subjectIndex].grades) {
+              allSubjects[subjectIndex].grades = [];
+            }
+
+            // Add the grade
+            allSubjects[subjectIndex].grades.push(grade);
+
+            // Recalculate average
+            allSubjects[subjectIndex].averageGrade = calculateAverage(
+              allSubjects[subjectIndex].grades
+            );
+
+            // Save directly to localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allSubjects));
+
+            console.log(`[${operationId}] ✅ DIRECT SAVE SUCCESS`);
+            directSaveSuccess = true;
+          }
+        }
+      }
+    } catch (directError) {
+      console.error(`[${operationId}] ⚠️ DIRECT SAVE FAILED:`, directError);
     }
 
-    if (!Array.isArray(parsedSubjects)) {
-      console.error(
-        `[${operationId}] Parsed subjects is not an array:`,
-        parsedSubjects
-      );
-      parsedSubjects = [];
+    // 2. API METHOD AS FALLBACK
+    if (!directSaveSuccess) {
+      console.log(`[${operationId}] Using API method as fallback`);
+      const subjects = await getSubjectsFromStorage(userId, false);
+      const subjectIndex = subjects.findIndex((s) => s.id === subjectId);
+
+      if (subjectIndex === -1) {
+        throw new Error(`Subject with ID ${subjectId} not found`);
+      }
+
+      // Clone to avoid mutations
+      const updatedSubject = { ...subjects[subjectIndex] };
+
+      // Ensure grades array exists
+      updatedSubject.grades = updatedSubject.grades || [];
+
+      // Add grade and recalculate
+      updatedSubject.grades.push(grade);
+      updatedSubject.averageGrade = calculateAverage(updatedSubject.grades);
+
+      // Update in array
+      const updatedSubjects = [...subjects];
+      updatedSubjects[subjectIndex] = updatedSubject;
+
+      // Save through normal channel
+      await saveSubjectsToStorage(updatedSubjects, userId, syncEnabled);
+      console.log(`[${operationId}] ✅ API SAVE SUCCESS`);
     }
 
-    console.log(
-      `[${operationId}] Found ${parsedSubjects.length} subjects in localStorage`
-    );
-
-    // Find the subject
-    const subjectIndex = parsedSubjects.findIndex((s) => s.id === subjectId);
-    if (subjectIndex === -1) {
-      console.error(`[${operationId}] Subject with ID ${subjectId} not found`);
-      throw new Error(`Subject with ID ${subjectId} not found`);
-    }
-
-    // Get a reference to the subject
-    const subject = parsedSubjects[subjectIndex];
-
-    // Ensure grades array exists
-    if (!subject.grades) {
-      subject.grades = [];
-    }
-
-    // Add or update the grade
-    const existingIndex = subject.grades.findIndex((g) => g.id === grade.id);
-    if (existingIndex >= 0) {
-      console.log(
-        `[${operationId}] Updating existing grade at index ${existingIndex}`
-      );
-      subject.grades[existingIndex] = grade;
-    } else {
-      console.log(`[${operationId}] Adding new grade to subject`);
-      subject.grades.push(grade);
-    }
-
-    // Recalculate average
-    subject.averageGrade = calculateAverage(subject.grades);
-
-    console.log(
-      `[${operationId}] Subject now has ${subject.grades.length} grades with average ${subject.averageGrade}`
-    );
-
-    // Save back to localStorage immediately
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedSubjects));
-
-    // Clear memory cache to force fresh data on next read
-    console.log(`[${operationId}] Clearing all cache to force fresh data`);
+    // 3. ENSURE CACHES ARE CLEARED
     memoryCache.clear();
 
-    // CRITICAL FIX: Only dispatch the gradeAdded event, not the subjects updated event
-    // This prevents the feedback loop that causes infinite fetches
-    console.log(`[${operationId}] Dispatching grade added event`);
+    // 4. EVENT NOTIFICATIONS
+    // Simple events first
+    window.dispatchEvent(new Event("gradeAdded"));
+    window.dispatchEvent(new Event("subjectsUpdated"));
+    window.dispatchEvent(new Event("gradesChanged"));
+
+    // Then custom event with details
     window.dispatchEvent(
       new CustomEvent("gradeAdded", {
         detail: {
           subjectId,
-          grade,
+          gradeId: grade.id,
           eventId: operationId,
-          timestamp: Date.now(),
         },
       })
     );
 
-    // For cloud sync, do it silently without triggering events
+    // 5. CLOUD SYNC (if enabled)
     if (ENABLE_CLOUD_FEATURES && userId && syncEnabled) {
-      console.log(`[${operationId}] Starting silent cloud sync for grade`);
       try {
-        await syncSubjectsToCloud(userId, parsedSubjects);
-        console.log(`[${operationId}] Silent cloud sync complete`);
-      } catch (e) {
-        console.error(`[${operationId}] Silent cloud sync failed:`, e);
+        // Get latest data to sync
+        const latestData = localStorage.getItem(STORAGE_KEY);
+        const latestSubjects = latestData ? JSON.parse(latestData) : [];
+
+        // Sync in background
+        syncSubjectsToCloud(userId, latestSubjects)
+          .then(() => console.log(`[${operationId}] ☁️ CLOUD SYNC SUCCESS`))
+          .catch((cloudError) =>
+            console.error(`[${operationId}] ☁️ CLOUD SYNC FAILED:`, cloudError)
+          );
+      } catch (syncError) {
+        console.error(
+          `[${operationId}] Error preparing cloud sync:`,
+          syncError
+        );
       }
     }
 
-    console.log(`[${operationId}] SAVING GRADE - COMPLETE`);
+    console.log(`[${operationId}] 🎉 GRADE SAVE COMPLETED`);
   } catch (error) {
-    console.error("ERROR SAVING GRADE:", error);
+    console.error(`[${operationId}] 🔥 CRITICAL FAILURE:`, error);
+
+    // LAST RESORT: Force refresh after 2 seconds to ensure UI is updated
+    setTimeout(() => {
+      console.log("Dispatching forceRefresh event");
+      window.dispatchEvent(new CustomEvent("forceRefresh"));
+    }, 2000);
+
     throw error;
   }
 };
