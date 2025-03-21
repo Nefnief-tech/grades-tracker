@@ -3,8 +3,7 @@
  */
 
 // Your Plausible instance URL
-export const PLAUSIBLE_URL =
-  "http://main-plausible-79eb1f-150-230-144-172.traefik.me";
+export const PLAUSIBLE_URL = "https://plausible.nief.tech";
 
 // Domain being tracked
 export const PLAUSIBLE_DOMAIN = "grades.nief.tech";
