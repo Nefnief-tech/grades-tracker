@@ -2,11 +2,12 @@
  * Plausible Analytics configuration
  */
 
-// Your Plausible instance URL (use HTTPS)
-export const PLAUSIBLE_URL = "https://plausible.nief.tech";
+// Your Plausible instance URL
+export const PLAUSIBLE_URL =
+  "http://main-plausible-79eb1f-150-230-144-172.traefik.me";
 
-// Domain being tracked - change this to your actual domain
-export const PLAUSIBLE_DOMAIN = "nief.tech";
+// Domain being tracked
+export const PLAUSIBLE_DOMAIN = "grades.nief.tech";
 
 // Enable/disable analytics in development
 export const ANALYTICS_ENABLED_IN_DEV = false;
