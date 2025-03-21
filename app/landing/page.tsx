@@ -215,7 +215,7 @@ export default function LandingPage() {
                 </h1>
               </div>
               <p className="text-lg text-muted-foreground">
-                The ultimate tool for German students to track, calculate, and
+                The ultimate tool for german students to track, calculate, and
                 improve academic performance. Seamlessly manage your 1-6 scale
                 grades and visualize your progress.
               </p>
