@@ -45,7 +45,7 @@ export default function RootLayout({
         <Script
           src={`${PLAUSIBLE_URL}/js/script.js`}
           data-domain={PLAUSIBLE_DOMAIN}
-          strategy="afterInteractive"
+          defer
         />
         <Script id="plausible-events-api" strategy="afterInteractive">
           {`
