@@ -20,9 +20,9 @@ export function useSubjects() {
   // Function to fetch subjects with optional force refresh
   const fetchSubjects = useCallback(
     async (forceRefresh = false) => {
-      // IMPORTANT: Prevent fetch loops by checking if already in progress
-      if (fetchInProgressRef.current && !forceRefresh) {
-        console.log("Fetch already in progress, skipping");
+      // EXTREME throttling to prevent excessive fetches
+      if (fetchInProgressRef.current) {
+        console.log("BLOCKED - Fetch already in progress");
         return;
       }
 
@@ -32,14 +32,11 @@ export function useSubjects() {
         return;
       }
 
-      // Maximum throttle - 30 seconds between fetches unless forced
+      // Only allow one fetch per minute unless explicitly forced by user action
       const now = Date.now();
-      if (!forceRefresh && now - lastFetchTimeRef.current < 30000) {
-        // 30 seconds
-        console.log(
-          "HARD THROTTLE - Skipping fetch, last fetch was only",
-          ((now - lastFetchTimeRef.current) / 1000).toFixed(1) + "s ago"
-        );
+      if (!forceRefresh && now - lastFetchTimeRef.current < 60000) {
+        // 1 minute
+        console.log("EXTREME THROTTLE - Only one fetch per minute allowed");
         return;
       }
 
@@ -48,32 +45,69 @@ export function useSubjects() {
         fetchInProgressRef.current = true;
         lastFetchTimeRef.current = now;
 
-        // Track operation with a unique ID to help debug
         const fetchId = `fetch-${Date.now()}-${Math.random()
           .toString(36)
           .substring(2, 9)}`;
-        console.log(`Starting subject fetch (ID: ${fetchId})`);
+        console.log(`Starting critical subject fetch (ID: ${fetchId})`);
 
         setIsLoading(true);
 
+        // Only clear cache on explicit user refresh
         if (forceRefresh) {
           console.log(`Force refresh requested (ID: ${fetchId})`);
           clearCacheForRefresh();
         }
 
+        // Use localStorage first if available
+        const localStorageKey = "gradeCalculator";
+        if (
+          !forceRefresh &&
+          typeof window !== "undefined" &&
+          window.localStorage
+        ) {
+          try {
+            const localData = localStorage.getItem(localStorageKey);
+            if (localData) {
+              const localSubjects = JSON.parse(localData);
+              if (Array.isArray(localSubjects) && localSubjects.length > 0) {
+                console.log(
+                  `Using fast local data: ${localSubjects.length} subjects`
+                );
+                setSubjects(localSubjects);
+                setIsLoading(false);
+
+                // Get cloud data in background without blocking UI
+                if (forceRefresh) {
+                  setTimeout(() => {
+                    getSubjectsFromStorage(user.id, user.syncEnabled, true)
+                      .then((cloudSubjects) => {
+                        setSubjects(cloudSubjects);
+                        console.log(
+                          `Updated with cloud data: ${cloudSubjects.length} subjects`
+                        );
+                      })
+                      .catch((e) =>
+                        console.error("Background cloud fetch failed:", e)
+                      )
+                      .finally(() => {
+                        fetchInProgressRef.current = false;
+                      });
+                  }, 500);
+                  return;
+                }
+              }
+            }
+          } catch (e) {
+            console.error("Error using local data:", e);
+          }
+        }
+
+        // If we get here, either forceRefresh is true or we don't have local data
         const fetchedSubjects = await getSubjectsFromStorage(
           user.id,
           user.syncEnabled,
           forceRefresh
         );
-
-        // Check if we're still relevant (no newer fetch started)
-        if (lastFetchTimeRef.current !== now) {
-          console.log(
-            `Fetch ${fetchId} superseded by newer fetch, discarding results`
-          );
-          return;
-        }
 
         console.log(
           `Fetch completed (ID: ${fetchId}) with ${fetchedSubjects.length} subjects`
@@ -84,11 +118,10 @@ export function useSubjects() {
         console.error("Error fetching subjects:", err);
         setError(err instanceof Error ? err : new Error(String(err)));
       } finally {
-        // Use a MUCH longer delay to prevent fetch loops - 15 seconds minimum
+        // Allow new fetches after a delay
         setTimeout(() => {
-          console.log("Unlocking fetch after extended cooldown period");
           fetchInProgressRef.current = false;
-        }, 15000); // 15 seconds
+        }, 5000); // 5 seconds is enough
         setIsLoading(false);
       }
     },
@@ -108,46 +141,19 @@ export function useSubjects() {
     }
   }, [user, fetchSubjects]);
 
-  // CRITICAL FIX: Only listen for specific events with clean handling
+  // Almost completely disable automatic event-based updates
   useEffect(() => {
-    // Only set up listener if we don't already have one and the user is logged in
     if (eventBoundRef.current || !user) return;
     eventBoundRef.current = true;
 
-    console.log("Setting up subject update event listener");
+    console.log("Setting up MINIMAL event listener");
 
-    // Track when we last processed an event
-    let lastEventProcessedTime = 0;
-
-    // Handle subjects updated events with strong throttling
+    // Only update on explicit subjectsUpdated events
     const handleEvent = () => {
-      const now = Date.now();
-
-      // 15 second cooldown between event processing
-      if (now - lastEventProcessedTime < 15000) {
-        console.log("Ignoring event - too soon after previous (15s cooldown)");
-        return;
-      }
-
-      lastEventProcessedTime = now;
-
-      // If fetch is already in progress, don't trigger another one
-      if (fetchInProgressRef.current) {
-        console.log("Fetch already in progress, not triggering from event");
-        return;
-      }
-
-      console.log("Processing subjects updated event, scheduling fetch");
-
-      // Schedule a refresh with a delay
-      setTimeout(() => {
-        if (!fetchInProgressRef.current) {
-          fetchSubjects(false); // Don't force refresh to use cache when possible
-        }
-      }, 2000); // 2 second delay
+      // Don't trigger any fetch - just inform the user refresh is available
+      console.log("Data changed - refresh button will allow updating");
     };
 
-    // Only listen for subjectsUpdated events
     window.addEventListener("subjectsUpdated", handleEvent);
 
     return () => {
