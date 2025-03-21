@@ -595,6 +595,13 @@ export default function LandingPage() {
             <div className="text-sm text-muted-foreground">
               &copy; {new Date().getFullYear()} GradeTracker. All rights
               reserved.
+              <span className="mx-2">|</span>
+              <Link
+                href="/privacy-policy"
+                className="hover:text-primary transition-colors"
+              >
+                Privacy Policy
+              </Link>
             </div>
           </div>
         </div>
