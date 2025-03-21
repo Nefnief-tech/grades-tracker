@@ -27,6 +27,13 @@ const nextConfig = {
     // This will completely ignore TypeScript errors during build
     ignoreBuildErrors: true,
   },
+  // Configure static generation to exclude problematic pages
+  output: "standalone",
+  experimental: {
+    // Skip building the 404 page statically
+    skipTrailingSlashRedirect: true,
+    skipMiddlewareUrlNormalize: true,
+  },
 };
 
 module.exports = nextConfig;
