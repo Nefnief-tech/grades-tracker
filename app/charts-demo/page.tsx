@@ -1,95 +1,100 @@
 "use client";
 
-import { ThemeProvider } from "next-themes";
-import React from "react";
-import dynamic from "next/dynamic";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import React, { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GradeHistoryChart } from "@/components/GradeHistoryChart";
 
-// Dynamically import charts components to avoid SSR issues
-const ChartComponents = dynamic(() => import("@/components/ChartComponents"), {
-  ssr: false, // This will disable Server Side Rendering for these components
-  loading: () => (
-    <div className="flex items-center justify-center h-[300px]">
-      Loading charts...
+// Separate client component that uses search params
+function ChartControls() {
+  const searchParams = useSearchParams();
+  const [chartType, setChartType] = useState("line");
+
+  useEffect(() => {
+    // Get the chart type from URL params if available
+    const paramType = searchParams?.get("type");
+    if (paramType && ["line", "bar", "radar"].includes(paramType)) {
+      setChartType(paramType);
+    }
+  }, [searchParams]);
+
+  return (
+    <div className="mb-6 flex flex-wrap gap-3">
+      <Button
+        variant={chartType === "line" ? "default" : "outline"}
+        onClick={() => setChartType("line")}
+      >
+        Line Chart
+      </Button>
+      <Button
+        variant={chartType === "bar" ? "default" : "outline"}
+        onClick={() => setChartType("bar")}
+      >
+        Bar Chart
+      </Button>
+      <Button
+        variant={chartType === "radar" ? "default" : "outline"}
+        onClick={() => setChartType("radar")}
+      >
+        Radar Chart
+      </Button>
+      <div className="ml-auto text-sm text-muted-foreground">
+        Chart type: <span className="font-medium">{chartType}</span>
+      </div>
     </div>
-  ),
-});
+  );
+}
 
-// Sample data for demonstration
-const data = [
-  { name: "Jan", value: 3.2 },
-  { name: "Feb", value: 4.1 },
-  { name: "Mar", value: 2.5 },
-  { name: "Apr", value: 3.8 },
-  { name: "May", value: 4.2 },
-  { name: "Jun", value: 5.0 },
+// Example data for our charts
+const sampleGrades = [
+  { id: "1", value: 1.5, type: "Test", date: "2023-01-15", weight: 2.0 },
+  { id: "2", value: 2.3, type: "Homework", date: "2023-02-10", weight: 1.0 },
+  { id: "3", value: 1.7, type: "Oral Exam", date: "2023-03-05", weight: 1.0 },
+  { id: "4", value: 2.0, type: "Test", date: "2023-04-20", weight: 2.0 },
+  { id: "5", value: 1.3, type: "Project", date: "2023-05-15", weight: 1.0 },
+  { id: "6", value: 2.7, type: "Test", date: "2023-06-10", weight: 2.0 },
+  { id: "7", value: 1.0, type: "Oral Exam", date: "2023-07-05", weight: 1.0 },
 ];
 
 export default function ChartsDemo() {
-  const [chartType, setChartType] = React.useState("line");
-
   return (
-    // Wrap everything in ThemeProvider to fix the build error
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-8">Grades Charts Demo</h1>
+    <div className="container py-8">
+      <h1 className="text-3xl font-bold mb-6">Charts Demo</h1>
 
-        <div className="mb-4">
-          <Select value={chartType} onValueChange={setChartType}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Chart Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="line">Line Chart</SelectItem>
-              <SelectItem value="bar">Bar Chart</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Grade Visualization</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Wrap the component using useSearchParams with Suspense */}
+          <Suspense
+            fallback={
+              <div className="flex gap-3">
+                <Button variant="outline" disabled>
+                  Line Chart
+                </Button>
+                <Button variant="outline" disabled>
+                  Bar Chart
+                </Button>
+                <Button variant="outline" disabled>
+                  Radar Chart
+                </Button>
+              </div>
+            }
+          >
+            <ChartControls />
+          </Suspense>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Progress Over Time</CardTitle>
-              <CardDescription>View your grade progression</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[300px]">
-              <ChartComponents
-                data={data}
-                type={chartType}
-                chartId="progress"
-              />
-            </CardContent>
-          </Card>
+          <div className="h-80">
+            <GradeHistoryChart grades={sampleGrades} />
+          </div>
+        </CardContent>
+      </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Subject Comparison</CardTitle>
-              <CardDescription>Compare grades across subjects</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[300px]">
-              <ChartComponents
-                data={data}
-                type={chartType}
-                chartId="comparison"
-                color="#82ca9d"
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </ThemeProvider>
+      <p className="text-muted-foreground text-sm mb-4">
+        This page demonstrates various chart types for visualizing grade data.
+      </p>
+    </div>
   );
 }
