@@ -25,14 +25,7 @@ const nextConfig = {
   // Disable TypeScript checking during build if environment variable is set
   typescript: {
     // This will completely ignore TypeScript errors during build
-    ignoreBuildErrors: true, // Changed from process.env.NEXT_TYPECHECK === "false" to always ignore errors
-  },
-  // Update deprecated options
-  experimental: {
-    // With this:
-    serverExternalPackages: [
-      // Add your external packages here
-    ],
+    ignoreBuildErrors: true,
   },
 };
 
