@@ -10,6 +10,8 @@ import { CookieBanner } from "@/components/CookieBanner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Script from "next/script";
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
+import { PLAUSIBLE_URL, PLAUSIBLE_DOMAIN } from "@/config/analytics";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -39,13 +41,13 @@ export default function RootLayout({
       <head>
         <link rel="icon" type="image/svg+xml" href="/grade-tracker-logo.svg" />
         <link rel="alternate icon" href="/favicon.ico" />
-        {/* Plausible Analytics - Using HTTPS for security */}
+        {/* Plausible Analytics */}
         <Script
-          data-domain="nief.tech"
-          src="https://main-plausible-79eb1f-150-230-144-172.traefik.me/js/script.js"
-          defer
+          src={`${PLAUSIBLE_URL}/js/script.js`}
+          data-domain={PLAUSIBLE_DOMAIN}
+          strategy="afterInteractive"
         />
-        <Script id="plausible-events-api">
+        <Script id="plausible-events-api" strategy="afterInteractive">
           {`
             window.plausible = window.plausible || function() { 
               (window.plausible.q = window.plausible.q || []).push(arguments) 
@@ -57,8 +59,10 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             <Providers>
-              <AppLayout>{children}</AppLayout>
-              <CookieBanner />
+              <AnalyticsProvider>
+                <AppLayout>{children}</AppLayout>
+                <CookieBanner />
+              </AnalyticsProvider>
             </Providers>
           </AuthProvider>
         </ThemeProvider>
