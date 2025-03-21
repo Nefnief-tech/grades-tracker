@@ -1,6 +1,7 @@
 /**
  * Utility functions for Plausible Analytics
  */
+import { isAnalyticsEnabled, PLAUSIBLE_DOMAIN } from "@/config/analytics";
 
 /**
  * Track a custom event with Plausible Analytics
@@ -11,11 +12,17 @@ export const trackEvent = (
   eventName: string,
   props?: Record<string, any>
 ): void => {
-  // Only run on client side
+  // Only run if analytics is enabled
+  if (!isAnalyticsEnabled()) return;
+
   if (typeof window !== "undefined" && window.plausible) {
     try {
       window.plausible(eventName, { props });
-      console.log(`Analytics: Tracked event "${eventName}"`, props);
+
+      // Only log in development
+      if (process.env.NODE_ENV === "development") {
+        console.log(`Analytics: Tracked event "${eventName}"`, props);
+      }
     } catch (error) {
       console.error("Analytics error:", error);
     }
@@ -27,14 +34,21 @@ export const trackEvent = (
  * @param url The URL to track (defaults to current URL)
  */
 export const trackPageView = (url?: string): void => {
+  // Only run if analytics is enabled
+  if (!isAnalyticsEnabled()) return;
+
   if (typeof window !== "undefined" && window.plausible) {
     try {
       window.plausible("pageview", {
         u: url || window.location.href,
       });
-      console.log(
-        `Analytics: Tracked pageview for "${url || window.location.href}"`
-      );
+
+      // Only log in development
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          `Analytics: Tracked pageview for "${url || window.location.href}"`
+        );
+      }
     } catch (error) {
       console.error("Analytics error:", error);
     }

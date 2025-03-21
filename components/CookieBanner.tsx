@@ -19,11 +19,21 @@ export function CookieBanner() {
   const acceptCookies = () => {
     localStorage.setItem("cookieConsent", "accepted");
     setShowBanner(false);
+
+    // If Plausible is available, notify it about the consent
+    if (typeof window !== "undefined" && window.plausible) {
+      window.plausible("Consent: Accepted");
+    }
   };
 
   const declineCookies = () => {
     localStorage.setItem("cookieConsent", "declined");
     setShowBanner(false);
+
+    // Respect user preference immediately
+    if (typeof window !== "undefined" && window.plausible) {
+      window.plausible("Consent: Declined");
+    }
   };
 
   if (!showBanner) return null;
