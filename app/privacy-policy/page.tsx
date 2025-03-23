@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Shield, Lock, Server, Trash2 } from "lucide-react";
 
 export const metadata = {
   title: "Privacy Policy | GradeTracker",
@@ -17,209 +17,224 @@ export default function PrivacyPolicyPage() {
         Back to Home
       </Link>
 
-      <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
+      <div className="flex items-center gap-2 mb-6">
+        <Shield className="h-6 w-6 text-primary" />
+        <h1 className="text-3xl font-bold">Privacy Policy</h1>
+      </div>
 
       <div className="prose dark:prose-invert max-w-none">
+        <p className="text-muted-foreground">Last updated: May 2023</p>
+
+        <div className="my-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
+          <h3 className="flex items-center gap-2 mt-0 text-primary">
+            <Lock className="h-5 w-5" />
+            <span>Data Protection Summary</span>
+          </h3>
+          <ul className="mt-2">
+            <li>
+              Your grades and academic data are encrypted when stored in the
+              cloud
+            </li>
+            <li>We do not share your data with any third parties</li>
+            <li>
+              You can delete your data at any time from your account settings
+            </li>
+            <li>We use minimal analytics that respect your privacy</li>
+            <li>
+              Your data can be used in offline mode without internet connection
+            </li>
+          </ul>
+        </div>
+
         <h2>1. Introduction</h2>
         <p>
-          With the following privacy policy, we would like to inform you about
-          what types of your personal data (hereinafter also referred to as
-          "data") we process, for what purposes, and to what extent.
+          At GradeTracker, we respect your privacy and are committed to
+          protecting your personal data. This privacy policy will inform you
+          about how we look after your personal data when you visit our website
+          or use our application and tell you about your privacy rights and how
+          the law protects you.
         </p>
 
-        <h2>2. Controller</h2>
-        <p>
-          The party responsible for data processing is:
-          <br />
-          GradeTracker
-          <br />
-          John Doe
-          <br />
-          Example Street 123
-          <br />
-          12345 Example City
-          <br />
-          United States
-          <br />
-          Email: contact@example.com
-          <br />
-        </p>
-
-        <h2>3. Overview of Processing</h2>
-        <p>
-          The following overview summarizes the types of data processed and the
-          purposes of their processing and refers to the data subjects.
-        </p>
-
-        <h3>Types of Processed Data</h3>
+        <h2>2. Data We Collect</h2>
+        <p>We collect the following types of information:</p>
         <ul>
-          <li>Inventory data (e.g., names, addresses)</li>
-          <li>Contact information (e.g., email, phone numbers)</li>
-          <li>Content data (e.g., entries in online forms)</li>
           <li>
-            Usage data (e.g., websites visited, interest in content, access
-            times)
+            <strong>Account Information:</strong> Email address, name, and
+            password (stored securely using industry-standard hashing)
           </li>
           <li>
-            Meta/communication data (e.g., device information, IP addresses)
+            <strong>Educational Data:</strong> Grades, subjects, and other
+            academic information you choose to enter
+          </li>
+          <li>
+            <strong>Usage Data:</strong> Information about how you use our
+            application, such as features accessed and time spent
+          </li>
+          <li>
+            <strong>Device Information:</strong> Information about the device
+            and browser you use to access our service
           </li>
         </ul>
 
-        <h3>Categories of Data Subjects</h3>
+        <h2>3. How We Use Your Data</h2>
+        <p>We use your data for the following purposes:</p>
         <ul>
-          <li>Users of the GradeTracker application</li>
-          <li>Website visitors</li>
+          <li>To provide and maintain our service</li>
+          <li>To notify you about changes to our service</li>
+          <li>
+            To allow you to participate in interactive features of our service
+            when you choose to do so
+          </li>
+          <li>To provide customer support</li>
+          <li>
+            To gather analysis or valuable information so that we can improve
+            our service
+          </li>
+          <li>To monitor the usage of our service</li>
+          <li>To detect, prevent and address technical issues</li>
         </ul>
 
-        <h3>Purposes of Processing</h3>
+        <h2>4. Data Security</h2>
+        <div className="flex items-start gap-3">
+          <Server className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
+          <div>
+            <p>
+              We implement the following security measures to protect your
+              personal data:
+            </p>
+            <ul>
+              <li>
+                <strong>Encryption:</strong> Your grades and educational data
+                are encrypted when stored in our cloud database
+              </li>
+              <li>
+                <strong>Local Storage:</strong> You can choose to store your
+                data only on your device
+              </li>
+              <li>
+                <strong>Secure Authentication:</strong> We use industry-standard
+                authentication methods to protect your account
+              </li>
+              <li>
+                <strong>Regular Security Audits:</strong> We regularly review
+                our systems for vulnerabilities
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <h2>5. Data Retention</h2>
+        <div className="flex items-start gap-3">
+          <Trash2 className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
+          <div>
+            <p>
+              We will retain your data only for as long as necessary to fulfill
+              the purposes we collected it for. You can request deletion of your
+              data at any time through your account settings.
+            </p>
+            <p>
+              When you delete your account, all your personal data, including
+              your grades and subjects, will be permanently deleted from our
+              systems within 30 days.
+            </p>
+          </div>
+        </div>
+
+        <h2>6. Cookies</h2>
+        <p>We use cookies for the following purposes:</p>
         <ul>
           <li>
-            Provision of the GradeTracker application and its functionalities
+            <strong>Essential Cookies:</strong> Required for the operation of
+            our service
           </li>
-          <li>Security measures</li>
-          <li>Management and response to inquiries</li>
-          <li>Feedback and contact</li>
+          <li>
+            <strong>Preference Cookies:</strong> Enable us to remember your
+            preferences and settings
+          </li>
+          <li>
+            <strong>Analytics Cookies:</strong> Help us understand how you use
+            our service (via Plausible Analytics, a privacy-friendly analytics
+            platform)
+          </li>
         </ul>
-
-        <h2>4. Legal Basis</h2>
         <p>
-          Below we share the legal basis of the General Data Protection
-          Regulation (GDPR) on which we process personal data:
+          You can control cookies through your browser settings and our cookie
+          consent banner. Declining cookies will not affect core functionality
+          but may limit certain features.
         </p>
+
+        <h2>7. Your Data Protection Rights</h2>
+        <p>Under data protection laws, you have the following rights:</p>
         <ul>
           <li>
-            <strong>Consent (Art. 6(1)(a) GDPR)</strong> - The data subject has
-            given consent to the processing of their personal data for one or
-            more specific purposes.
+            <strong>Access:</strong> Request access to your personal data
           </li>
           <li>
-            <strong>
-              Performance of a contract and pre-contractual inquiries (Art.
-              6(1)(b) GDPR)
-            </strong>{" "}
-            - Processing is necessary for the performance of a contract to which
-            the data subject is party or in order to take steps at the request
-            of the data subject prior to entering into a contract.
+            <strong>Rectification:</strong> Request correction of inaccurate
+            data
           </li>
           <li>
-            <strong>Legitimate interests (Art. 6(1)(f) GDPR)</strong> -
-            Processing is necessary for the purposes of the legitimate interests
-            pursued by the controller or by a third party, except where such
-            interests are overridden by the interests or fundamental rights and
-            freedoms of the data subject which require protection of personal
-            data.
+            <strong>Erasure:</strong> Request deletion of your personal data
+          </li>
+          <li>
+            <strong>Restriction:</strong> Request restriction of processing of
+            your data
+          </li>
+          <li>
+            <strong>Portability:</strong> Request transfer of your data to you
+            or a third party
+          </li>
+          <li>
+            <strong>Objection:</strong> Object to processing of your personal
+            data
           </li>
         </ul>
-
-        <h2>5. Security Measures</h2>
         <p>
-          We take appropriate technical and organizational measures in
-          accordance with legal requirements, taking into account the state of
-          the art, the implementation costs, and the nature, scope, context, and
-          purposes of processing, as well as the risk of varying likelihood and
-          severity to the rights and freedoms of natural persons, in order to
-          ensure a level of security appropriate to the risk.
+          To exercise any of these rights, please contact us at
+          privacy@gradetracker-example.com. We will respond to all legitimate
+          requests within one month.
         </p>
 
-        <h2>6. Storage Period</h2>
+        <h2>8. Children's Privacy</h2>
         <p>
-          The data will be deleted as soon as it is no longer required for the
-          purposes for which it was collected. In the case of data collected to
-          provide the website, this is the case when the respective session is
-          terminated.
+          Our service is intended for users who are at least 13 years of age. We
+          do not knowingly collect personal information from children under 13.
+          If you are a parent or guardian and you are aware that your child has
+          provided us with personal information, please contact us. If we become
+          aware that we have collected personal information from a child under
+          13 without verification of parental consent, we will take steps to
+          remove that information from our servers.
         </p>
 
-        <h2>7. Data Processing in Third Countries</h2>
+        <h2>9. International Data Transfers</h2>
         <p>
-          If we process data in a third country (i.e., outside the European
-          Union (EU), the European Economic Area (EEA)) or if this happens in
-          the context of using third-party services or disclosure or transfer of
-          data to other persons or companies, this will only be done in
-          accordance with legal requirements.
+          Your information may be transferred to — and maintained on — computers
+          located outside of your state, province, country or other governmental
+          jurisdiction where the data protection laws may differ from those in
+          your jurisdiction.
+        </p>
+        <p>
+          If you are located outside Germany and choose to provide information
+          to us, please note that we transfer the data, including personal data,
+          to Germany and process it there.
         </p>
 
-        <h2>8. Cookies</h2>
+        <h2>10. Changes to This Privacy Policy</h2>
         <p>
-          We use cookies on our website. Cookies are small text files that are
-          stored on your device and save certain information.
+          We may update our Privacy Policy from time to time. We will notify you
+          of any changes by posting the new Privacy Policy on this page and
+          updating the "Last updated" date at the top of this page.
         </p>
         <p>
-          You have the option to accept or decline the use of cookies. Most
-          browsers accept cookies automatically. However, you can configure your
-          browser so that no cookies are stored on your device or a notice
-          appears before a new cookie is created.
-        </p>
-
-        <h2>9. Rights of Data Subjects</h2>
-        <p>
-          As a data subject, you have various rights under the GDPR, which arise
-          in particular from Art. 15 to 21 GDPR:
-        </p>
-        <ul>
-          <li>
-            <strong>Right to object:</strong> You have the right to object at
-            any time, on grounds relating to your particular situation, to the
-            processing of personal data concerning you which is based on Art.
-            6(1)(e) or (f) GDPR.
-          </li>
-          <li>
-            <strong>Right to information:</strong> You have the right to request
-            confirmation as to whether data in question is being processed and
-            to information about this data as well as further information and
-            copy of the data in accordance with the legal requirements.
-          </li>
-          <li>
-            <strong>Right to rectification:</strong> You have the right to
-            request the completion of data concerning you or the rectification
-            of inaccurate data concerning you in accordance with the legal
-            requirements.
-          </li>
-          <li>
-            <strong>Right to erasure and restriction of processing:</strong> You
-            have the right, in accordance with the legal requirements, to
-            request that data concerning you be erased without delay, or
-            alternatively, in accordance with the legal requirements, to request
-            restriction of the processing of the data.
-          </li>
-          <li>
-            <strong>Right to data portability:</strong> You have the right to
-            receive data concerning you, which you have provided to us, in a
-            structured, commonly used and machine-readable format in accordance
-            with the legal requirements, or to request its transfer to another
-            controller.
-          </li>
-          <li>
-            <strong>Complaint to supervisory authority:</strong> Without
-            prejudice to any other administrative or judicial remedy, you have
-            the right to lodge a complaint with a supervisory authority, in
-            particular in the Member State of your habitual residence, place of
-            work or place of the alleged infringement if you consider that the
-            processing of personal data relating to you infringes the GDPR.
-          </li>
-        </ul>
-
-        <h2>10. Changes to the Privacy Policy</h2>
-        <p>
-          We reserve the right to adapt this privacy policy so that it always
-          complies with current legal requirements or to implement changes to
-          our services in the privacy policy. The new privacy policy will then
-          apply to your next visit.
+          You are advised to review this Privacy Policy periodically for any
+          changes. Changes to this Privacy Policy are effective when they are
+          posted on this page.
         </p>
 
         <h2>11. Contact Us</h2>
         <p>
-          If you have any questions about the processing of your personal data,
-          for information, rectification, or deletion of data, as well as
-          revocation of consent given, please contact us:
-        </p>
-        <p>
-          GradeTracker
-          <br />
-          Email: contact@example.com
-        </p>
-
-        <p className="text-muted-foreground text-sm mt-8">
-          Last updated: May 2023
+          If you have any questions about this Privacy Policy, please contact us
+          at privacy@gradetracker-example.com.
         </p>
       </div>
     </div>

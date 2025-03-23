@@ -1,50 +1,53 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, LineChart, PieChart } from "@/components/charts";
+import { Card, CardContent } from "@/components/ui/card";
+import { GradeAnalytics } from "@/components/GradeAnalytics";
 import { useSubjects } from "@/hooks/useSubjects";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
-  const { subjects, isLoading } = useSubjects();
-  const [averageGrade, setAverageGrade] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (subjects.length > 0) {
-      // Calculate overall average grade
-      const totalGrades = subjects.reduce((acc, subject) => {
-        return subject.grades ? acc + subject.grades.length : acc;
-      }, 0);
-
-      const weightedSum = subjects.reduce((acc, subject) => {
-        return subject.grades
-          ? acc + subject.averageGrade * subject.grades.length
-          : acc;
-      }, 0);
-
-      setAverageGrade(
-        totalGrades > 0 ? Number((weightedSum / totalGrades).toFixed(2)) : null
-      );
-    }
-  }, [subjects]);
+  const { subjects, isLoading, error } = useSubjects();
 
   // Loading state
   if (isLoading) {
     return (
       <div className="container py-8">
         <h1 className="text-3xl font-bold mb-6">Analytics</h1>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="pt-6">
+                <Skeleton className="h-8 w-24 mb-2" />
+                <Skeleton className="h-10 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
         <Card className="mb-6">
-          <CardHeader>
-            <Skeleton className="h-8 w-64" />
-          </CardHeader>
           <CardContent>
-            <Skeleton className="h-[300px] w-full" />
+            <Skeleton className="h-[400px] w-full" />
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container py-8">
+        <h1 className="text-3xl font-bold mb-6">Analytics</h1>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to load your data. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -68,89 +71,7 @@ export default function AnalyticsPage() {
     <div className="container py-8">
       <h1 className="text-3xl font-bold mb-6">Analytics Dashboard</h1>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Subjects
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{subjects.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Grades
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {subjects.reduce((acc, subject) => {
-                return subject.grades ? acc + subject.grades.length : acc;
-              }, 0)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Overall Average
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {averageGrade !== null ? averageGrade : "N/A"}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Chart Tabs */}
-      <Tabs defaultValue="grades" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="grades">Grade Distribution</TabsTrigger>
-          <TabsTrigger value="subjects">Subject Performance</TabsTrigger>
-          <TabsTrigger value="trends">Grade Trends</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="grades">
-          <Card>
-            <CardHeader>
-              <CardTitle>Grade Distribution</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[400px]">
-              <PieChart subjects={subjects} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="subjects">
-          <Card>
-            <CardHeader>
-              <CardTitle>Subject Performance</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[400px]">
-              <BarChart subjects={subjects} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="trends">
-          <Card>
-            <CardHeader>
-              <CardTitle>Grade Trends Over Time</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[400px]">
-              <LineChart subjects={subjects} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <GradeAnalytics subjects={subjects} />
     </div>
   );
 }

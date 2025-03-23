@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileHeader } from "@/components/MobileHeader";
+import { Footer } from "@/components/Footer";
 import { Toaster } from "@/components/ui/toaster";
 
 interface AppLayoutProps {
@@ -23,8 +24,12 @@ export function AppLayout({ children }: AppLayoutProps) {
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/privacy-policy" ||
+    pathname === "/terms-of-service" ||
     pathname === "/datenschutz" ||
     pathname?.startsWith("/auth/");
+
+  // Check if current route should have a footer
+  const showFooter = isPublicRoute || pathname === "/";
 
   // Determine if device is mobile
   useEffect(() => {
@@ -83,7 +88,12 @@ export function AppLayout({ children }: AppLayoutProps) {
         )}
 
         {/* Main scrollable content */}
-        <main className="flex-1 overflow-y-auto">{memoizedChildren}</main>
+        <main className="flex-1 overflow-y-auto">
+          {memoizedChildren}
+
+          {/* Footer - only rendered on certain routes */}
+          {showFooter && <Footer />}
+        </main>
       </div>
 
       <Toaster />

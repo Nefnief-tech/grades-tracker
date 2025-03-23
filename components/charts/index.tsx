@@ -304,67 +304,354 @@ export function LineChart({ subjects }: { subjects: Subject[] }) {
 
 export function PieChart({ subjects }: { subjects: Subject[] }) {
   // Count grades by their rounded values
-  const gradeCounts = {
+  const [gradeCounts, setGradeCounts] = useState({
     1: 0,
     2: 0,
     3: 0,
     4: 0,
     5: 0,
     6: 0,
-  };
-
-  subjects.forEach((subject) => {
-    if (subject.grades && subject.grades.length > 0) {
-      subject.grades.forEach((grade) => {
-        // Round to nearest integer
-        const roundedGrade = Math.round(grade.value);
-        if (roundedGrade >= 1 && roundedGrade <= 6) {
-          gradeCounts[roundedGrade as keyof typeof gradeCounts]++;
-        }
-      });
-    }
   });
 
-  // Colors for each grade
+  // Additional analysis metrics
+  const [totalGrades, setTotalGrades] = useState(0);
+  const [bestSubject, setBestSubject] = useState<{
+    name: string;
+    avg: number;
+  } | null>(null);
+  const [worstSubject, setWorstSubject] = useState<{
+    name: string;
+    avg: number;
+  } | null>(null);
+  const [averageGrade, setAverageGrade] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Calculate additional metrics
+    if (subjects.length === 0) return;
+
+    let total = 0;
+    let weightedSum = 0;
+    let best = { name: "", avg: 6 };
+    let worst = { name: "", avg: 1 };
+
+    // Reset grade counts
+    const counts = {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+      6: 0,
+    };
+
+    subjects.forEach((subject) => {
+      if (subject.grades && subject.grades.length > 0) {
+        // Count grades by rounded value for pie chart
+        subject.grades.forEach((grade) => {
+          const roundedGrade = Math.round(grade.value);
+          if (roundedGrade >= 1 && roundedGrade <= 6) {
+            counts[roundedGrade as keyof typeof counts]++;
+          }
+
+          // Add to weighted sum for average calculation
+          weightedSum += grade.value * (grade.weight || 1);
+          total += grade.weight || 1;
+        });
+
+        // Check for best and worst subjects
+        if (subject.averageGrade < best.avg && subject.averageGrade > 0) {
+          best = { name: subject.name, avg: subject.averageGrade };
+        }
+        if (subject.averageGrade > worst.avg) {
+          worst = { name: subject.name, avg: subject.averageGrade };
+        }
+      }
+    });
+
+    // Update state with calculated values
+    setGradeCounts(counts);
+    setTotalGrades(total);
+    setBestSubject(best.name ? best : null);
+    setWorstSubject(worst.name ? worst : null);
+    setAverageGrade(
+      total > 0 ? Number((weightedSum / total).toFixed(2)) : null
+    );
+  }, [subjects]);
+
+  // Colors for each grade with enhanced styling
   const gradeColors = {
-    1: "bg-green-500",
-    2: "bg-emerald-500",
-    3: "bg-yellow-500",
-    4: "bg-orange-500",
-    5: "bg-red-500",
-    6: "bg-red-700",
+    1: {
+      bg: "bg-green-500",
+      fill: "fill-green-500",
+      text: "text-green-700 dark:text-green-400",
+    },
+    2: {
+      bg: "bg-blue-500",
+      fill: "fill-blue-500",
+      text: "text-blue-700 dark:text-blue-400",
+    },
+    3: {
+      bg: "bg-yellow-500",
+      fill: "fill-yellow-500",
+      text: "text-yellow-700 dark:text-yellow-400",
+    },
+    4: {
+      bg: "bg-orange-500",
+      fill: "fill-orange-500",
+      text: "text-orange-700 dark:text-orange-400",
+    },
+    5: {
+      bg: "bg-red-500",
+      fill: "fill-red-500",
+      text: "text-red-700 dark:text-red-400",
+    },
+    6: {
+      bg: "bg-red-700",
+      fill: "fill-red-700",
+      text: "text-red-800 dark:text-red-300",
+    },
   };
 
-  const total = Object.values(gradeCounts).reduce((a, b) => a + b, 0);
+  // Calculate total for percentages
+  const totalGradeCount = Object.values(gradeCounts).reduce((a, b) => a + b, 0);
+
+  // If no grades, show a message
+  if (totalGradeCount === 0) {
+    // Debug message to help troubleshoot
+    console.log("PieChart: No grades found", {
+      subjects: subjects.length,
+      gradesInSubjects: subjects.map((s) => s.grades?.length || 0),
+      gradeCounts,
+      totalGradeCount,
+    });
+
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <h3 className="text-lg font-medium mb-2">No Grades Available</h3>
+          <p className="text-muted-foreground text-sm mb-4">
+            Add grades to see your grade distribution.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate segments for pie chart
+  const segments = [];
+  let cumulativePercentage = 0;
+
+  for (const [grade, count] of Object.entries(gradeCounts)) {
+    if (count > 0) {
+      const percentage = (count / totalGradeCount) * 100;
+      const startPercentage = cumulativePercentage;
+      cumulativePercentage += percentage;
+
+      segments.push({
+        grade: Number(grade),
+        count,
+        percentage,
+        startPercentage,
+        endPercentage: cumulativePercentage,
+        color: gradeColors[Number(grade) as keyof typeof gradeColors].bg,
+        borderColor:
+          gradeColors[Number(grade) as keyof typeof gradeColors].border,
+        textColor: gradeColors[Number(grade) as keyof typeof gradeColors].text,
+      });
+    }
+  }
+
+  // Create SVG path for pie chart segments
+  const generateSegmentPath = (
+    startPercentage: number,
+    endPercentage: number,
+    radius: number
+  ) => {
+    const startAngle = (startPercentage / 100) * 2 * Math.PI - Math.PI / 2;
+    const endAngle = (endPercentage / 100) * 2 * Math.PI - Math.PI / 2;
+
+    const startX = radius + radius * Math.cos(startAngle);
+    const startY = radius + radius * Math.sin(startAngle);
+    const endX = radius + radius * Math.cos(endAngle);
+    const endY = radius + radius * Math.sin(endAngle);
+
+    const largeArcFlag = endPercentage - startPercentage > 50 ? 1 : 0;
+
+    return `M ${radius} ${radius} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
+  };
 
   return (
-    <div className="flex flex-col md:flex-row items-center justify-center h-full gap-8">
-      <div className="text-center">
-        <h3 className="text-lg font-medium mb-4">Grade Distribution</h3>
-        <div className="w-48 h-48 rounded-full border-8 border-muted relative">
-          {/* Simplified pie chart representation */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-2xl font-bold">{total} Grades</span>
+    <div className="flex flex-col lg:flex-row items-center justify-center h-full gap-8">
+      <div className="flex flex-col items-center">
+        {/* Actual SVG Pie Chart - with direct color fill values */}
+        <div className="relative w-56 h-56 mb-2">
+          <svg
+            width="224"
+            height="224"
+            viewBox="0 0 100 100"
+            className="transform -rotate-90"
+          >
+            {segments.map((segment) => (
+              <path
+                key={segment.grade}
+                d={generateSegmentPath(
+                  segment.startPercentage,
+                  segment.endPercentage,
+                  50
+                )}
+                className={`hover:opacity-90 transition-all duration-200`}
+                stroke="hsl(var(--background))"
+                strokeWidth="0.5"
+                fill={getColorForGrade(segment.grade)}
+              >
+                <title>
+                  Grade {segment.grade}: {segment.count} grades (
+                  {segment.percentage.toFixed(1)}%)
+                </title>
+              </path>
+            ))}
+            {/* Center circle for better aesthetics */}
+            <circle cx="50" cy="50" r="25" className="fill-card" />
+          </svg>
+          {/* Display total grades in center */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span className="text-3xl font-bold">{totalGradeCount}</span>
+            <span className="text-sm text-muted-foreground">Grades</span>
           </div>
+        </div>
+
+        {/* Analysis summary */}
+        <div className="grid grid-cols-2 gap-4 mt-4 w-full max-w-xs">
+          {averageGrade !== null && (
+            <div className="bg-card border rounded-md p-3 text-center">
+              <div className="text-xl font-bold">{averageGrade}</div>
+              <div className="text-xs text-muted-foreground">
+                Overall Average
+              </div>
+            </div>
+          )}
+
+          {bestSubject && (
+            <div className="bg-card border rounded-md p-3 text-center">
+              <div
+                className="text-sm font-medium truncate"
+                title={bestSubject.name}
+              >
+                {bestSubject.name}
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                <span className="text-emerald-500">★</span> Best Subject (
+                {bestSubject.avg.toFixed(1)})
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="space-y-2">
-        {Object.entries(gradeCounts).map(([grade, count]) => (
-          <div key={grade} className="flex items-center">
-            <div
-              className={`w-4 h-4 rounded-full mr-2 ${
-                gradeColors[Number(grade) as keyof typeof gradeColors]
-              }`}
-            ></div>
-            <span className="text-sm font-medium mr-2">Grade {grade}:</span>
-            <span className="text-sm">{count} grades</span>
-            <span className="text-xs text-muted-foreground ml-2">
-              ({total > 0 ? ((count / total) * 100).toFixed(1) : 0}%)
-            </span>
+        <h3 className="text-lg font-medium mb-3">Grade Distribution</h3>
+
+        {/* Legend with progress bars */}
+        {segments.map((segment) => (
+          <div key={segment.grade} className="flex items-center mb-2">
+            <div className={`w-5 h-5 rounded-sm mr-2 ${segment.color}`}></div>
+            <div className="min-w-24">
+              <span className={`text-sm font-medium ${segment.textColor}`}>
+                Grade {segment.grade}:
+              </span>
+            </div>
+            <div className="flex-1 mx-2">
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className={`${segment.color} h-2 rounded-full`}
+                  style={{ width: `${segment.percentage}%` }}
+                ></div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 min-w-24">
+              <span className="text-sm">{segment.count}</span>
+              <span className="text-xs text-muted-foreground">
+                ({segment.percentage.toFixed(1)}%)
+              </span>
+            </div>
           </div>
         ))}
+
+        {/* Insights */}
+        <div className="mt-6 p-4 bg-card border rounded-md">
+          <h4 className="font-medium mb-2">Insights</h4>
+          <ul className="text-sm space-y-2">
+            {segments.length > 0 && (
+              <li>
+                Most common grade:{" "}
+                <span className="font-medium">
+                  {segments
+                    .sort((a, b) => b.count - a.count)[0]
+                    .grade.toFixed(1)}
+                </span>
+              </li>
+            )}
+            {bestSubject && worstSubject && (
+              <li>
+                Grade range:{" "}
+                <span className="font-medium">
+                  {bestSubject.avg.toFixed(1)} - {worstSubject.avg.toFixed(1)}
+                </span>
+              </li>
+            )}
+            {(segments
+              .filter((s) => s.grade <= 4)
+              .reduce((sum, s) => sum + s.count, 0) /
+              totalGradeCount) *
+              100 >=
+              60 && (
+              <li className="text-green-600 dark:text-green-400">
+                More than 60% of your grades are passing grades (≤ 4.0)
+              </li>
+            )}
+            {(segments
+              .filter((s) => s.grade <= 2)
+              .reduce((sum, s) => sum + s.count, 0) /
+              totalGradeCount) *
+              100 >=
+              30 && (
+              <li className="text-emerald-600 dark:text-emerald-400">
+                Strong performance with 30%+ excellent grades (≤ 2.0)
+              </li>
+            )}
+            {(segments
+              .filter((s) => s.grade >= 5)
+              .reduce((sum, s) => sum + s.count, 0) /
+              totalGradeCount) *
+              100 >=
+              20 && (
+              <li className="text-red-600 dark:text-red-400">
+                Warning: 20%+ of your grades need improvement (≥ 5.0)
+              </li>
+            )}
+          </ul>
+        </div>
       </div>
     </div>
   );
+
+  // Helper function to get color for grade
+  function getColorForGrade(grade: number): string {
+    switch (grade) {
+      case 1:
+        return "#10b981"; // green-500
+      case 2:
+        return "#3b82f6"; // blue-500
+      case 3:
+        return "#eab308"; // yellow-500
+      case 4:
+        return "#f97316"; // orange-500
+      case 5:
+        return "#ef4444"; // red-500
+      case 6:
+        return "#b91c1c"; // red-700
+      default:
+        return "#6b7280"; // gray-500
+    }
+  }
 }
