@@ -17,6 +17,7 @@ import {
   ChevronsRight,
   GraduationCap,
   BookOpenText,
+  Calendar,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
@@ -84,6 +85,12 @@ export function Sidebar() {
       href: "/",
       icon: Home,
       current: pathname === "/",
+    },
+    {
+      name: "Academic Calendar",
+      href: "/academic-calendar",
+      icon: Calendar,
+      current: pathname === "/academic-calendar",
     },
     {
       name: "Analytics",

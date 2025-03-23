@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ColorPicker, SUBJECT_COLORS } from "@/components/ColorPicker";
 
 // SUPER SIMPLE COMPONENT - MAXIMUM RELIABILITY
 export default function SubjectPage() {
@@ -467,6 +468,115 @@ function SubjectSkeleton() {
           <div className="h-80 bg-muted/40 border border-muted rounded-lg"></div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Add color state in the EditSubjectDialog component
+function EditSubjectDialog({
+  subject,
+  isOpen,
+  onClose,
+  onSave,
+}: {
+  subject: Subject;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updatedSubject: Subject) => void;
+}) {
+  const [name, setName] = useState(subject.name);
+  const [description, setDescription] = useState(subject.description || "");
+  const [teacher, setTeacher] = useState(subject.teacher || "");
+  const [room, setRoom] = useState(subject.room || "");
+  const [color, setColor] = useState(subject.color || SUBJECT_COLORS[0]); // Add color state
+
+  // ...existing code...
+
+  const handleSave = () => {
+    if (!name.trim()) {
+      // Show error
+      return;
+    }
+
+    const updatedSubject = {
+      ...subject,
+      name,
+      description: description || undefined,
+      teacher: teacher || undefined,
+      room: room || undefined,
+      color: color || undefined, // Add color to updated subject
+    };
+
+    onSave(updatedSubject);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Subject</DialogTitle>
+          <DialogDescription>
+            Make changes to the subject details.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="subject-name">Subject Name</Label>
+
+              {/* Add ColorPicker component */}
+              <ColorPicker color={color} onChange={setColor} />
+            </div>
+            <Input
+              id="subject-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          {/* ...existing form fields... */}
+
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" onClick={handleSave}>
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Update the subject header to show the color
+function SubjectHeader({
+  subject,
+  onEdit,
+}: {
+  subject: Subject;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="flex items-start justify-between mb-6">
+      <div>
+        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+          {/* Add a colored dot based on the subject's color */}
+          {subject.color && (
+            <div
+              className="w-4 h-4 rounded-full"
+              style={{ backgroundColor: subject.color }}
+            ></div>
+          )}
+          {subject.name}
+        </h1>
+
+        {/* ...existing code... */}
+      </div>
+
+      {/* ...existing code... */}
     </div>
   );
 }

@@ -1,19 +1,54 @@
 // Grade types - fixed enum with specific types
 export type GradeType = "Test" | "Oral Exam" | "Homework" | "Project";
 
-// Grade interface - explicitly define all required fields
 export interface Grade {
   id: string;
   value: number;
-  type: GradeType;
-  date: string;
-  weight: number; // Either 1.0 or 2.0 based on type
+  date?: string;
+  type?: string;
+  weight?: number;
+  notes?: string;
 }
 
-// Subject interface
 export interface Subject {
   id: string;
   name: string;
-  grades: Grade[];
+  description?: string;
+  grades?: Grade[];
   averageGrade: number;
+  color?: string; // Add color field for subject customization
+  teacher?: string;
+  room?: string;
+}
+
+// Add new types for timetable functionality
+export interface TimetableEntry {
+  id: string;
+  subjectId: string;
+  day:
+    | "monday"
+    | "tuesday"
+    | "wednesday"
+    | "thursday"
+    | "friday"
+    | "saturday"
+    | "sunday";
+  startTime: string; // HH:MM format
+  endTime: string; // HH:MM format
+  room?: string;
+  recurring: boolean;
+  notes?: string;
+}
+
+export interface TimetableDay {
+  name: string;
+  value:
+    | "monday"
+    | "tuesday"
+    | "wednesday"
+    | "thursday"
+    | "friday"
+    | "saturday"
+    | "sunday";
+  entries: TimetableEntry[];
 }

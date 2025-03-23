@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { addNewSubject } from "@/utils/storageUtils";
 import { useToast } from "@/components/ui/use-toast";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ColorPicker, SUBJECT_COLORS } from "@/components/ColorPicker";
 
 interface SubjectFormProps {
   onSubjectAdded: () => void;
@@ -18,6 +21,10 @@ export function SubjectForm({ onSubjectAdded }: SubjectFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const lastSubmissionRef = useRef<{ name: string; time: number } | null>(null);
+  const [description, setDescription] = useState("");
+  const [teacher, setTeacher] = useState("");
+  const [room, setRoom] = useState("");
+  const [color, setColor] = useState(SUBJECT_COLORS[0]);
 
   // Keep track of form submission status for instant feedback
   const formSubmissionRef = useRef<{ name: string; timestamp: number } | null>(
@@ -78,8 +85,17 @@ export function SubjectForm({ onSubjectAdded }: SubjectFormProps) {
     });
 
     try {
+      // Create a new subject with color
+      const newSubject = {
+        name: trimmedName,
+        description: description || undefined,
+        teacher: teacher || undefined,
+        room: room || undefined,
+        color: color,
+      };
+
       // Use addNewSubject instead of saveSubjectToStorage
-      await addNewSubject(trimmedName, user?.id, user?.syncEnabled);
+      await addNewSubject(newSubject, user?.id, user?.syncEnabled);
 
       // Callback for UI refresh
       onSubjectAdded();
@@ -121,17 +137,66 @@ export function SubjectForm({ onSubjectAdded }: SubjectFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="name">Subject Name</Label>
+
+          {/* Use the ColorPicker component */}
+          <ColorPicker color={color} onChange={setColor} />
+        </div>
         <Input
-          type="text"
-          placeholder="Enter subject name"
+          id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          disabled={isSubmitting}
-          className="flex-1"
+          placeholder="e.g., Mathematics"
+          required
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description (Optional)</Label>
+        <Textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Brief description of the subject"
+          rows={3}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="teacher">Teacher (Optional)</Label>
+          <Input
+            id="teacher"
+            value={teacher}
+            onChange={(e) => setTeacher(e.target.value)}
+            placeholder="Teacher's name"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="room">Room (Optional)</Label>
+          <Input
+            id="room"
+            value={room}
+            onChange={(e) => setRoom(e.target.value)}
+            placeholder="e.g., Room 101"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {}}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Adding..." : "Add Subject"}
+          {isSubmitting ? "Saving..." : "Add Subject"}
         </Button>
       </div>
     </form>

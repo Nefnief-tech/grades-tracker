@@ -9,6 +9,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { CookieBanner } from "@/components/CookieBanner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import Script from "next/script";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { PLAUSIBLE_URL, PLAUSIBLE_DOMAIN } from "@/config/analytics";
@@ -58,12 +59,14 @@ export default function RootLayout({
       <body className={`${inter.className} overflow-hidden`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
-            <Providers>
-              <AnalyticsProvider>
-                <AppLayout>{children}</AppLayout>
-                <CookieBanner />
-              </AnalyticsProvider>
-            </Providers>
+            <SettingsProvider>
+              <Providers>
+                <AnalyticsProvider>
+                  <AppLayout>{children}</AppLayout>
+                  <CookieBanner />
+                </AnalyticsProvider>
+              </Providers>
+            </SettingsProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

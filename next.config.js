@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Move experimental options to top level as required by Next.js 15.1.0
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
+
   // Enable image optimization
   images: {
     domains: ["localhost"],
@@ -30,9 +34,7 @@ const nextConfig = {
   // Configure static generation to exclude problematic pages
   output: "standalone",
   experimental: {
-    // Skip building the 404 page statically
-    skipTrailingSlashRedirect: true,
-    skipMiddlewareUrlNormalize: true,
+    // Keep other experimental options here
   },
 };
 
