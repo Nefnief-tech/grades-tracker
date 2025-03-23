@@ -81,9 +81,9 @@ export function SubjectForm({ onSubjectAdded }: SubjectFormProps) {
 
     try {
       // Get existing subjects
-      const existingSubjects = localStorage.getItem('subjects');
+      const existingSubjects = localStorage.getItem("subjects");
       const subjects = existingSubjects ? JSON.parse(existingSubjects) : [];
-      
+
       // Create a new subject with just the name field
       const newSubject = {
         id: generateId(),
@@ -91,10 +91,10 @@ export function SubjectForm({ onSubjectAdded }: SubjectFormProps) {
         grades: [],
         averageGrade: 0,
       };
-      
+
       // Add to existing subjects
       const updatedSubjects = [...subjects, newSubject];
-      
+
       // Save to storage
       await saveSubjectsToStorage(updatedSubjects, user?.id, user?.syncEnabled);
 

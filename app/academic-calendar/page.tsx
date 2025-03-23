@@ -81,7 +81,9 @@ export default function AcademicCalendarPage() {
     entry: TimetableEntry;
     subject: Subject;
   } | null>(null);
-  const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([]);
+  const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>(
+    []
+  );
   const [addGradeOpen, setAddGradeOpen] = useState(false);
   const [addTimetableOpen, setAddTimetableOpen] = useState(false);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");

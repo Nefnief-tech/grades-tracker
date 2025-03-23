@@ -191,18 +191,14 @@ export function FullCalendar({
         {sortedEntries.map((entry) => {
           // Use entry color if available, otherwise fall back to subject color
           const entryColor = entry.color || entry.subject.color;
-          
+
           return (
             <div
               key={entry.id}
               className="text-xs p-1 rounded-sm cursor-pointer hover:bg-muted/50 transition-colors flex items-center gap-1"
               style={{
-                backgroundColor: entryColor
-                  ? `${entryColor}20`
-                  : undefined,
-                borderLeft: entryColor
-                  ? `2px solid ${entryColor}`
-                  : undefined,
+                backgroundColor: entryColor ? `${entryColor}20` : undefined,
+                borderLeft: entryColor ? `2px solid ${entryColor}` : undefined,
               }}
               onClick={() => onTimetableEntryClick?.(entry, entry.subject)}
             >

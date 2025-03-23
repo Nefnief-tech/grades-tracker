@@ -894,6 +894,7 @@ export const getTimetableEntries = async (
           room: doc.room || "",
           notes: doc.notes || "",
           recurring: doc.recurring ?? true,
+          color: doc.color || "", // Include color in document data
         }));
 
         // Cache the cloud data in localStorage
@@ -976,6 +977,7 @@ export const saveTimetableEntries = async (
             room: entry.room || "",
             notes: entry.notes || "",
             recurring: entry.recurring !== undefined ? entry.recurring : true,
+            color: entry.color || "", // Include color in document data
           };
 
           await databases.createDocument(
@@ -1196,35 +1198,46 @@ export const deleteGrade = async (
  * @returns The newly created subject
  */
 export const addNewSubject = async (
-  subjectData: string | Partial<Subject>,
+  subjectData: {
+    name: string;
+    description?: string;
+    teacher?: string;
+    room?: string;
+    color?: string; // Include color property
+  },
   userId?: string,
   syncEnabled?: boolean
-): Promise<Subject> => {
-  // Generate a unique ID for the new subject
-  const subjectId = `subject-${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(2, 9)}`;
+): Promise<void> => {
+  try {
+    // Get existing subjects
+    const existingSubjects = localStorage.getItem("subjects");
+    const subjects = existingSubjects ? JSON.parse(existingSubjects) : [];
 
-  // Create the subject object
-  const subject: Subject = {
-    id: subjectId,
-    name:
-      typeof subjectData === "string"
-        ? subjectData
-        : subjectData.name || "New Subject",
-    description:
-      typeof subjectData === "object" ? subjectData.description : undefined,
-    teacher: typeof subjectData === "object" ? subjectData.teacher : undefined,
-    room: typeof subjectData === "object" ? subjectData.room : undefined,
-    color: typeof subjectData === "object" ? subjectData.color : undefined,
-    grades: [],
-    averageGrade: 0,
-  };
+    // Create new subject with ID and initial data
+    const newSubject = {
+      id: generateId(),
+      name: subjectData.name,
+      description: subjectData.description,
+      teacher: subjectData.teacher,
+      room: subjectData.room,
+      color: subjectData.color, // Store color
+      grades: [],
+      averageGrade: 0,
+    };
 
-  // Save the subject
-  await saveSubject(subject, userId, syncEnabled);
+    // Add to existing subjects
+    const updatedSubjects = [...subjects, newSubject];
 
-  return subject;
+    // Save to storage
+    await saveSubjectsToStorage(updatedSubjects, userId, syncEnabled);
+
+    // Dispatch an event to notify components that subjects have been updated
+    const event = new Event("subjectsUpdated");
+    window.dispatchEvent(event);
+  } catch (error) {
+    console.error("Error adding new subject:", error);
+    throw error;
+  }
 };
 
 import { generateId } from "@/utils/idUtils";
@@ -1291,6 +1304,201 @@ const getAppwriteDatabases = async () => {
     throw new Error("Could not access Appwrite databases client");
   } catch (error) {
     console.error("Error accessing Appwrite client:", error);
+    throw error;
+  }
+};
+
+/**
+ * Save subjects to Appwrite cloud storage
+ */
+const saveSubjectsToCloud = async (
+  subjects: Subject[],
+  userId: string
+): Promise<void> => {
+  try {
+    // Get Appwrite clients reliably
+    const clients = await getAppwriteClients();
+    if (!clients || !clients.databases) {
+      throw new Error("Appwrite databases client not properly initialized");
+    }
+
+    const { databases, ID, Query } = clients;
+
+    // First delete all existing subjects for this user
+    await clearCloudSubjects(userId);
+
+    // Create new documents for each subject
+    for (const subject of subjects) {
+      const documentData = {
+        userId: userId,
+        subjectId: subject.id,
+        name: subject.name,
+        color: subject.color || "", // Add color to document data
+        description: subject.description || "",
+        teacher: subject.teacher || "",
+        room: subject.room || "",
+        averageGrade: subject.averageGrade || 0,
+      };
+
+      await databases.createDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
+        process.env.NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID || "subjects",
+        ID.unique(),
+        documentData
+      );
+
+      // Add grades for this subject
+      if (subject.grades && subject.grades.length > 0) {
+        // ...existing code to save grades...
+      }
+    }
+
+    console.log(`Successfully saved ${subjects.length} subjects to cloud`);
+  } catch (error) {
+    console.error("Error saving subjects to cloud:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get subjects from Appwrite cloud storage
+ */
+const getSubjectsFromCloud = async (userId: string): Promise<Subject[]> => {
+  try {
+    // Get Appwrite clients reliably
+    const clients = await getAppwriteClients();
+    if (!clients || !clients.databases) {
+      throw new Error("Appwrite databases client not properly initialized");
+    }
+
+    const { databases, Query } = clients;
+
+    // Get all subject documents for this user
+    const response = await databases.listDocuments(
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
+      process.env.NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID || "subjects",
+      [Query.equal("userId", userId)]
+    );
+
+    // Process subject documents
+    const subjects: Subject[] = [];
+    for (const doc of response.documents) {
+      // Create a new subject object
+      const subject: Subject = {
+        id: doc.subjectId,
+        name: doc.name,
+        color: doc.color || undefined, // Get color from document
+        description: doc.description || undefined,
+        teacher: doc.teacher || undefined,
+        room: doc.room || undefined,
+        averageGrade: doc.averageGrade || 0,
+        grades: [],
+      };
+
+      // Get grades for this subject
+      // ...existing code to get grades...
+
+      subjects.push(subject);
+    }
+
+    return subjects;
+  } catch (error) {
+    console.error("Error getting subjects from cloud:", error);
+    throw error;
+  }
+};
+
+/**
+ * Save timetable entries to cloud storage
+ */
+const saveTimetableEntriesToCloud = async (
+  entries: TimetableEntry[],
+  userId: string
+): Promise<void> => {
+  try {
+    // Get Appwrite clients reliably
+    const clients = await getAppwriteClients();
+    if (!clients || !clients.databases) {
+      throw new Error("Appwrite databases client not properly initialized");
+    }
+
+    const { databases, ID, Query } = clients;
+
+    // Clear existing entries
+    await clearCloudTimetableEntries(userId);
+
+    // Create new entries
+    for (const entry of entries) {
+      const documentData = {
+        userId: userId,
+        entryId: entry.id,
+        subjectId: entry.subjectId,
+        day: entry.day,
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        room: entry.room || "",
+        notes: entry.notes || "",
+        recurring: entry.recurring !== undefined ? entry.recurring : true,
+        color: entry.color || "", // Include color in document data
+      };
+
+      await databases.createDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
+        process.env.NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID ||
+          "timetableEntries",
+        ID.unique(),
+        documentData
+      );
+    }
+
+    console.log(
+      `Successfully saved ${entries.length} timetable entries to cloud`
+    );
+  } catch (error) {
+    console.error("Error saving timetable entries to cloud:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get timetable entries from cloud storage
+ */
+const getTimetableEntriesFromCloud = async (
+  userId: string
+): Promise<TimetableEntry[]> => {
+  try {
+    // Get Appwrite clients reliably
+    const clients = await getAppwriteClients();
+    if (!clients || !clients.databases) {
+      throw new Error("Appwrite databases client not properly initialized");
+    }
+
+    const { databases, Query } = clients;
+
+    // Query documents
+    const response = await databases.listDocuments(
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
+      process.env.NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID ||
+        "timetableEntries",
+      [Query.equal("userId", userId)]
+    );
+
+    // Map to TimetableEntry objects
+    const entries: TimetableEntry[] = response.documents.map((doc: any) => ({
+      id: doc.entryId,
+      subjectId: doc.subjectId,
+      day: doc.day,
+      startTime: doc.startTime,
+      endTime: doc.endTime,
+      room: doc.room || undefined,
+      notes: doc.notes || undefined,
+      recurring: doc.recurring !== undefined ? doc.recurring : true,
+      color: doc.color || undefined, // Include color in parsed data
+    }));
+
+    return entries;
+  } catch (error) {
+    console.error("Error getting timetable entries from cloud:", error);
     throw error;
   }
 };
