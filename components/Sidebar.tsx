@@ -108,8 +108,10 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        "flex h-screen flex-col border-r bg-background transition-all duration-300",
-        isCollapsed ? "w-16" : "w-64"
+        "flex h-screen flex-col border-r bg-background transition-all duration-300 z-50",
+        isCollapsed ? "w-16" : "w-64",
+        // Add shadow for mobile view
+        "md:shadow-none shadow-lg"
       )}
     >
       <div className="flex h-14 items-center px-4 border-b">
