@@ -81,9 +81,7 @@ export default function AcademicCalendarPage() {
     entry: TimetableEntry;
     subject: Subject;
   } | null>(null);
-  const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>(
-    []
-  );
+  const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([]);
   const [addGradeOpen, setAddGradeOpen] = useState(false);
   const [addTimetableOpen, setAddTimetableOpen] = useState(false);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
@@ -826,16 +824,19 @@ function WeeklyTimetable({
                 const subject = subjects.find((s) => s.id === entry.subjectId);
                 if (!subject) return null;
 
+                // Use entry color if available, otherwise fall back to subject color
+                const entryColor = entry.color || subject.color;
+
                 return (
                   <div
                     key={entry.id}
                     className="p-3 border rounded-md cursor-pointer hover:bg-muted/50 transition-colors"
                     style={{
-                      borderLeft: subject.color
-                        ? `4px solid ${subject.color}`
+                      borderLeft: entryColor
+                        ? `4px solid ${entryColor}`
                         : undefined,
-                      backgroundColor: subject.color
-                        ? `${subject.color}10`
+                      backgroundColor: entryColor
+                        ? `${entryColor}10`
                         : undefined,
                     }}
                     onClick={() => onEntryClick?.(entry, subject)}

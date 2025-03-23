@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ColorPicker, SUBJECT_COLORS } from "@/components/ColorPicker";
 
 interface TimetableFormProps {
   onSubmit: (entry: Omit<TimetableEntry, "id" | "subjectId">) => void;
@@ -38,6 +39,7 @@ export function TimetableForm({
   const [room, setRoom] = useState(initialEntry?.room || "");
   const [notes, setNotes] = useState(initialEntry?.notes || "");
   const [recurring, setRecurring] = useState(initialEntry?.recurring ?? true);
+  const [color, setColor] = useState(initialEntry?.color || SUBJECT_COLORS[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -59,6 +61,7 @@ export function TimetableForm({
       room: room || undefined,
       notes: notes || undefined,
       recurring,
+      color: color, // Include color in the entry
     };
 
     onSubmit(entry);
@@ -113,7 +116,10 @@ export function TimetableForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="room">Room (Optional)</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="room">Room (Optional)</Label>
+          <ColorPicker color={color} onChange={setColor} />
+        </div>
         <Input
           id="room"
           value={room}

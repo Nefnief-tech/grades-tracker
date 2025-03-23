@@ -4,11 +4,10 @@ import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
-import { addNewSubject } from "@/utils/storageUtils";
+import { saveSubjectsToStorage } from "@/utils/storageUtils";
 import { useToast } from "@/components/ui/use-toast";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ColorPicker, SUBJECT_COLORS } from "@/components/ColorPicker";
+import { generateId } from "@/utils/idUtils";
 
 interface SubjectFormProps {
   onSubjectAdded: () => void;
@@ -21,10 +20,6 @@ export function SubjectForm({ onSubjectAdded }: SubjectFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const lastSubmissionRef = useRef<{ name: string; time: number } | null>(null);
-  const [description, setDescription] = useState("");
-  const [teacher, setTeacher] = useState("");
-  const [room, setRoom] = useState("");
-  const [color, setColor] = useState(SUBJECT_COLORS[0]);
 
   // Keep track of form submission status for instant feedback
   const formSubmissionRef = useRef<{ name: string; timestamp: number } | null>(
@@ -85,17 +80,23 @@ export function SubjectForm({ onSubjectAdded }: SubjectFormProps) {
     });
 
     try {
-      // Create a new subject with color
+      // Get existing subjects
+      const existingSubjects = localStorage.getItem('subjects');
+      const subjects = existingSubjects ? JSON.parse(existingSubjects) : [];
+      
+      // Create a new subject with just the name field
       const newSubject = {
+        id: generateId(),
         name: trimmedName,
-        description: description || undefined,
-        teacher: teacher || undefined,
-        room: room || undefined,
-        color: color,
+        grades: [],
+        averageGrade: 0,
       };
-
-      // Use addNewSubject instead of saveSubjectToStorage
-      await addNewSubject(newSubject, user?.id, user?.syncEnabled);
+      
+      // Add to existing subjects
+      const updatedSubjects = [...subjects, newSubject];
+      
+      // Save to storage
+      await saveSubjectsToStorage(updatedSubjects, user?.id, user?.syncEnabled);
 
       // Callback for UI refresh
       onSubjectAdded();
@@ -138,12 +139,7 @@ export function SubjectForm({ onSubjectAdded }: SubjectFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="name">Subject Name</Label>
-
-          {/* Use the ColorPicker component */}
-          <ColorPicker color={color} onChange={setColor} />
-        </div>
+        <Label htmlFor="name">Subject Name</Label>
         <Input
           id="name"
           value={name}
@@ -151,39 +147,6 @@ export function SubjectForm({ onSubjectAdded }: SubjectFormProps) {
           placeholder="e.g., Mathematics"
           required
         />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description (Optional)</Label>
-        <Textarea
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Brief description of the subject"
-          rows={3}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="teacher">Teacher (Optional)</Label>
-          <Input
-            id="teacher"
-            value={teacher}
-            onChange={(e) => setTeacher(e.target.value)}
-            placeholder="Teacher's name"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="room">Room (Optional)</Label>
-          <Input
-            id="room"
-            value={room}
-            onChange={(e) => setRoom(e.target.value)}
-            placeholder="e.g., Room 101"
-          />
-        </div>
       </div>
 
       <div className="flex justify-end space-x-2 pt-2">

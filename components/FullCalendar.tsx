@@ -188,34 +188,39 @@ export function FullCalendar({
 
     return (
       <div className="mt-1 space-y-1">
-        {sortedEntries.map((entry) => (
-          <div
-            key={entry.id}
-            className="text-xs p-1 rounded-sm cursor-pointer hover:bg-muted/50 transition-colors flex items-center gap-1"
-            style={{
-              backgroundColor: entry.subject.color
-                ? `${entry.subject.color}20`
-                : undefined,
-              borderLeft: entry.subject.color
-                ? `2px solid ${entry.subject.color}`
-                : undefined,
-            }}
-            onClick={() => onTimetableEntryClick?.(entry, entry.subject)}
-          >
-            <Clock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <div className="flex-1 truncate">
-              <span className="font-medium">{entry.startTime}</span>
-              <span className="mx-1">-</span>
-              <span>{entry.endTime}</span>
-              <div className="font-medium truncate">{entry.subject.name}</div>
-              {entry.room && (
-                <div className="text-muted-foreground truncate">
-                  Room: {entry.room}
-                </div>
-              )}
+        {sortedEntries.map((entry) => {
+          // Use entry color if available, otherwise fall back to subject color
+          const entryColor = entry.color || entry.subject.color;
+          
+          return (
+            <div
+              key={entry.id}
+              className="text-xs p-1 rounded-sm cursor-pointer hover:bg-muted/50 transition-colors flex items-center gap-1"
+              style={{
+                backgroundColor: entryColor
+                  ? `${entryColor}20`
+                  : undefined,
+                borderLeft: entryColor
+                  ? `2px solid ${entryColor}`
+                  : undefined,
+              }}
+              onClick={() => onTimetableEntryClick?.(entry, entry.subject)}
+            >
+              <Clock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <div className="flex-1 truncate">
+                <span className="font-medium">{entry.startTime}</span>
+                <span className="mx-1">-</span>
+                <span>{entry.endTime}</span>
+                <div className="font-medium truncate">{entry.subject.name}</div>
+                {entry.room && (
+                  <div className="text-muted-foreground truncate">
+                    Room: {entry.room}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };

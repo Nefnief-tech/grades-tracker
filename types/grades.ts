@@ -36,8 +36,9 @@ export interface TimetableEntry {
   startTime: string; // HH:MM format
   endTime: string; // HH:MM format
   room?: string;
-  recurring: boolean;
   notes?: string;
+  recurring?: boolean;
+  color?: string; // Add color property for timetable entries
 }
 
 export interface TimetableDay {
