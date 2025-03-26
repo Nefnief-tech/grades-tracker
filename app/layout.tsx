@@ -12,6 +12,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Script from "next/script";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { PLAUSIBLE_URL, PLAUSIBLE_DOMAIN } from "@/config/analytics";
+import { ClipboardList } from "lucide-react"; // Add this import for the icon
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,6 +31,17 @@ export const metadata: Metadata = {
     },
   },
 };
+
+// If navigation is defined directly in the layout
+const navigationItems = [
+  // ...existing items...
+  {
+    name: "Tests & Exams",
+    href: "/tests",
+    icon: ClipboardList,
+  },
+  // ...existing code...
+];
 
 export default function RootLayout({
   children,

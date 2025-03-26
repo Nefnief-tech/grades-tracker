@@ -1,0 +1,79 @@
+{
+  "$id": "timetableEntries",
+  "name": "Timetable Entries",
+  "permissions": [
+    "read(\"user:{{userId}}\")",
+    "create(\"user:{{userId}}\")",
+    "update(\"user:{{userId}}\")",
+    "delete(\"user:{{userId}}\")"
+  ],
+  "documentSecurity": true,
+  "attributes": [
+    {
+      "key": "userId",
+      "type": "string",
+      "required": true,
+      "default": null,
+      "array": false,
+      "size": 255,
+      "index": true
+    },
+    {
+      "key": "entryId",
+      "type": "string",
+      "required": true,
+      "default": null,
+      "array": false,
+      "size": 255,
+      "index": true
+    },
+    {
+      "key": "subjectId",
+      "type": "string",
+      "required": true,
+      "default": null,
+      "array": false,
+      "size": 255,
+      "index": true
+    },
+    {
+      "key": "encryptedData",
+      "type": "string",
+      "required": true,
+      "default": null,
+      "array": false,
+      "size": 16384,
+      "index": false
+    },
+    {
+      "key": "createdAt",
+      "type": "datetime",
+      "required": false,
+      "default": null,
+      "array": false,
+      "index": true
+    },
+    {
+      "key": "updatedAt",
+      "type": "datetime",
+      "required": false,
+      "default": null,
+      "array": false,
+      "index": true
+    }
+  ],
+  "indexes": [
+    {
+      "key": "user_subject_index",
+      "type": "key",
+      "attributes": ["userId", "subjectId"],
+      "orders": ["ASC", "ASC"]
+    },
+    {
+      "key": "entry_id_index",
+      "type": "key",
+      "attributes": ["entryId"],
+      "orders": ["ASC"]
+    }
+  ]
+}

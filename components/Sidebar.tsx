@@ -17,6 +17,8 @@ import {
   ChevronsRight,
   GraduationCap,
   BookOpenText,
+  Calendar as CalendarIcon,
+  ClipboardList,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
@@ -92,6 +94,12 @@ export function Sidebar() {
       current: pathname === "/analytics",
     },
     {
+      name: "Academic Calendar",
+      href: "/academic-calendar",
+      icon: CalendarIcon,
+      current: pathname === "/academic-calendar",
+    },
+    {
       name: "Profile",
       href: "/profile",
       icon: User,
@@ -102,6 +110,11 @@ export function Sidebar() {
       href: "/settings",
       icon: Settings,
       current: pathname === "/settings",
+    },
+    {
+      name: "Tests & Exams",
+      href: "/tests",
+      icon: ClipboardList,
     },
   ];
 
@@ -135,7 +148,6 @@ export function Sidebar() {
           )}
         </Button>
       </div>
-
       <ScrollArea className="flex-1 py-2">
         <nav className="grid gap-1 px-2">
           {/* Main Navigation */}
@@ -228,7 +240,6 @@ export function Sidebar() {
           )}
         </nav>
       </ScrollArea>
-
       {user && (
         <div className="border-t p-4">
           <div className="flex items-center gap-2 mb-4">

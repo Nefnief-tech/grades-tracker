@@ -1,0 +1,19 @@
+import {
+  // ...existing icons...
+  ClipboardList,
+  // ...existing code...
+} from "lucide-react";
+
+// ...existing code...
+
+const navItems = [
+  // ...existing items...
+  {
+    title: "Tests & Exams",
+    href: "/tests",
+    icon: <ClipboardList className="h-5 w-5" />,
+  },
+  // ...existing code...
+];
+
+// ...existing code...

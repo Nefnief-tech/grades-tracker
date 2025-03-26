@@ -1310,3 +1310,28 @@ const getDatabases = () => {
     throw error;
   }
 };
+
+export const initializeAppwrite = () => {
+  if (!appwriteClient) {
+    appwriteClient = new Client()
+      .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "")
+      .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "");
+  }
+  return appwriteClient;
+};
+
+export const getAppwriteClient = () => {
+  if (!appwriteClient) {
+    initializeAppwrite();
+  }
+  if (!appwriteClient) {
+    throw new Error(
+      "Appwrite client not initialized. Call initializeAppwrite first."
+    );
+  }
+  const databases = new Databases(appwriteClient);
+  if (!databases) {
+    throw new Error("Appwrite databases client not properly initialized");
+  }
+  return { client: appwriteClient, databases };
+};

@@ -18,3 +18,91 @@
       linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   }
 }
+
+/* Landing page core styles */
+.landing-page {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+/* Hero section styles */
+.hero-section {
+  position: relative;
+  min-height: 90vh;
+  display: flex;
+  align-items: center;
+}
+
+/* Feature cards hover effect */
+.feature-card {
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Testimonial card styles */
+.testimonial-card {
+  transition: all 0.3s ease;
+}
+
+.testimonial-card:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Responsive styles */
+@media (max-width: 1024px) {
+  .hero-section {
+    min-height: auto;
+    padding: 100px 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 80px 0;
+    text-align: center;
+  }
+
+  .feature-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* Staggered animation delays for elements */
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+.stagger-3 {
+  animation-delay: 0.3s;
+}
+.stagger-4 {
+  animation-delay: 0.4s;
+}
+.stagger-5 {
+  animation-delay: 0.5s;
+}
+
+/* Remove the triangle animation styles */
+/* They're completely gone now */

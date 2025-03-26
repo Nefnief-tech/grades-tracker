@@ -17,3 +17,35 @@ export interface Subject {
   grades: Grade[];
   averageGrade: number;
 }
+
+export interface TimetableEntry {
+  id: string;
+  subjectId: string;
+  day:
+    | "monday"
+    | "tuesday"
+    | "wednesday"
+    | "thursday"
+    | "friday"
+    | "saturday"
+    | "sunday";
+  startTime: string; // Format: "HH:MM"
+  endTime: string; // Format: "HH:MM"
+  room?: string;
+  notes?: string;
+  recurring?: boolean; // Whether this is a weekly recurring entry
+  color?: string; // Custom color override for this specific entry
+}
+
+// Define the Test type
+export interface Test {
+  id: string;
+  title: string;
+  description?: string;
+  date: string; // ISO date format
+  subjectId: string;
+  completed: boolean;
+  priority?: "high" | "medium" | "low";
+  reminderEnabled?: boolean;
+  reminderDate?: string; // ISO date format
+}
