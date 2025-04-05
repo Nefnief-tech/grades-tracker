@@ -64,6 +64,12 @@ import {
   TrendingUp as TrendingUpIcon,
 } from "lucide-react";
 
+// Add this import at the top with other imports
+import {
+  exportToPDF,
+  createAnalyticsPrintableElement,
+} from "@/utils/pdfExport";
+
 // Custom Book icon component
 function BookIcon(props) {
   return (
@@ -368,367 +374,45 @@ export default function AnalyticsPage() {
           description: "Your analytics data has been downloaded as a CSV file",
         });
       } else {
-        // PDF Export - Using browser print functionality
-        // Create a hidden div for printing
-        const printWindow = window.open("", "_blank");
+        // Updated PDF export using the new utility
+        try {
+          // Create a printable element with all necessary data
+          const elementId = createAnalyticsPrintableElement({
+            subjects,
+            overallAverage,
+            totalGradesCount,
+            recentTrend,
+            predictions,
+            subjectStrengths,
+          });
 
-        if (!printWindow) {
+          // Generate PDF from that element
+          await exportToPDF(
+            elementId,
+            `grades-analytics-${new Date().toISOString().split("T")[0]}`,
+            { quality: 1.5 }
+          );
+
+          // Show success message
           toast({
-            title: "Export Failed",
+            title: "PDF Export Complete",
             description:
-              "Could not open print window. Please check your browser settings.",
+              "Your analytics data has been downloaded as a PDF file",
+          });
+
+          // Clean up the temporary element
+          const tempElement = document.getElementById(elementId);
+          if (tempElement) {
+            document.body.removeChild(tempElement);
+          }
+        } catch (pdfError) {
+          console.error("PDF generation error:", pdfError);
+          toast({
+            title: "PDF Export Failed",
+            description: "Could not generate PDF. Please try again.",
             variant: "destructive",
           });
-          return;
         }
-
-        // Get current theme (light/dark)
-        const isDarkMode =
-          window.matchMedia &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-        // Write the content with improved styling that matches the app
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>Grades Analytics - ${new Date().toLocaleDateString()}</title>
-              <style>
-                :root {
-                  --primary: #3b82f6;
-                  --primary-light: #dbeafe;
-                  --background: ${isDarkMode ? "#121220" : "#ffffff"};
-                  --card-background: ${isDarkMode ? "#1e1e2e" : "#f8fafc"};
-                  --text: ${isDarkMode ? "#f8f8fb" : "#121212"};
-                  --text-muted: ${isDarkMode ? "#a1a1aa" : "#64748b"};
-                  --border: ${isDarkMode ? "#2c2c40" : "#e2e8f0"};
-                  --green: #22c55e;
-                  --amber: #eab308;
-                  --red: #ef4444; 
-                  --blue: #3b82f6;
-                }
-                
-                body {
-                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                  background-color: var(--background);
-                  color: var(--text);
-                  line-height: 1.5;
-                  padding: 2rem;
-                  max-width: 900px;
-                  margin: 0 auto;
-                }
-                
-                .container {
-                  width: 100%;
-                }
-                
-                h1 {
-                  color: var(--primary);
-                  font-weight: 700;
-                  margin-bottom: 0.5rem;
-                  font-size: 2rem;
-                  display: flex;
-                  align-items: center;
-                  gap: 0.75rem;
-                }
-                
-                h2 {
-                  color: var(--text);
-                  font-weight: 600;
-                  margin-top: 2rem;
-                  margin-bottom: 1rem;
-                  font-size: 1.5rem;
-                  display: flex;
-                  align-items: center;
-                  gap: 0.5rem;
-                }
-                
-                p {
-                  margin-top: 0.25rem;
-                  color: var(--text-muted);
-                }
-                
-                .card {
-                  background-color: var(--card-background);
-                  border: 1px solid var(--border);
-                  border-radius: 0.5rem;
-                  padding: 1.5rem;
-                  margin-bottom: 1.5rem;
-                  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                }
-                
-                table {
-                  width: 100%;
-                  border-collapse: collapse;
-                }
-                
-                th, td {
-                  padding: 0.75rem 1rem;
-                  border-bottom: 1px solid var(--border);
-                  text-align: left;
-                }
-                
-                th {
-                  font-weight: 600;
-                  color: var(--text-muted);
-                  background-color: ${isDarkMode ? "#1a1a28" : "#f8fafc"};
-                  font-size: 0.875rem;
-                }
-                
-                .badge {
-                  display: inline-block;
-                  padding: 0.25rem 0.5rem;
-                  border-radius: 9999px;
-                  font-size: 0.75rem;
-                  font-weight: 500;
-                  background-color: var(--primary-light);
-                  color: var(--primary);
-                }
-                
-                .badge-green {
-                  background-color: rgba(34, 197, 94, 0.1);
-                  color: var(--green);
-                }
-                
-                .badge-amber {
-                  background-color: rgba(234, 179, 8, 0.1);
-                  color: var(--amber);
-                }
-                
-                .badge-red {
-                  background-color: rgba(239, 68, 68, 0.1);
-                  color: var(--red);
-                }
-                
-                .flex {
-                  display: flex;
-                }
-                
-                .items-center {
-                  align-items: center;
-                }
-                
-                .justify-between {
-                  justify-content: space-between;
-                }
-                
-                .gap-2 {
-                  gap: 0.5rem;
-                }
-                
-                .gap-4 {
-                  gap: 1rem;
-                }
-                
-                .grid {
-                  display: grid;
-                  grid-template-columns: repeat(2, minmax(0, 1fr));
-                  gap: 1.5rem;
-                }
-                
-                .icon {
-                  width: 20px;
-                  height: 20px;
-                  display: inline-flex;
-                  align-items: center;
-                  justify-content: center;
-                }
-                
-                .grade {
-                  font-weight: 600;
-                }
-                
-                .grade-1 { color: var(--green); }
-                .grade-2 { color: var(--blue); }
-                .grade-3 { color: var(--amber); }
-                .grade-4 { color: var(--red); }
-                
-                @media print {
-                  body {
-                    padding: 0;
-                    background-color: white;
-                  }
-                  
-                  .card {
-                    break-inside: avoid;
-                    page-break-inside: avoid;
-                  }
-                  
-                  .no-print {
-                    display: none;
-                  }
-                }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <header class="card">
-                  <h1>
-                    <span class="icon">📊</span> 
-                    Grades Analytics Report
-                  </h1>
-                  <p>Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
-                </header>
-                
-                <div class="card">
-                  <h2>Overall Performance</h2>
-                  <div class="grid">
-                    <div>
-                      <p>Overall Average</p>
-                      <span class="grade grade-${Math.ceil(
-                        overallAverage
-                      )}">${overallAverage.toFixed(2)}</span>
-                    </div>
-                    <div>
-                      <p>Recent Trend</p>
-                      <span class="badge ${
-                        recentTrend === "improving"
-                          ? "badge-green"
-                          : recentTrend === "declining"
-                          ? "badge-red"
-                          : "badge-amber"
-                      }">
-                        ${
-                          recentTrend === "improving"
-                            ? "Improving"
-                            : recentTrend === "declining"
-                            ? "Declining"
-                            : "Stable"
-                        }
-                      </span>
-                    </div>
-                    <div>
-                      <p>Total Subjects</p>
-                      <span class="grade">${subjects.length}</span>
-                    </div>
-                    <div>
-                      <p>Total Grades</p>
-                      <span class="grade">${totalGradesCount}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="card">
-                  <h2>Subject Performance</h2>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Subject</th>
-                        <th>Average Grade</th>
-                        <th>Grades Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${subjects
-                        .map((subject) =>
-                          subject.grades && subject.grades.length > 0
-                            ? `
-                        <tr>
-                          <td>${subject.name}</td>
-                          <td><span class="grade grade-${Math.ceil(
-                            subject.averageGrade
-                          )}">${subject.averageGrade.toFixed(2)}</span></td>
-                          <td>${subject.grades.length}</td>
-                        </tr>
-                      `
-                            : ""
-                        )
-                        .join("")}
-                    </tbody>
-                  </table>
-                </div>
-                
-                ${
-                  subjectStrengths.bestSubject ||
-                  subjectStrengths.worstSubject ||
-                  subjectStrengths.mostImproved
-                    ? `
-                  <div class="card">
-                    <h2><span class="icon">💡</span> Performance Insights</h2>
-                    <div class="grid">
-                      ${
-                        subjectStrengths.bestSubject
-                          ? `
-                        <div>
-                          <p>Best Subject</p>
-                          <span class="badge badge-green">${subjectStrengths.bestSubject}</span>
-                        </div>
-                      `
-                          : ""
-                      }
-                      ${
-                        subjectStrengths.worstSubject
-                          ? `
-                        <div>
-                          <p>Needs Improvement</p>
-                          <span class="badge badge-amber">${subjectStrengths.worstSubject}</span>
-                        </div>
-                      `
-                          : ""
-                      }
-                      ${
-                        subjectStrengths.mostImproved
-                          ? `
-                        <div>
-                          <p>Most Improved</p>
-                          <span class="badge badge-blue">${subjectStrengths.mostImproved}</span>
-                        </div>
-                      `
-                          : ""
-                      }
-                    </div>
-                  </div>
-                `
-                    : ""
-                }
-                
-                ${
-                  predictions && predictions.length > 0
-                    ? `
-                  <div class="card">
-                    <h2><span class="icon">📈</span> Future Predictions</h2>
-                    <p>Based on your current performance trends, your predicted grade might be around 
-                      <span class="grade grade-${Math.ceil(
-                        predictions[2].value
-                      )}">
-                        ${predictions[2].value.toFixed(2)}
-                      </span> 
-                      in the future.
-                    </p>
-                  </div>
-                `
-                    : ""
-                }
-                
-                <footer style="text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.8rem;">
-                  <p>Generated by Grades Tracker • ${new Date().toLocaleDateString()}</p>
-                </footer>
-                
-                <div class="no-print" style="margin-top: 2rem; text-align: center;">
-                  <button onclick="window.print();" style="padding: 0.75rem 1.5rem; background-color: var(--primary); color: white; border: none; border-radius: 0.375rem; font-weight: 500; cursor: pointer;">
-                    Print / Save as PDF
-                  </button>
-                </div>
-              </div>
-            </body>
-          </html>
-        `);
-
-        // Add a slight delay to ensure content is loaded
-        setTimeout(() => {
-          printWindow.document.close();
-          printWindow.print();
-
-          // Listen for print dialog close
-          const checkWindowClose = setInterval(() => {
-            if (printWindow.closed) {
-              clearInterval(checkWindowClose);
-              toast({
-                title: "PDF Export Complete",
-                description: "Use the browser's print dialog to save as PDF",
-              });
-            }
-          }, 500);
-        }, 500);
       }
     } catch (error) {
       console.error("Export error:", error);
