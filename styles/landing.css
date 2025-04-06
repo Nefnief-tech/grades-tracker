@@ -38,8 +38,20 @@
   transition: all 0.3s ease;
 }
 
+/* Optimized feature card styles */
+.feature-card {
+  position: relative;
+  z-index: 10;
+  transform: translateY(0);
+  opacity: 1;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 0.3s ease, box-shadow 0.3s ease;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
 .feature-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-5px) translateZ(0);
 }
 
 /* Testimonial card styles */
@@ -50,6 +62,11 @@
 .testimonial-card:hover {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
     0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Add glow effect to the scroll indicator */
+.shadow-glow {
+  box-shadow: 0 0 10px 2px rgba(var(--primary), 0.2);
 }
 
 /* Responsive styles */
@@ -83,6 +100,50 @@
   }
 }
 
+/* Smoother scroll reveal animation */
+.reveal-on-scroll {
+  opacity: 0.7; /* Increase from 0.3 to 0.7 for better visibility */
+  transform: translateY(15px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.reveal-on-scroll.revealed {
+  opacity: 1 !important;
+  transform: translateY(0) translateZ(0) !important;
+}
+
+/* Ensure revealed items are visible with hardware acceleration */
+.revealed {
+  opacity: 1 !important;
+  transform: translateY(0) translateZ(0) !important;
+}
+
+/* Add a maintenance class to ensure content is always visible regardless of animation */
+.always-visible {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Animation delays for staggered effects */
+.animation-delay-100 {
+  transition-delay: 100ms;
+}
+
+.animation-delay-200 {
+  transition-delay: 200ms;
+}
+
+.animation-delay-300 {
+  transition-delay: 300ms;
+}
+
+.animation-delay-400 {
+  transition-delay: 400ms;
+}
+
 .animate-fadeInUp {
   animation: fadeInUp 0.5s ease-out forwards;
 }
@@ -104,5 +165,47 @@
   animation-delay: 0.5s;
 }
 
-/* Remove the triangle animation styles */
-/* They're completely gone now */
+/* Optimized blob animation */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1) translateZ(0);
+  }
+  33% {
+    transform: translate(20px, -20px) scale(1.1) translateZ(0);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9) translateZ(0);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1) translateZ(0);
+  }
+}
+
+.animate-blob {
+  animation: blob 10s infinite alternate ease-in-out;
+  will-change: transform;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-3000 {
+  animation-delay: 3s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Add hardware acceleration to animated element wrappers */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Smooth shadow transition for hover effects */
+.shadow-transition {
+  transition: box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}

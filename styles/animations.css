@@ -1,37 +1,92 @@
-/* Add smooth transitions for better perceived performance */
+/* Add better performance for animations */
 .transition-all {
   transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-duration: 300ms;
 }
 
-/* Use will-change for elements that will animate */
+/* Better hardware acceleration */
 .will-change-transform {
   will-change: transform;
+  transform: translateZ(0);
 }
 
 .will-change-opacity {
   will-change: opacity;
+  transform: translateZ(0);
 }
 
-/* Add hardware-accelerated animations */
+/* Improved GPU-accelerated animations */
 .gpu-accelerated {
   transform: translateZ(0);
   backface-visibility: hidden;
+  perspective: 1000px;
 }
 
-/* Fade-in animation for new elements */
-.fade-in {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
+/* Optimized fade-in animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
+    transform: translateZ(0);
   }
   to {
     opacity: 1;
+    transform: translateZ(0);
   }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: opacity;
+}
+
+/* Smoother Fade In Up */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Optimized Slide Up */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%) translateZ(0);
+  }
+  to {
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform;
+}
+
+/* Pulse */
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s infinite ease-in-out;
 }
 
 /* Placeholder animation for content that will be loaded */
@@ -100,14 +155,6 @@
   animation: blob 7s infinite;
 }
 
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-
-.animation-delay-4000 {
-  animation-delay: 4s;
-}
-
 /* Scroll down animation */
 @keyframes scrollDown {
   0% {
@@ -132,9 +179,31 @@
   animation: scrollDown 1.5s ease-in-out infinite;
 }
 
-/* Hover scale */
+/* Smoother Scroll Down Indicator */
+@keyframes scrollDown {
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateZ(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(5px) translateZ(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px) translateZ(0);
+  }
+}
+
+.animate-scrollDown {
+  animation: scrollDown 1.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  will-change: transform, opacity;
+}
+
+/* Smoother hover scale */
 .hover\:scale-102:hover {
-  transform: scale(1.02);
+  transform: scale(1.02) translateZ(0);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Add animation for mobile day detail sheet */
@@ -199,4 +268,54 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
     0 8px 10px -6px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
+}
+
+/* For staggered animations */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
+
+.delay-400 {
+  animation-delay: 400ms;
+}
+
+.delay-500 {
+  animation-delay: 500ms;
+}
+
+.delay-2000 {
+  animation-delay: 2s;
+}
+
+.delay-3000 {
+  animation-delay: 3s;
+}
+
+.delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Optimized section reveal animation */
+@keyframes revealSection {
+  from {
+    opacity: 0;
+    transform: translateY(40px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+.animate-reveal-section {
+  animation: revealSection 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
 }

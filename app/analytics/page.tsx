@@ -46,6 +46,14 @@ import {
 // Import the Cell component from recharts
 import { Cell } from "recharts";
 
+// Import dropdown menu components
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 // Import chart components
 import { GradeDistributionChart } from "@/components/charts/GradeDistributionChart";
 import { AverageGradeChart } from "@/components/charts/AverageGradeChart";
@@ -294,11 +302,18 @@ export default function AnalyticsPage() {
   };
 
   // Function to handle data export
-  const handleExportData = async (format: "pdf" | "csv") => {
+  const handleExportData = async (
+    format: "pdf" | "csv",
+    showAllGrades: boolean = false
+  ) => {
     setExportFormat(format);
+
+    // Show toast with shadcn/ui styling
     toast({
       title: `Preparing ${format.toUpperCase()} export`,
       description: "Your analytics data is being prepared for download",
+      // Use this variant for a neutral info message
+      variant: "default",
     });
 
     try {
@@ -374,17 +389,20 @@ export default function AnalyticsPage() {
           description: "Your analytics data has been downloaded as a CSV file",
         });
       } else {
-        // Updated PDF export using the new utility
+        // Updated PDF export using the redesigned utility
         try {
           // Create a printable element with all necessary data
-          const elementId = createAnalyticsPrintableElement({
-            subjects,
-            overallAverage,
-            totalGradesCount,
-            recentTrend,
-            predictions,
-            subjectStrengths,
-          });
+          const elementId = createAnalyticsPrintableElement(
+            {
+              subjects,
+              overallAverage,
+              totalGradesCount,
+              recentTrend,
+              predictions,
+              subjectStrengths,
+            },
+            showAllGrades
+          ); // Pass the showAllGrades parameter
 
           // Generate PDF from that element
           await exportToPDF(
@@ -393,11 +411,12 @@ export default function AnalyticsPage() {
             { quality: 1.5 }
           );
 
-          // Show success message
+          // Show success message with shadcn/ui toast styling
           toast({
             title: "PDF Export Complete",
             description:
               "Your analytics data has been downloaded as a PDF file",
+            variant: "default",
           });
 
           // Clean up the temporary element
@@ -758,14 +777,27 @@ export default function AnalyticsPage() {
                   Performance Insights
                 </h2>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleExportData("pdf")}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export PDF
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Export PDF
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleExportData("pdf", false)}
+                      >
+                        Basic Report
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleExportData("pdf", true)}
+                      >
+                        Detailed Report with All Grades
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
                   <Button
                     variant="outline"
                     size="sm"
