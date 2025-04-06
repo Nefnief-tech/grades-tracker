@@ -98,6 +98,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.21(postcss@8.5.3)
+      canvas-confetti:
+        specifier: ^1.6.0
+        version: 1.9.3
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -110,6 +113,9 @@ importers:
       date-fns:
         specifier: 4.1.0
         version: 4.1.0
+      duration-fns:
+        specifier: ^3.0.1
+        version: 3.0.2
       embla-carousel-react:
         specifier: 8.5.1
         version: 8.5.1(react@19.0.0)
@@ -1869,6 +1875,9 @@ packages:
   caniuse-lite@1.0.30001705:
     resolution: {integrity: sha512-S0uyMMiYvA7CxNgomYBwwwPUnWzFD83f3B1ce5jHUfHTH//QL6hHsreI8RVC5606R4ssqravelYO5TU6t8sEyg==}
 
+  canvas-confetti@1.9.3:
+    resolution: {integrity: sha512-rFfTURMvmVEX1gyXFgn5QMn81bYk70qa0HLzcIOSVEyl57n6o9ItHeBtUSWdvKAPY0xlvBHno4/v3QPrT83q9g==}
+
   canvg@3.0.11:
     resolution: {integrity: sha512-5ON+q7jCTgMp9cjpu4Jo6XbvfYwSB2Ow3kzHKfIyJfaCAOHLbdKPQqGKgfED/R5B+3TFFfe8pegYA+b423SRyA==}
     engines: {node: '>=10.0.0'}
@@ -2079,6 +2088,9 @@ packages:
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
+
+  duration-fns@3.0.2:
+    resolution: {integrity: sha512-w82IXh/6aWNHFA0qlQazJYJrZTWieTItuuGTE7YX4cxPaZTWhmVImbsBBiMK1/OhGDgiinuCpJoSFILYLDSKDg==}
 
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
@@ -5444,6 +5456,8 @@ snapshots:
 
   caniuse-lite@1.0.30001705: {}
 
+  canvas-confetti@1.9.3: {}
+
   canvg@3.0.11:
     dependencies:
       '@babel/runtime': 7.26.10
@@ -5669,6 +5683,8 @@ snapshots:
       call-bind-apply-helpers: 1.0.2
       es-errors: 1.3.0
       gopd: 1.2.0
+
+  duration-fns@3.0.2: {}
 
   eastasianwidth@0.2.0: {}
 

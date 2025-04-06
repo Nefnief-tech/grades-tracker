@@ -19,6 +19,7 @@ import {
   BookOpenText,
   Calendar as CalendarIcon,
   ClipboardList,
+  Layout,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
@@ -100,6 +101,18 @@ export function Sidebar() {
       current: pathname === "/academic-calendar",
     },
     {
+      name: "Tests & Exams",
+      href: "/tests",
+      icon: ClipboardList,
+      current: pathname === "/tests",
+    },
+    {
+      name: "Kanban Board",
+      href: "/kanban",
+      icon: Layout,
+      current: pathname === "/kanban",
+    },
+    {
       name: "Profile",
       href: "/profile",
       icon: User,
@@ -110,11 +123,6 @@ export function Sidebar() {
       href: "/settings",
       icon: Settings,
       current: pathname === "/settings",
-    },
-    {
-      name: "Tests & Exams",
-      href: "/tests",
-      icon: ClipboardList,
     },
   ];
 
