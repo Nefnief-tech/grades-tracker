@@ -50,7 +50,7 @@ COPY package.json pnpm-lock.yaml* ./
 
 # Install pnpm and production dependencies only - CRITICAL FIX: Use --no-frozen-lockfile
 RUN npm install -g pnpm && \
-    pnpm install --no-frozen-lockfile --prod
+    pnpm install --prod
 
 # Copy built application from builder stage
 COPY --from=builder /app/.next ./.next
