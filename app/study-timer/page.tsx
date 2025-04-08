@@ -429,13 +429,9 @@ export default function StudyTimerPage() {
     }
 
     try {
-      // Notes will be encrypted in the saveStudySession function
-      // We make sure we're only passing the notes string here
-      const notes = data.notes || "";
-      
-      // End session with notes and completed pomodoros
-      const result = await endSession(completedPomodoros, notes);
-      
+      // Set loading state if needed
+      const result = await endSession(completedPomodoros, data.notes || "");
+
       if (result) {
         setNotesDialogOpen(false);
         setCompletedPomodoros(0);
@@ -444,7 +440,7 @@ export default function StudyTimerPage() {
 
         toast({
           title: "Session saved",
-          description: "Your notes have been securely saved and encrypted",
+          description: "Your study session has been recorded",
         });
 
         // Force refresh sessions list
@@ -790,6 +786,7 @@ export default function StudyTimerPage() {
                             : timerMode === "shortBreak"
                             ? "rgba(34, 197, 94, 0.15)"
                             : "rgba(168, 85, 247, 0.15)",
+                      }}
                     ></div>
                   )}
                 </div>
