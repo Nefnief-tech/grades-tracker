@@ -13,9 +13,9 @@ RUN apk add --no-cache libc6-compat python3 make g++
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
 
-# Install pnpm and dependencies - CRITICAL FIX: Use --no-frozen-lockfile
+# Install pnpm and dependencies - CRITICAL FIX: Fix typo in flag name
 RUN npm install -g pnpm && \
-    pnpm install 
+    pnpm install --no-frozen-lockfile
 
 # Copy application code
 COPY . .
@@ -48,9 +48,9 @@ ENV NEXT_PUBLIC_OPTIMIZE_FONTS=true
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
 
-# Install pnpm and production dependencies only - CRITICAL FIX: Use --no-frozen-lockfile
+# Install pnpm and production dependencies only - CRITICAL FIX: Fix typo in flag name
 RUN npm install -g pnpm && \
-    pnpm install --prod
+    pnpm install --no-frozen-lockfile --prod
 
 # Copy built application from builder stage
 COPY --from=builder /app/.next ./.next
