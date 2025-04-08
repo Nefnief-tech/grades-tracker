@@ -14,9 +14,36 @@ export let FORCE_LOCAL_MODE = false;
 // Flag to track if we've already shown the network error
 let hasShownNetworkError = false;
 
-// Enhanced logging
+// Enhanced logging with more deployment details
 function logAppwriteInfo(message: string, ...args: any[]) {
-  console.log(`[Appwrite] ${message}`, ...args);
+  const env = typeof window !== "undefined" ? "browser" : "server";
+  const envPrefix = `[${env}]`;
+  const isProduction = process.env.NODE_ENV === "production";
+
+  // Always log critical connection issues
+  if (
+    message.includes("error") ||
+    message.includes("failed") ||
+    message.includes("invalid") ||
+    !isProduction
+  ) {
+    console.log(`[Appwrite]${envPrefix} ${message}`, ...args);
+
+    // In browser, log additional deployment info for debugging
+    if (env === "browser") {
+      console.log(`[Appwrite] Environment variables:`, {
+        endpoint: process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT ? "set" : "missing",
+        projectId: process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID
+          ? "set"
+          : "missing",
+        databaseId: process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID
+          ? "set"
+          : "missing",
+        environment: process.env.NODE_ENV,
+        railwayDomain: process.env.RAILWAY_PUBLIC_DOMAIN || "not set",
+      });
+    }
+  }
 }
 
 // Appwrite configuration from environment variables
@@ -224,10 +251,29 @@ const showNetworkErrorOnce = () => {
   }
 };
 
-// Validate the Appwrite endpoint URL before attempting to use it
+// Better validation for the Appwrite endpoint URL
 function validateAppwriteEndpoint(endpoint: string): boolean {
   if (!endpoint) {
-    logAppwriteInfo("No Appwrite endpoint provided");
+    logAppwriteInfo(
+      "No Appwrite endpoint provided. Check your environment variables."
+    );
+
+    // Show more specific error in development
+    if (process.env.NODE_ENV !== "production") {
+      console.error(`
+      ===============================================================
+      CONFIGURATION ERROR: APPWRITE ENDPOINT MISSING
+      ===============================================================
+      Make sure you have set NEXT_PUBLIC_APPWRITE_ENDPOINT in:
+      
+      1. Your .env.local file for local development
+      2. Your Railway project variables for deployment
+      
+      Current endpoint value: "${endpoint}"
+      ===============================================================
+      `);
+    }
+
     return false;
   }
 
@@ -290,6 +336,13 @@ if (ENABLE_CLOUD_FEATURES && isBrowser && !FORCE_LOCAL_MODE) {
       account = new Account(appwriteClient);
       databases = new Databases(appwriteClient);
       logAppwriteInfo("Appwrite client initialized successfully");
+
+      // Check connection
+      setTimeout(() => {
+        checkCloudConnection().catch((err) => {
+          logAppwriteInfo("Background connection check failed:", err);
+        });
+      }, 1000);
     } else {
       logAppwriteInfo(
         "Appwrite configuration is invalid or missing. Cloud features will be disabled."

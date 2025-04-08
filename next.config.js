@@ -1,4 +1,12 @@
 /** @type {import('next').NextConfig} */
+
+const withPWA = require("next-pwa")({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+});
+
 const nextConfig = {
   // Enable image optimization
   images: {
@@ -21,7 +29,7 @@ const nextConfig = {
       },
     ];
   },
-  reactStrictMode: process.env.NEXT_STRICT_MODE !== "false",
+  reactStrictMode: true,
   // Disable TypeScript checking during build if environment variable is set
   typescript: {
     // This will completely ignore TypeScript errors during build
@@ -29,11 +37,12 @@ const nextConfig = {
   },
   // Configure static generation to exclude problematic pages
   output: "standalone",
+  // Move these from experimental to root level
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
   experimental: {
-    // Skip building the 404 page statically
-    skipTrailingSlashRedirect: true,
-    skipMiddlewareUrlNormalize: true,
+    // Remove the options that have been moved to root level
   },
 };
 
-module.exports = nextConfig;
+module.exports = withPWA(nextConfig);
