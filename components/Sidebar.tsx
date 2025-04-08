@@ -20,6 +20,7 @@ import {
   Calendar as CalendarIcon,
   ClipboardList,
   Layout,
+  Timer, // Import Timer icon
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
@@ -111,6 +112,12 @@ export function Sidebar() {
       href: "/kanban",
       icon: Layout,
       current: pathname === "/kanban",
+    },
+    {
+      name: "Study Timer", // Add Study Timer entry
+      href: "/study-timer",
+      icon: Timer,
+      current: pathname === "/study-timer",
     },
     {
       name: "Profile",
