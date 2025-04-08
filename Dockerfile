@@ -15,7 +15,7 @@ COPY package.json pnpm-lock.yaml* ./
 
 # Install pnpm and dependencies - CRITICAL FIX: Use --no-frozen-lockfile
 RUN npm install -g pnpm && \
-    pnpm install --no-frozen-lockfile
+    pnpm install 
 
 # Copy application code
 COPY . .
