@@ -1,0 +1,14 @@
+{
+  "build": {
+    "steps": [
+      {
+        "name": "install",
+        "command": "pnpm install --no-frozen-lockfile"
+      },
+      {
+        "name": "build",
+        "command": "pnpm run build"
+      }
+    ]
+  }
+}
