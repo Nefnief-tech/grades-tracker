@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -12,9 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { saveGradeToSubject } from "@/utils/storageUtils";
-import { useToast } from "@/components/ui/use-toast";
-import { ID } from "appwrite";
+import { CardContent, CardFooter } from "@/components/ui/card";
+import { AlertCircle, CheckCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { format } from "date-fns";
+import type { GradeType, Grade } from "@/types/grades";
 
 interface GradeFormProps {
   subjectId: string;
@@ -23,202 +25,248 @@ interface GradeFormProps {
 
 export function GradeForm({ subjectId, onGradeAdded }: GradeFormProps) {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [value, setValue] = useState("");
-  const [type, setType] = useState("assignment");
-  const [date, setDate] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [optimisticGrades, setOptimisticGrades] = useState<any[]>([]);
-
-  // Set current date when component mounts
-  useEffect(() => {
-    // Format the current date as YYYY-MM-DD for the date input
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
-    const day = String(today.getDate()).padStart(2, "0");
-
-    setDate(`${year}-${month}-${day}`);
-  }, []);
+  const [value, setValue] = useState<number | "">("");
+  const [type, setType] = useState<GradeType>("Test");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setSuccess(null);
 
-    const gradeValue = parseFloat(value);
-
-    if (isNaN(gradeValue) || gradeValue < 1 || gradeValue > 6) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid grade between 1 and 6",
-        variant: "destructive",
-      });
+    // Validate input
+    if (value === "" || value < 1 || value > 6) {
+      setError("Grade must be between 1 and 6");
       return;
     }
 
-    if (!date) {
-      toast({
-        title: "Error",
-        description: "Please select a date",
-        variant: "destructive",
-      });
-      return;
-    }
+    console.clear(); // Clear console for easier debugging
+    console.log("=== MANUAL GRADE SAVE PROCESS STARTED ===");
+    console.log("Subject ID:", subjectId);
+    console.log("Grade Value:", value);
+    console.log("Grade Type:", type);
 
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+    setIsLoading(true);
 
     try {
-      const weight = type === "test" ? 2.0 : 1.0;
-      const gradeId = ID.unique();
+      // Create a unique grade ID
+      const uniqueId = `grade_${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(2, 11)}`;
 
       // Create the grade object
-      const newGrade = {
-        id: gradeId,
-        value: gradeValue,
-        type,
-        date,
-        weight,
+      const newGrade: Grade = {
+        id: uniqueId,
+        value: Number(value),
+        type: type,
+        date: format(new Date(), "yyyy-MM-dd"),
+        weight: type === "Test" ? 2.0 : 1.0,
       };
 
-      // Show optimistic update immediately
-      setOptimisticGrades((prev) => [...prev, newGrade]);
+      console.log("New Grade Object:", newGrade);
 
-      // Show success toast immediately for responsive feedback
-      toast({
-        title: "Grade added",
-        description: "Your grade has been recorded",
-      });
+      // DIRECT STORAGE - No API calls, no utility functions
+      const STORAGE_KEY = "gradeCalculator";
 
-      // Reset form right away
-      setValue("");
-      setType("assignment");
+      // Get existing data from localStorage
+      const localStorageData = localStorage.getItem(STORAGE_KEY);
+      console.log("Found data in localStorage:", !!localStorageData);
 
-      // Trigger callback to update UI (parent components)
-      onGradeAdded();
+      if (!localStorageData) {
+        throw new Error("No data found in localStorage!");
+      }
 
-      // Perform the actual save operation asynchronously
-      await saveGradeToSubject(
-        subjectId,
-        newGrade,
-        user?.id,
-        user?.syncEnabled
+      // Parse the data
+      const allSubjects = JSON.parse(localStorageData);
+      console.log("Total subjects in storage:", allSubjects?.length || 0);
+
+      if (!Array.isArray(allSubjects)) {
+        throw new Error("Invalid data format in localStorage!");
+      }
+
+      // Find the subject
+      const subjectIndex = allSubjects.findIndex((s) => s.id === subjectId);
+      console.log("Subject index:", subjectIndex);
+
+      if (subjectIndex === -1) {
+        throw new Error(`Subject with ID ${subjectId} not found!`);
+      }
+
+      // Add the grade
+      if (!allSubjects[subjectIndex].grades) {
+        allSubjects[subjectIndex].grades = [];
+      }
+
+      // Push the new grade
+      allSubjects[subjectIndex].grades.push(newGrade);
+      console.log(
+        "Added grade to subject. New total grades:",
+        allSubjects[subjectIndex].grades.length
       );
 
-      // Clear the optimistic grade after successful save
-      setOptimisticGrades((prev) => prev.filter((g) => g.id !== gradeId));
-    } catch (error) {
-      console.error("Error adding grade:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to add grade. Please try again.",
-        variant: "destructive",
-      });
+      // Calculate new average
+      const grades = allSubjects[subjectIndex].grades;
+      let weightedSum = 0;
+      let totalWeight = 0;
+
+      for (const g of grades) {
+        const w = g.weight || 1.0;
+        weightedSum += g.value * w;
+        totalWeight += w;
+      }
+
+      allSubjects[subjectIndex].averageGrade =
+        totalWeight > 0 ? Number((weightedSum / totalWeight).toFixed(2)) : 0;
+
+      console.log("New average grade:", allSubjects[subjectIndex].averageGrade);
+
+      // Save back to localStorage
+      const updatedData = JSON.stringify(allSubjects);
+      localStorage.setItem(STORAGE_KEY, updatedData);
+      console.log("Successfully saved to localStorage");
+
+      // EXPLICITLY TRIGGER CLOUD SYNC
+      if (user?.syncEnabled) {
+        try {
+          console.log("🔄 EXPLICITLY SYNCING TO CLOUD");
+
+          try {
+            // Import directly from file to avoid circular dependencies
+            const { syncSubjectsToCloud } = await import("@/lib/appwrite");
+
+            // Execute explicit cloud sync
+            const syncResult = await syncSubjectsToCloud(user.id, allSubjects);
+            console.log(
+              "☁️ CLOUD SYNC RESULT:",
+              syncResult ? "Success" : "Failed"
+            );
+
+            // Manually update last sync timestamp
+            localStorage.setItem("lastSyncTimestamp", new Date().toISOString());
+          } catch (syncError) {
+            console.error("💥 CLOUD SYNC ERROR:", syncError);
+            // Continue anyway - we already saved to localStorage
+          }
+        } catch (importError) {
+          console.error("Failed to import cloud sync function:", importError);
+        }
+      }
+
+      // Clear form
+      setValue("");
+      setType("Test");
+
+      // Show success message
+      setSuccess(`Grade ${value} added successfully! Page will reload.`);
+
+      // Wait for user to see success message, then reload page
+      setTimeout(() => {
+        console.log("Reloading page to show updated data...");
+        window.location.reload();
+      }, 1500);
+    } catch (err: any) {
+      console.error("ERROR SAVING GRADE:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save grade. Please try again."
+      );
     } finally {
-      // Always ensure we clear the submitting state
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <Card className="bg-card transition-all">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <CardContent className="pt-4 transition-all">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="grade"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Grade Value
-                </label>
-                <Input
-                  id="grade"
-                  type="number"
-                  min="1"
-                  max="6"
-                  step="0.1"
-                  placeholder="1.0 - 6.0"
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  required
-                  className="transition-all"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="type"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Grade Type
-                </label>
-                <Select value={type} onValueChange={setType}>
-                  <SelectTrigger className="transition-all">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="test">Test (x2)</SelectItem>
-                    <SelectItem value="quiz">Quiz</SelectItem>
-                    <SelectItem value="homework">Homework</SelectItem>
-                    <SelectItem value="participation">Participation</SelectItem>
-                    <SelectItem value="project">Project</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label
-                  htmlFor="date"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Date
-                </label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                  className="transition-all"
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-end">
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="transition-all relative"
+    <form onSubmit={handleSubmit}>
+      <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {success && (
+          <Alert
+            variant="default"
+            className="bg-green-50 border-green-200 text-green-800"
           >
-            <span className={isSubmitting ? "opacity-0" : "opacity-100"}>
-              Add Grade
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="grade-value">Grade Value (1-6)</Label>
+          <Input
+            id="grade-value"
+            type="number"
+            min="1"
+            max="6"
+            step="0.1"
+            placeholder="4.5"
+            value={value}
+            onChange={(e) =>
+              setValue(e.target.value ? Number(e.target.value) : "")
+            }
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="grade-type">Grade Type</Label>
+          <Select
+            value={type}
+            onValueChange={(val) => setType(val as GradeType)}
+          >
+            <SelectTrigger id="grade-type">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Test">Test (Weight: 2.0)</SelectItem>
+              <SelectItem value="Oral Exam">Oral Exam (Weight: 1.0)</SelectItem>
+              <SelectItem value="Homework">Homework (Weight: 1.0)</SelectItem>
+              <SelectItem value="Project">Project (Weight: 1.0)</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Tests are weighted 2.0, all other assignments 1.0
+          </p>
+        </div>
+
+        <div className="p-3 bg-muted/20 rounded-md">
+          <div className="text-sm flex justify-between">
+            <span>Selected Weight:</span>
+            <span className="font-medium">
+              {type === "Test" ? "2.0" : "1.0"}
             </span>
-            {isSubmitting && (
-              <span className="absolute inset-0 flex items-center justify-center">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              </span>
-            )}
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+          </div>
+        </div>
+      </CardContent>
+
+      <CardFooter>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isLoading || !!success}
+        >
+          {isLoading ? (
+            <span className="flex items-center">
+              <span className="animate-spin h-4 w-4 mr-2 border-2 border-current border-t-transparent rounded-full"></span>
+              Saving...
+            </span>
+          ) : success ? (
+            <span className="flex items-center">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Saved!
+            </span>
+          ) : (
+            "Add Grade"
+          )}
+        </Button>
+      </CardFooter>
+    </form>
   );
 }

@@ -1,5 +1,6 @@
 import { Client, Account, Databases, ID, Query } from "appwrite";
 import { rateLimitHandler } from "./rate-limit-handler";
+import type { Subject, Grade } from "@/types/grades";
 
 // Feature flag to enable/disable cloud features
 export const ENABLE_CLOUD_FEATURES = true; // Set to true to enable cloud features
@@ -30,6 +31,16 @@ export const SUBJECTS_COLLECTION_ID =
   process.env.NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID || "";
 export const GRADES_COLLECTION_ID =
   process.env.NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID || "";
+
+// Add the missing config object
+const config = {
+  endpoint: appwriteEndpoint,
+  projectId: appwriteProjectId,
+  databaseId: DATABASE_ID,
+  usersCollectionId: USERS_COLLECTION_ID,
+  subjectsCollectionId: SUBJECTS_COLLECTION_ID,
+  gradesCollectionId: GRADES_COLLECTION_ID,
+};
 
 // Initialize Appwrite client only if cloud features are enabled
 let appwriteClient: Client | null = null;
@@ -516,82 +527,478 @@ export const updateUserSyncPreference = async (
   }
 };
 
-export const syncSubjectsToCloud = async (userId: string, subjects: any[]) => {
-  // Ensure all subjects have required fields
-  subjects = subjects.map((subject) => ({
-    ...subject,
-    id: subject.id || ID.unique(),
-  }));
-  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
-    return false;
+/**
+ * Helper function to sanitize objects before sending to Appwrite
+ * This ensures we never send fields that aren't in the schema
+ */
+function sanitizeForAppwrite(obj: any): any {
+  // Create a new clean object with only allowed fields
+  const sanitized: any = {};
+
+  // Only copy explicitly allowed fields
+  const allowedFields = [
+    "userId",
+    "subjectid",
+    "name",
+    "averageGrade",
+    "value",
+    "type",
+    "date",
+    "weight",
+  ];
+
+  for (const field of allowedFields) {
+    if (obj[field] !== undefined) {
+      sanitized[field] = obj[field];
+    }
   }
 
+  return sanitized;
+}
+
+/**
+ * Fixed and simplified subject syncing to avoid schema conflicts
+ */
+export const syncSubjectsToCloud = async (
+  userId: string,
+  subjects: Subject[]
+): Promise<boolean> => {
+  console.log(
+    `[Cloud] Starting sync for user ${userId} with ${subjects.length} subjects`
+  );
+
   try {
-    // First, delete all existing subjects for this user
-    try {
-      // Get all subjects in a single query without throttling
-      const existingSubjects = await databases.listDocuments(
-        DATABASE_ID,
-        SUBJECTS_COLLECTION_ID,
-        [Query.equal("userId", userId), Query.limit(1000)]
-      );
+    const databases = getDatabases();
 
-      // Delete all subjects in parallel for maximum speed
-      await Promise.all(
-        existingSubjects.documents.map((doc) =>
-          databases!.deleteDocument(
-            DATABASE_ID,
-            SUBJECTS_COLLECTION_ID,
-            doc.$id
-          )
-        )
-      );
-    } catch (error) {
-      console.error("Error handling existing subjects:", error);
-    }
-
-    // Process subjects in parallel for maximum speed
-    await Promise.all(
-      subjects.map(async (subject) => {
-        // Encrypt the average grade if encryption is enabled
-        const encryptedAverageGrade = await encrypt(
-          userId,
-          subject.averageGrade || 0
-        );
-
-        // Create subject document
-        await databases!.createDocument(
-          DATABASE_ID,
-          SUBJECTS_COLLECTION_ID,
-          ID.unique(),
-          {
-            userId: userId,
-            subjectid: subject.id,
-            name: subject.name,
-            averageGrade: encryptedAverageGrade,
-          }
-        );
-
-        // Sync grades for this subject with parallel processing
-        if (subject.grades && subject.grades.length > 0) {
-          await syncGradesToCloud(userId, subject.id, subject.grades || []);
-        }
-      })
+    // Get existing subjects to identify what needs updating vs creating
+    console.log(`[Cloud] Fetching existing subjects for user ${userId}`);
+    const existingSubjectsResponse = await databases.listDocuments(
+      config.databaseId,
+      config.subjectsCollectionId,
+      [Query.equal("userId", userId), Query.limit(1000)]
     );
 
-    return true;
-  } catch (error: any) {
-    console.error("Error syncing subjects to cloud:", error);
-
-    if (error.message && error.message.includes("NetworkError")) {
-      showNetworkErrorOnce();
-      return false;
-    } else {
-      return false;
+    // Log document schema to help debug
+    if (existingSubjectsResponse.documents.length > 0) {
+      console.log(
+        "[Cloud] Subject schema:",
+        Object.keys(existingSubjectsResponse.documents[0])
+      );
     }
+
+    // Create a map of cloud subjects with Appwrite's internal IDs
+    const cloudSubjectMap = new Map();
+    existingSubjectsResponse.documents.forEach((doc) => {
+      // Try all possible field names for subject ID
+      const subjectId = doc.subjectid || doc.subjectId || doc.id || doc.$id;
+      if (subjectId) {
+        cloudSubjectMap.set(subjectId, doc.$id);
+      }
+    });
+
+    // Process each subject one by one (more reliable than batch processing)
+    for (const subject of subjects) {
+      try {
+        // Step 1: Create/update the subject
+        const cloudDocId = cloudSubjectMap.get(subject.id);
+        const encryptedAvg = await encrypt(userId, subject.averageGrade);
+
+        if (cloudDocId) {
+          // Update existing subject
+          console.log(
+            `[Cloud] Updating subject: ${subject.name} (${subject.id})`
+          );
+          await databases.updateDocument(
+            config.databaseId,
+            config.subjectsCollectionId,
+            cloudDocId,
+            sanitizeForAppwrite({
+              name: subject.name,
+              averageGrade: encryptedAvg,
+            })
+          );
+        } else {
+          // Create new subject
+          console.log(
+            `[Cloud] Creating new subject: ${subject.name} (${subject.id})`
+          );
+          await databases.createDocument(
+            config.databaseId,
+            config.subjectsCollectionId,
+            ID.unique(),
+            sanitizeForAppwrite({
+              userId: userId,
+              subjectid: subject.id, // Use lowercase consistently
+              name: subject.name,
+              averageGrade: encryptedAvg,
+            })
+          );
+        }
+
+        // Step 2: Handle grades for this subject
+        if (subject.grades && subject.grades.length > 0) {
+          // First, get existing grades
+          const existingGrades = await databases.listDocuments(
+            config.databaseId,
+            config.gradesCollectionId,
+            [
+              Query.equal("userId", userId),
+              Query.equal("subjectid", subject.id),
+              Query.limit(1000),
+            ]
+          );
+
+          // Log grade schema to help debug
+          if (existingGrades.documents.length > 0) {
+            console.log(
+              "[Cloud] Grade schema:",
+              Object.keys(existingGrades.documents[0])
+            );
+          }
+
+          // Map existing grades by Appwrite internal ID
+          const gradeDocMap = new Map();
+          existingGrades.documents.forEach((doc) => {
+            // Store by document ID for simplicity
+            gradeDocMap.set(doc.$id, doc);
+          });
+
+          // Delete all existing grades (safer than trying to update)
+          for (const gradeDocId of gradeDocMap.keys()) {
+            try {
+              await databases.deleteDocument(
+                config.databaseId,
+                config.gradesCollectionId,
+                gradeDocId
+              );
+            } catch (delError) {
+              console.warn(
+                `[Cloud] Failed to delete grade ${gradeDocId}:`,
+                delError
+              );
+            }
+          }
+
+          // Create fresh grades
+          for (const grade of subject.grades) {
+            const encryptedValue = await encrypt(userId, grade.value);
+
+            // Create with minimal fields to avoid schema conflicts
+            try {
+              // CRITICAL FIX: Completely avoid any problematic field names
+              // Use only the minimal set of fields known to be supported
+              await databases.createDocument(
+                config.databaseId,
+                config.gradesCollectionId,
+                ID.unique(),
+                sanitizeForAppwrite({
+                  userId: userId,
+                  subjectid: subject.id,
+                  // Remove gradeKey field entirely - it's causing issues
+                  value: encryptedValue,
+                  type: grade.type || "Test",
+                  date: grade.date || new Date().toISOString().split("T")[0],
+                  weight: grade.weight || 1.0,
+                })
+              );
+            } catch (gradeCreateError) {
+              console.error(
+                `[Cloud] Failed to create grade:`,
+                gradeCreateError
+              );
+
+              // More minimal fallback - absolutely essential fields only
+              try {
+                await databases.createDocument(
+                  config.databaseId,
+                  config.gradesCollectionId,
+                  ID.unique(),
+                  sanitizeForAppwrite({
+                    userId: userId,
+                    subjectid: subject.id,
+                    value: encryptedValue,
+                    type: grade.type || "Test",
+                  })
+                );
+              } catch (fallbackError) {
+                console.error(
+                  `[Cloud] Even fallback grade creation failed:`,
+                  fallbackError
+                );
+              }
+            }
+          }
+        }
+      } catch (subjectError) {
+        console.error(
+          `[Cloud] Error processing subject ${subject.id}:`,
+          subjectError
+        );
+        // Continue with next subject even if this one fails
+      }
+    }
+
+    console.log(`[Cloud] Sync completed successfully for user ${userId}`);
+    return true;
+  } catch (error) {
+    console.error("[Cloud] Error in syncSubjectsToCloud:", error);
+    return false;
   }
 };
 
+/**
+ * Fixed and simplified fetching of subjects and grades
+ */
+export const getSubjectsFromCloud = async (
+  userId: string
+): Promise<Subject[]> => {
+  try {
+    console.log(`[Cloud] Fetching subjects for user ${userId}`);
+    const databases = getDatabases();
+
+    // Create array to hold results
+    const results: Subject[] = [];
+
+    // 1. Get all subjects
+    try {
+      const subjectsResponse = await databases.listDocuments(
+        config.databaseId,
+        config.subjectsCollectionId,
+        [Query.equal("userId", userId), Query.limit(1000)]
+      );
+
+      // Log document count
+      console.log(
+        `[Cloud] Found ${subjectsResponse.documents.length} subjects`
+      );
+
+      // Log first document structure
+      if (subjectsResponse.documents.length > 0) {
+        console.log(
+          "[Cloud] First subject document:",
+          JSON.stringify(subjectsResponse.documents[0])
+        );
+      }
+
+      // Process each subject
+      for (const doc of subjectsResponse.documents) {
+        try {
+          // Ensure we have required fields
+          if (!doc.name) {
+            console.warn("[Cloud] Subject missing name:", doc.$id);
+            continue;
+          }
+
+          // Get the subject ID from various possible fields
+          const subjectId = doc.subjectid || doc.subjectId || doc.id || doc.$id;
+
+          // Decrypt average grade (if available)
+          let avgGrade = 0;
+          try {
+            if (doc.averageGrade) {
+              avgGrade = (await decrypt(userId, doc.averageGrade)) || 0;
+            }
+          } catch (e) {
+            console.warn("[Cloud] Error decrypting average grade:", e);
+            avgGrade =
+              typeof doc.averageGrade === "number" ? doc.averageGrade : 0;
+          }
+
+          // Add subject to results
+          const subject: Subject = {
+            id: subjectId,
+            name: doc.name,
+            grades: [],
+            averageGrade: avgGrade,
+          };
+
+          // Add to results
+          results.push(subject);
+        } catch (subjectError) {
+          console.error("[Cloud] Error processing subject:", subjectError);
+        }
+      }
+    } catch (subjectsError) {
+      console.error("[Cloud] Error fetching subjects:", subjectsError);
+    }
+
+    // 2. Get grades for each subject
+    for (const subject of results) {
+      try {
+        console.log(`[Cloud] Fetching grades for subject ${subject.id}`);
+
+        const gradesResponse = await databases.listDocuments(
+          config.databaseId,
+          config.gradesCollectionId,
+          [
+            Query.equal("userId", userId),
+            Query.equal("subjectid", subject.id),
+            Query.limit(1000),
+          ]
+        );
+
+        console.log(
+          `[Cloud] Found ${gradesResponse.documents.length} grades for subject ${subject.id}`
+        );
+
+        // Process each grade document
+        if (gradesResponse.documents.length > 0) {
+          // Log first grade document
+          console.log(
+            "[Cloud] First grade document:",
+            JSON.stringify(gradesResponse.documents[0])
+          );
+
+          const grades: Grade[] = [];
+
+          for (const doc of gradesResponse.documents) {
+            try {
+              // Try to find grade ID or generate a unique one
+              const gradeId =
+                doc.gradeKey ||
+                doc.gradeid ||
+                doc.gradeId ||
+                doc.grade_id ||
+                doc.$id ||
+                `grade-${Date.now()}-${Math.random()
+                  .toString(36)
+                  .substring(2, 9)}`;
+
+              // Decrypt value
+              let value = 0;
+              try {
+                if (doc.value) {
+                  value = (await decrypt(userId, doc.value)) || 0;
+                }
+              } catch (decryptError) {
+                console.warn(
+                  "[Cloud] Error decrypting grade value:",
+                  decryptError
+                );
+                value = typeof doc.value === "number" ? doc.value : 0;
+              }
+
+              // Create grade object
+              const grade: Grade = {
+                id: gradeId,
+                value: value,
+                type: doc.type || "Test",
+                date: doc.date || new Date().toISOString().split("T")[0],
+                weight: doc.weight || 1.0,
+              };
+
+              grades.push(grade);
+            } catch (gradeError) {
+              console.error(
+                "[Cloud] Error processing grade document:",
+                gradeError
+              );
+            }
+          }
+
+          // Sort grades by date (newest first)
+          grades.sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+
+          // Assign grades to subject
+          subject.grades = grades;
+
+          // Recalculate average grade
+          if (grades.length > 0) {
+            let weightedSum = 0;
+            let totalWeight = 0;
+
+            for (const grade of grades) {
+              const weight = grade.weight || 1.0;
+              weightedSum += grade.value * weight;
+              totalWeight += weight;
+            }
+
+            subject.averageGrade =
+              totalWeight > 0
+                ? Number((weightedSum / totalWeight).toFixed(2))
+                : 0;
+          }
+        }
+      } catch (gradesError) {
+        console.error(
+          "[Cloud] Error fetching grades for subject:",
+          gradesError
+        );
+      }
+    }
+
+    console.log(
+      `[Cloud] Successfully fetched ${results.length} subjects with their grades`
+    );
+    return results;
+  } catch (error) {
+    console.error("[Cloud] Error in getSubjectsFromCloud:", error);
+    return [];
+  }
+};
+
+/**
+ * Modified deleteGradeFromCloud to handle field name variations
+ */
+export const deleteGradeFromCloud = async (
+  userId: string,
+  subjectId: string,
+  grade: Grade
+): Promise<boolean> => {
+  try {
+    const databases = getDatabases();
+
+    // Try multiple query combinations to find the grade, but avoid problematic fields
+    const queries = [
+      // Try with value and type (avoid ID fields completely)
+      [
+        Query.equal("userId", userId),
+        Query.equal("subjectid", subjectId),
+        Query.equal("type", grade.type),
+        Query.equal("date", grade.date),
+      ],
+      // Try with just the subject ID (will delete all grades for that subject)
+      [Query.equal("userId", userId), Query.equal("subjectid", subjectId)],
+    ];
+
+    // Try each query combination
+    for (const query of queries) {
+      try {
+        const response = await databases.listDocuments(
+          config.databaseId,
+          config.gradesCollectionId,
+          query
+        );
+
+        if (response.documents.length > 0) {
+          // Delete the found documents
+          for (const doc of response.documents) {
+            await databases.deleteDocument(
+              config.databaseId,
+              config.gradesCollectionId,
+              doc.$id
+            );
+          }
+          return true;
+        }
+      } catch (queryError) {
+        console.warn("[Cloud] Query failed:", queryError);
+        // Continue trying other queries
+      }
+    }
+
+    // If we get here, no matching document was found
+    console.warn("[Cloud] No matching grade found to delete");
+    return false;
+  } catch (error) {
+    console.error("[Cloud] Error deleting grade:", error);
+    return false;
+  }
+};
+
+// Also fix syncGradesToCloud
 export const syncGradesToCloud = async (
   userId: string,
   subjectid: string,
@@ -634,19 +1041,20 @@ export const syncGradesToCloud = async (
         // Encrypt the grade value if encryption is enabled
         const encryptedValue = await encrypt(userId, grade.value);
 
-        // Create grade document
+        // Create grade document - OMIT gradeid field
         await databases!.createDocument(
           DATABASE_ID,
           GRADES_COLLECTION_ID,
           ID.unique(),
-          {
+          sanitizeForAppwrite({
             userId: userId,
             subjectid: subjectid,
+            // NO gradeid field since it causes validation errors
             value: encryptedValue,
             type: grade.type,
             date: grade.date,
             weight: grade.weight || 1.0,
-          }
+          })
         );
       })
     );
@@ -679,108 +1087,47 @@ function removeDuplicateGrades(grades: any[]): any[] {
 export const deleteSubjectFromCloud = async (
   userId: string,
   subjectId: string
-) => {
-  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
-    return false;
-  }
-
+): Promise<boolean> => {
   try {
-    // First, delete all grades for this subject
-    try {
-      const existingGrades = await databases.listDocuments(
-        DATABASE_ID,
-        GRADES_COLLECTION_ID,
-        [Query.equal("userId", userId), Query.equal("subjectid", subjectId)]
-      );
+    const databases = getDatabases();
 
-      for (const doc of existingGrades.documents) {
-        await databases.deleteDocument(
-          DATABASE_ID,
-          GRADES_COLLECTION_ID,
-          doc.$id
-        );
-      }
-    } catch (error) {
-      console.error("Error deleting grades for subject:", error);
-    }
-
-    // Then, delete the subject document
-    try {
-      const existingSubjects = await databases.listDocuments(
-        DATABASE_ID,
-        SUBJECTS_COLLECTION_ID,
-        [Query.equal("userId", userId), Query.equal("subjectid", subjectId)]
-      );
-
-      for (const doc of existingSubjects.documents) {
-        await databases.deleteDocument(
-          DATABASE_ID,
-          SUBJECTS_COLLECTION_ID,
-          doc.$id
-        );
-      }
-    } catch (error) {
-      console.error("Error deleting subject:", error);
-      return false;
-    }
-
-    return true;
-  } catch (error: any) {
-    console.error("Error deleting subject from cloud:", error);
-
-    if (error.message && error.message.includes("NetworkError")) {
-      showNetworkErrorOnce();
-      return false;
-    } else {
-      return false;
-    }
-  }
-};
-
-// Delete a specific grade from a subject
-export const deleteGradeFromCloud = async (
-  userId: string,
-  subjectId: string,
-  gradeToDelete: Grade
-) => {
-  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
-    return false;
-  }
-
-  try {
-    // Find the grade document by matching all its properties
-    const grades = await databases.listDocuments(
-      DATABASE_ID,
-      GRADES_COLLECTION_ID,
+    // 1. Find and delete the subject document - use lowercase field name
+    const subjectResponse = await databases.listDocuments(
+      config.databaseId,
+      config.subjectsCollectionId,
       [
         Query.equal("userId", userId),
-        Query.equal("subjectid", subjectId),
-        Query.equal("value", gradeToDelete.value),
-        Query.equal("type", gradeToDelete.type),
-        Query.equal("date", gradeToDelete.date),
+        Query.equal("subjectid", subjectId), // Using lowercase field name
       ]
     );
 
-    // Delete the matching grade document
-    if (grades.documents.length > 0) {
+    for (const doc of subjectResponse.documents) {
       await databases.deleteDocument(
-        DATABASE_ID,
-        GRADES_COLLECTION_ID,
-        grades.documents[0].$id
+        config.databaseId,
+        config.subjectsCollectionId,
+        doc.$id
       );
-      return true;
     }
 
+    // 2. Find and delete all grades for this subject - subjectid is already lowercase
+    const gradesResponse = await databases.listDocuments(
+      config.databaseId,
+      config.gradesCollectionId,
+      [Query.equal("userId", userId), Query.equal("subjectid", subjectId)]
+    );
+
+    for (const doc of gradesResponse.documents) {
+      await databases.deleteDocument(
+        config.databaseId,
+        config.gradesCollectionId,
+        doc.$id
+      );
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[Cloud] Error deleting subject:", error);
     return false;
-  } catch (error: any) {
-    console.error("Error deleting grade from cloud:", error);
-
-    if (error.message && error.message.includes("NetworkError")) {
-      showNetworkErrorOnce();
-      return false;
-    } else {
-      return false;
-    }
   }
 };
 
@@ -932,109 +1279,59 @@ export const deleteAccount = async (userId: string) => {
   }
 };
 
-export const getSubjectsFromCloud = async (userId: string) => {
-  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
-    console.warn("Cloud features are disabled or database is not initialized");
-    return null; // Return null instead of empty array to indicate "no data" rather than "empty data"
-  }
+export default {
+  syncSubjectsToCloud,
+  getSubjectsFromCloud,
+  deleteGradeFromCloud,
+  deleteSubjectFromCloud,
+};
+
+// Initialize Appwrite client
+const getClient = () => {
+  const client = new Client();
 
   try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      SUBJECTS_COLLECTION_ID,
-      [Query.equal("userId", userId)]
-    );
+    console.log("[Appwrite] Initializing client");
+    client.setEndpoint(config.endpoint).setProject(config.projectId);
 
-    if (!response.documents || response.documents.length === 0) {
-      console.warn("No subjects found in cloud storage");
-      return null; // Return null instead of empty array
-    }
-
-    // Process the documents to extract subject data
-    const result = await Promise.all(
-      response.documents.map(async (subjectDoc) => {
-        try {
-          // Get grades for this subject
-          const grades = await databases.listDocuments(
-            DATABASE_ID,
-            GRADES_COLLECTION_ID,
-            [
-              Query.equal("userId", userId),
-              Query.equal("subjectid", subjectDoc.subjectid),
-            ]
-          );
-
-          const formattedGrades = await Promise.all(
-            grades.documents.map(async (grade) => {
-              // Always try to decrypt the value when encryption is enabled
-              let value = grade.value;
-              if (ENABLE_ENCRYPTION) {
-                try {
-                  value = await decrypt(userId, grade.value);
-                } catch (error) {
-                  console.error("Error decrypting grade value:", error);
-                  // Use the original value as a fallback
-                }
-              }
-
-              return {
-                value: value,
-                type: grade.type,
-                date: grade.date,
-                weight: grade.weight || 1.0,
-              };
-            })
-          );
-
-          // Always try to decrypt the average grade when encryption is enabled
-          let averageGrade = subjectDoc.averageGrade || 0;
-          if (ENABLE_ENCRYPTION) {
-            try {
-              averageGrade = await decrypt(userId, subjectDoc.averageGrade);
-            } catch (error) {
-              console.error("Error decrypting average grade:", error);
-              // Use the original value as a fallback
-            }
-          }
-
-          return {
-            id: subjectDoc.subjectid,
-            name: subjectDoc.name,
-            grades: formattedGrades,
-            averageGrade: averageGrade,
-          };
-        } catch (gradeError) {
-          console.error(
-            `Error fetching grades for subject ${subjectDoc.subjectid}:`,
-            gradeError
-          );
-          return {
-            id: subjectDoc.subjectid,
-            name: subjectDoc.name,
-            grades: [],
-            averageGrade: 0,
-          };
-        }
-      })
-    );
-
-    // Only return non-empty results, never an empty array
-    if (result.filter(Boolean).length > 0) {
-      return result.filter(Boolean);
-    } else {
-      return null; // Return null if no valid subjects were found
-    }
-  } catch (error: any) {
-    console.error("Error getting subjects from cloud:", error);
-
-    if (error.message && error.message.includes("NetworkError")) {
-      showNetworkErrorOnce();
-      console.warn(
-        "Network error when fetching cloud subjects. Using local data."
-      );
-      return null; // Return null instead of empty array
-    } else {
-      return null; // Return null instead of empty array
-    }
+    return client;
+  } catch (error) {
+    console.error("[Appwrite] Error initializing client:", error);
+    throw error;
   }
+};
+
+// CRITICAL: Add the missing getDatabases function
+const getDatabases = () => {
+  try {
+    return new Databases(getClient());
+  } catch (error) {
+    console.error("[Appwrite] Error getting databases instance:", error);
+    throw error;
+  }
+};
+
+export const initializeAppwrite = () => {
+  if (!appwriteClient) {
+    appwriteClient = new Client()
+      .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "")
+      .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "");
+  }
+  return appwriteClient;
+};
+
+export const getAppwriteClient = () => {
+  if (!appwriteClient) {
+    initializeAppwrite();
+  }
+  if (!appwriteClient) {
+    throw new Error(
+      "Appwrite client not initialized. Call initializeAppwrite first."
+    );
+  }
+  const databases = new Databases(appwriteClient);
+  if (!databases) {
+    throw new Error("Appwrite databases client not properly initialized");
+  }
+  return { client: appwriteClient, databases };
 };

@@ -1,0 +1,144 @@
+/* Settings-related CSS styles */
+
+/* Font size settings */
+body.text-small {
+  font-size: 0.875rem; /* 14px */
+}
+
+body.text-medium {
+  font-size: 1rem; /* 16px - default */
+}
+
+body.text-large {
+  font-size: 1.125rem; /* 18px */
+}
+
+body.text-x-large {
+  font-size: 1.25rem; /* 20px */
+}
+
+/* High contrast mode */
+body.high-contrast {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 0%;
+  --primary: 210 100% 35%;
+  --border: 0 0% 0%;
+  
+  /* Force stronger contrast for text and backgrounds */
+  --card: 0 0% 97%;
+  --card-foreground: 0 0% 0%;
+  --muted: 0 0% 90%;
+  --muted-foreground: 0 0% 20%;
+  --destructive: 0 100% 40%;
+  --destructive-foreground: 0 0% 100%;
+}
+
+body.dark.high-contrast {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --primary: 210 100% 60%;
+  --border: 0 0% 100%;
+  
+  /* Force stronger contrast for text and backgrounds in dark mode */
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 100%;
+  --muted: 0 0% 20%;
+  --muted-foreground: 0 0% 80%;
+  --destructive: 0 100% 60%;
+  --destructive-foreground: 0 0% 100%;
+}
+
+/* Dark mode contrast levels */
+body.dark[data-contrast="low"] {
+  --background: 250 30% 7%;
+  --card: 250 30% 10%;
+  --muted: 250 20% 20%;
+  --muted-foreground: 250 10% 70%;
+}
+
+body.dark[data-contrast="medium"] {
+  /* Default dark mode values */
+}
+
+body.dark[data-contrast="high"] {
+  --background: 250 30% 2%;
+  --card: 250 30% 5%;
+  --muted: 250 20% 12%;
+  --muted-foreground: 250 10% 80%;
+}
+
+/* Reduced motion for accessibility */
+body.reduce-motion * {
+  transition-duration: 0.05s !important;
+  animation-duration: 0.05s !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+}
+
+/* High emphasis labels for better readability */
+body.high-emphasis-labels label {
+  font-weight: 600;
+  font-size: 1.05em;
+}
+
+body.high-emphasis-labels .text-muted-foreground {
+  color: hsl(var(--foreground) / 0.75);
+}
+
+/* Accent color overrides */
+:root[data-accent-color="blue"] {
+  --primary: 217 91% 60%;
+  --accent: 217 91% 60%;
+}
+
+:root[data-accent-color="green"] {
+  --primary: 142 76% 36%;
+  --accent: 142 76% 36%;
+}
+
+:root[data-accent-color="purple"] {
+  --primary: 262 83% 58%;
+  --accent: 262 83% 58%;
+}
+
+:root[data-accent-color="orange"] {
+  --primary: 24 95% 53%;
+  --accent: 24 95% 53%;
+}
+
+:root[data-accent-color="pink"] {
+  --primary: 336 80% 58%;
+  --accent: 336 80% 58%;
+}
+
+/* Display settings for grade colors */
+.grade-value-display {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Grade colors when showGradeColors is true */
+.grade-colors-enabled .grade-value-1 {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: hsl(var(--foreground));
+}
+
+.grade-colors-enabled .grade-value-2 {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: hsl(var(--foreground));
+}
+
+.grade-colors-enabled .grade-value-3 {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: hsl(var(--foreground));
+}
+
+.grade-colors-enabled .grade-value-4 {
+  background-color: rgba(249, 115, 22, 0.2);
+  color: hsl(var(--foreground));
+}
+
+.grade-colors-enabled .grade-value-5,
+.grade-colors-enabled .grade-value-6 {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: hsl(var(--foreground));
+}

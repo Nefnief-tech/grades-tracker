@@ -8,6 +8,16 @@ import {
 } from "@/lib/appwrite";
 import { initializeSubjects } from "./cookieUtils";
 
+// Import the correct Appwrite SDK functions
+import { Client, Databases, ID, Query } from "appwrite";
+import { encryptData, decryptData } from "@/utils/dataProtection";
+
+// Import the correct helper instead of getAppwriteClients
+import {
+  getAppwriteClient as importedGetAppwriteClient,
+  initializeAppwrite,
+} from "../lib/appwrite";
+
 // Constants
 const STORAGE_KEY = "gradeCalculator";
 const CACHE_TTL = 30000; // Increased from 10000 to 30000 (30 seconds cache lifetime)
@@ -26,9 +36,19 @@ function logStorage(operation: string, data?: any): void {
 /**
  * Notifies components that subjects have been updated
  */
-export function notifySubjectsUpdated(): void {
+export function notifySubjectsUpdated(eventId?: string): void {
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("subjectsUpdated"));
+    console.log(
+      "Dispatching subjectsUpdated event",
+      eventId ? `(ID: ${eventId})` : ""
+    );
+
+    // Use CustomEvent to allow passing data
+    const event = eventId
+      ? new CustomEvent("subjectsUpdated", { detail: { eventId } })
+      : new Event("subjectsUpdated");
+
+    window.dispatchEvent(event);
   }
 }
 
@@ -95,6 +115,25 @@ function validateSubjects(subjects: Subject[]): Subject[] {
 }
 
 /**
+ * Gets data from localStorage
+ */
+function getFromLocalStorage(): Subject[] {
+  try {
+    const localSubjectsJson = localStorage.getItem(STORAGE_KEY);
+
+    if (!localSubjectsJson) {
+      return initializeSubjects();
+    }
+
+    const localSubjects = JSON.parse(localSubjectsJson);
+    return validateSubjects(localSubjects);
+  } catch (error) {
+    console.error("Error reading from localStorage:", error);
+    return initializeSubjects();
+  }
+}
+
+/**
  * Saves subjects to localStorage and optionally to cloud
  */
 export async function saveSubjectsToStorage(
@@ -153,15 +192,64 @@ export async function saveSubjectsToStorage(
  */
 export async function getSubjectsFromStorage(
   userId?: string,
-  syncEnabled?: boolean
+  syncEnabled?: boolean,
+  forceRefresh?: boolean
 ): Promise<Subject[]> {
   const cacheKey = `subjects-${userId || "anonymous"}`;
 
+  // Allow force refresh by checking URL parameter
+  const forceRefreshParam =
+    typeof window !== "undefined" &&
+    window.location.search.includes("refresh=true");
+
+  if (forceRefresh || forceRefreshParam) {
+    // When force refreshing, clear cached data
+    memoryCache.delete(cacheKey);
+    logStorage("force refresh requested - cleared cache");
+  }
+
   // Try memory cache first (fastest) with longer cache validity
   const cachedSubjects = getFromCache<Subject[]>(cacheKey);
-  if (cachedSubjects) {
+  if (cachedSubjects && !forceRefresh) {
     logStorage("using cached subjects", { count: cachedSubjects.length });
     return cachedSubjects;
+  }
+
+  // If cloud is enabled and we're doing a force refresh, try to get data from cloud first
+  if (ENABLE_CLOUD_FEATURES && userId && syncEnabled && forceRefresh) {
+    try {
+      logStorage("force fetching from cloud", { userId });
+      const cloudSubjects = await getSubjectsFromCloud(userId);
+
+      if (
+        cloudSubjects &&
+        Array.isArray(cloudSubjects) &&
+        cloudSubjects.length > 0
+      ) {
+        const validatedCloudSubjects = validateSubjects(cloudSubjects);
+
+        logStorage("got cloud subjects", {
+          count: validatedCloudSubjects.length,
+        });
+
+        // Save to localStorage
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(validatedCloudSubjects)
+        );
+        localStorage.setItem("lastSyncTimestamp", new Date().toISOString());
+
+        // Update the cache
+        setInCache(cacheKey, validatedCloudSubjects);
+
+        // Notify about the update
+        notifySubjectsUpdated();
+
+        return validatedCloudSubjects;
+      }
+    } catch (error) {
+      console.error("Error force fetching from cloud:", error);
+    }
   }
 
   // Then try localStorage (fast)
@@ -445,24 +533,71 @@ export async function deleteGradeFromSubject(
 export async function getSubjectById(
   subjectId: string,
   userId?: string,
-  syncEnabled?: boolean
+  syncEnabled?: boolean,
+  forceRefresh?: boolean
 ): Promise<Subject | null> {
+  console.log(`Looking up subject: ${subjectId}`);
+
+  // CRITICAL FIX: FIRST try direct localStorage access for immediate response
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      const localStorageData = localStorage.getItem(STORAGE_KEY);
+      if (localStorageData) {
+        const allSubjects = JSON.parse(localStorageData);
+        if (Array.isArray(allSubjects)) {
+          const directSubject = allSubjects.find((s) => s.id === subjectId);
+          if (directSubject) {
+            console.log(`Found subject directly: ${directSubject.name}`);
+            return directSubject;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Direct localStorage lookup failed:", e);
+    }
+  }
+
+  // If direct lookup failed, use the cached version or fetch
   const cacheKey = `subject-${subjectId}-${userId || "anonymous"}`;
 
-  // Try memory cache first
-  const cachedSubject = getFromCache<Subject | null>(cacheKey);
+  // Clear cache if force refresh is requested
+  if (forceRefresh) {
+    memoryCache.delete(cacheKey);
+  }
+
+  // Try memory cache first if not forcing refresh
+  const cachedSubject = !forceRefresh
+    ? getFromCache<Subject | null>(cacheKey)
+    : null;
+
   if (cachedSubject !== null) {
+    console.log(`Found subject in cache: ${cachedSubject.name}`);
     return cachedSubject;
   }
 
   try {
-    const subjects = await getSubjectsFromStorage(userId, syncEnabled);
+    // Force fresh data from storage
+    console.log("Getting fresh subjects data from storage");
+    const subjects = await getSubjectsFromStorage(
+      userId,
+      syncEnabled,
+      forceRefresh
+    );
+
+    console.log(
+      `Got ${subjects.length} subjects, looking for ID: ${subjectId}`
+    );
     const subject = subjects.find((s) => s.id === subjectId) || null;
 
-    // Cache the result
-    setInCache(cacheKey, subject);
-
-    return subject;
+    if (subject) {
+      console.log(`Found subject in retrieved data: ${subject.name}`);
+      // Cache the result for future quick access
+      setInCache(cacheKey, subject);
+      return subject;
+    } else {
+      console.error(`Subject with ID ${subjectId} not found in subjects list`);
+      return null;
+    }
   } catch (error) {
     console.error("Error getting subject by ID:", error);
     return null;
@@ -611,7 +746,7 @@ export async function deleteSubject(
 }
 
 /**
- * Saves a grade to a subject with optimistic UI updates
+ * ENHANCED CRITICAL PATH: Saves a grade to a subject directly
  */
 export const saveGradeToSubject = async (
   subjectId: string,
@@ -619,88 +754,130 @@ export const saveGradeToSubject = async (
   userId?: string,
   syncEnabled?: boolean
 ): Promise<void> => {
+  const operationId = `grade-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 9)}`;
+  console.log(`[${operationId}] GRADE SAVE OPERATION STARTED`);
+
   try {
-    logStorage("saving grade", { subjectId, grade });
+    // 1. DIRECT STORAGE FIRST - most reliable method
+    let directSaveSuccess = false;
+    try {
+      // Get current data
+      const storageData = localStorage.getItem(STORAGE_KEY);
 
-    // Use cached subjects when possible to reduce storage reads
-    const cacheKey = `subjects-${userId || "anonymous"}`;
-    let subjects: Subject[] = [];
+      if (storageData) {
+        const allSubjects = JSON.parse(storageData);
 
-    // Try memory cache first for better performance
-    const cachedSubjects = getFromCache<Subject[]>(cacheKey);
-    if (cachedSubjects) {
-      subjects = cachedSubjects;
-    } else {
-      subjects = await getSubjectsFromStorage(userId, false); // Don't trigger cloud sync yet
+        if (Array.isArray(allSubjects)) {
+          const subjectIndex = allSubjects.findIndex((s) => s.id === subjectId);
+
+          if (subjectIndex >= 0) {
+            // Initialize or get grades array
+            if (!allSubjects[subjectIndex].grades) {
+              allSubjects[subjectIndex].grades = [];
+            }
+
+            // Add the grade
+            allSubjects[subjectIndex].grades.push(grade);
+
+            // Recalculate average
+            allSubjects[subjectIndex].averageGrade = calculateAverage(
+              allSubjects[subjectIndex].grades
+            );
+
+            // Save directly to localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allSubjects));
+
+            console.log(`[${operationId}] ✅ DIRECT SAVE SUCCESS`);
+            directSaveSuccess = true;
+          }
+        }
+      }
+    } catch (directError) {
+      console.error(`[${operationId}] ⚠️ DIRECT SAVE FAILED:`, directError);
     }
 
-    const subjectIndex = subjects.findIndex((s) => s.id === subjectId);
+    // 2. API METHOD AS FALLBACK
+    if (!directSaveSuccess) {
+      console.log(`[${operationId}] Using API method as fallback`);
+      const subjects = await getSubjectsFromStorage(userId, false);
+      const subjectIndex = subjects.findIndex((s) => s.id === subjectId);
 
-    if (subjectIndex === -1) {
-      throw new Error(`Subject not found with ID: ${subjectId}`);
+      if (subjectIndex === -1) {
+        throw new Error(`Subject with ID ${subjectId} not found`);
+      }
+
+      // Clone to avoid mutations
+      const updatedSubject = { ...subjects[subjectIndex] };
+
+      // Ensure grades array exists
+      updatedSubject.grades = updatedSubject.grades || [];
+
+      // Add grade and recalculate
+      updatedSubject.grades.push(grade);
+      updatedSubject.averageGrade = calculateAverage(updatedSubject.grades);
+
+      // Update in array
+      const updatedSubjects = [...subjects];
+      updatedSubjects[subjectIndex] = updatedSubject;
+
+      // Save through normal channel
+      await saveSubjectsToStorage(updatedSubjects, userId, syncEnabled);
+      console.log(`[${operationId}] ✅ API SAVE SUCCESS`);
     }
 
-    const subject = { ...subjects[subjectIndex] };
+    // 3. ENSURE CACHES ARE CLEARED
+    memoryCache.clear();
 
-    // Check for existing grade with same ID or properties
-    const existingIndex = subject.grades.findIndex(
-      (g) =>
-        g.id === grade.id ||
-        (g.value === grade.value &&
-          g.type === grade.type &&
-          g.date === grade.date)
+    // 4. EVENT NOTIFICATIONS
+    // Simple events first
+    window.dispatchEvent(new Event("gradeAdded"));
+    window.dispatchEvent(new Event("subjectsUpdated"));
+    window.dispatchEvent(new Event("gradesChanged"));
+
+    // Then custom event with details
+    window.dispatchEvent(
+      new CustomEvent("gradeAdded", {
+        detail: {
+          subjectId,
+          gradeId: grade.id,
+          eventId: operationId,
+        },
+      })
     );
 
-    if (existingIndex !== -1) {
-      // Update existing grade
-      subject.grades = [
-        ...subject.grades.slice(0, existingIndex),
-        grade,
-        ...subject.grades.slice(existingIndex + 1),
-      ];
-    } else {
-      // Add new grade
-      subject.grades = [...subject.grades, grade];
-    }
-
-    // Recalculate average
-    subject.averageGrade = calculateAverage(subject.grades);
-
-    // Update subjects array
-    const updatedSubjects = [...subjects];
-    updatedSubjects[subjectIndex] = subject;
-
-    // Update memory cache immediately for optimistic UI
-    setInCache(cacheKey, updatedSubjects);
-
-    // Update subject cache for optimistic UI
-    const subjectCacheKey = `subject-${subjectId}-${userId || "anonymous"}`;
-    setInCache(subjectCacheKey, subject);
-
-    // Notify UI for immediate feedback
-    window.dispatchEvent(new Event("subjectsUpdated"));
-
-    // Save to localStorage without waiting - this happens in the background
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSubjects));
-
-    // Then start the cloud sync in the background if enabled
+    // 5. CLOUD SYNC (if enabled)
     if (ENABLE_CLOUD_FEATURES && userId && syncEnabled) {
-      // This runs in the background - don't await it
-      syncSubjectsToCloud(userId, updatedSubjects).catch((e) => {
-        console.error("Background sync failed:", e);
-      });
+      try {
+        // Get latest data to sync
+        const latestData = localStorage.getItem(STORAGE_KEY);
+        const latestSubjects = latestData ? JSON.parse(latestData) : [];
+
+        // Sync in background
+        syncSubjectsToCloud(userId, latestSubjects)
+          .then(() => console.log(`[${operationId}] ☁️ CLOUD SYNC SUCCESS`))
+          .catch((cloudError) =>
+            console.error(`[${operationId}] ☁️ CLOUD SYNC FAILED:`, cloudError)
+          );
+      } catch (syncError) {
+        console.error(
+          `[${operationId}] Error preparing cloud sync:`,
+          syncError
+        );
+      }
     }
 
-    // Dispatch additional event with a small delay to ensure UI is updated
-    setTimeout(() => {
-      window.dispatchEvent(
-        new CustomEvent("gradeAdded", {
-          detail: { subjectId, grade },
-        })
-      );
-    }, 100);
+    console.log(`[${operationId}] 🎉 GRADE SAVE COMPLETED`);
   } catch (error) {
-    console.error("Error saving grade:", error);
+    console.error(`[${operationId}] 🔥 CRITICAL FAILURE:`, error);
+
+    // LAST RESORT: Force refresh after 2 seconds to ensure UI is updated
+    setTimeout(() => {
+      console.log("Dispatching forceRefresh event");
+      window.dispatchEvent(new CustomEvent("forceRefresh"));
+    }, 2000);
+
     throw error;
   }
 };
@@ -726,4 +903,386 @@ export function clearAllGradesData(): void {
   localStorage.removeItem("lastSyncTimestamp");
   memoryCache.clear();
   logStorage("cleared all data");
+}
+
+/**
+ * Clears cache for a specific subject
+ */
+export function clearSubjectCache(userId?: string, subjectId?: string): void {
+  if (userId && subjectId) {
+    // Clear cache for specific subject
+    const subjectCacheKey = `subject-${subjectId}-${userId || "anonymous"}`;
+    memoryCache.delete(subjectCacheKey);
+    logStorage("cleared cache for subject", { subjectId });
+  }
+}
+
+/**
+ * Clear cache specifically for forcing refresh
+ */
+export function clearCacheForRefresh(): void {
+  // Clear all memory cache
+  memoryCache.clear();
+
+  // Clear timestamp records to force fresh fetch
+  localStorage.removeItem("lastBgFetchTime");
+  localStorage.removeItem("lastCloudFetchTime");
+
+  logStorage("cleared cache for refresh");
+}
+
+/**
+ * Debug function to check subjects and grades
+ */
+export function debugSubjects(userId?: string): void {
+  const cacheKey = `subjects-${userId || "anonymous"}`;
+  const subjects = getFromCache<Subject[]>(cacheKey);
+
+  console.log("=== SUBJECTS DEBUG ===");
+  console.log("From cache:", subjects);
+
+  try {
+    const localStorageSubjects = localStorage.getItem(STORAGE_KEY);
+    console.log(
+      "From localStorage:",
+      localStorageSubjects ? JSON.parse(localStorageSubjects) : "No data"
+    );
+  } catch (e) {
+    console.error("Error reading from localStorage:", e);
+  }
+
+  console.log("=== END DEBUG ===");
+}
+
+/**
+ * Helper function to get Appwrite clients consistently
+ */
+export const getAppwriteClient = async () => {
+  try {
+    // Instead of calling initializeAppwrite and importedGetAppwriteClient (which causes recursion),
+    // directly create and configure the client
+    const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+    const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+
+    if (!endpoint || !projectId) {
+      throw new Error(
+        "Missing Appwrite configuration: endpoint or projectId not set"
+      );
+    }
+
+    // Create a new client directly
+    const client = new Client();
+    client.setEndpoint(endpoint).setProject(projectId);
+
+    // Create databases instance
+    const databases = new Databases(client);
+
+    // Return object with all required properties
+    return {
+      databases,
+      ID,
+      Query,
+    };
+  } catch (error) {
+    console.error("Error creating Appwrite client:", error);
+
+    // Try fallback client as last resort
+    const fallback = initializeFallbackClient();
+    if (fallback && fallback.databases) {
+      return {
+        databases: fallback.databases,
+        ID,
+        Query,
+      };
+    }
+
+    throw new Error("Appwrite databases client not properly initialized");
+  }
+};
+
+/**
+ * Save timetable entries to cloud storage with encryption
+ */
+export const saveTimetableEntriesToCloud = async (
+  entries: TimetableEntry[],
+  userId: string
+): Promise<void> => {
+  try {
+    // Get Appwrite clients reliably using our helper function
+    initializeAppwrite();
+    const clients = await getAppwriteClient();
+    if (!clients || !clients.databases) {
+      throw new Error("Appwrite databases client not properly initialized");
+    }
+
+    const { databases, ID } = clients;
+
+    console.log(
+      `Saving ${entries.length} timetable entries to cloud for user ${userId}`
+    );
+
+    // Clear existing entries
+    await clearCloudTimetableEntries(userId);
+
+    // Create new entries according to the schema
+    for (const entry of entries) {
+      // Format data to match database schema requirements
+      const documentData = {
+        userId: userId,
+        entryId: entry.id,
+        subjectId: entry.subjectId,
+        day: entry.day.toString(), // Must be string per schema
+        startTime: entry.startTime.toString(), // Must be string per schema
+        endTime: entry.endTime.toString(), // Must be string per schema
+        room: entry.room || "",
+        notes: entry.notes || "",
+        recurring: Boolean(entry.recurring),
+        color: entry.color || "",
+      };
+
+      await databases.createDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+        process.env.NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID!,
+        ID.unique(),
+        documentData
+      );
+    }
+
+    console.log(
+      `Successfully saved ${entries.length} timetable entries to cloud`
+    );
+    localStorage.setItem("lastTimetableSync", Date.now().toString());
+  } catch (error) {
+    console.error("Error saving timetable entries to cloud:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get timetable entries from cloud storage with decryption
+ */
+export const getTimetableEntriesFromCloud = async (
+  userId: string
+): Promise<TimetableEntry[]> => {
+  try {
+    const client = await getAppwriteClient();
+    const { databases, Query } = client;
+
+    // Fetch timetable entries from the cloud
+    const response = await databases.listDocuments(
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+      process.env.NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID!,
+      [Query.equal("userId", userId)]
+    );
+
+    // Transform to match expected format - preserve time formats to maintain minutes
+    return response.documents.map((doc) => ({
+      id: doc.entryId || doc.$id,
+      subjectId: doc.subjectId,
+      day: parseInt(doc.day), // Convert day to number
+      startTime: doc.startTime, // Keep time as string to preserve minutes
+      endTime: doc.endTime, // Keep time as string to preserve minutes
+      room: doc.room,
+      notes: doc.notes,
+      recurring: Boolean(doc.recurring),
+      color: doc.color,
+    }));
+  } catch (error) {
+    console.error("Error getting timetable entries from cloud:", error);
+    throw error;
+  }
+};
+
+/**
+ * Clear all timetable entries from cloud storage for a specific user
+ */
+const clearCloudTimetableEntries = async (userId: string): Promise<void> => {
+  try {
+    const clients = await getAppwriteClient();
+    if (!clients || !clients.databases) {
+      throw new Error("Appwrite databases client not properly initialized");
+    }
+
+    const { databases, Query } = clients;
+
+    console.log(`Clearing cloud timetable entries for user ${userId}`);
+
+    // Get all documents for this user
+    const response = await databases.listDocuments(
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
+      process.env.NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID ||
+        "timetableEntries",
+      [Query.equal("userId", userId)]
+    );
+
+    console.log(`Found ${response.documents.length} entries to delete`);
+
+    // Delete each document
+    for (const doc of response.documents) {
+      await databases.deleteDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
+        process.env.NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID ||
+          "timetableEntries",
+        doc.$id
+      );
+    }
+
+    console.log(
+      `Cleared ${response.documents.length} timetable entries from cloud`
+    );
+  } catch (error) {
+    console.error("Error clearing cloud timetable entries:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get timetable entries from storage (local or cloud based on user preference)
+ */
+export const getTimetableEntries = async (
+  userId?: string,
+  syncEnabled?: boolean
+): Promise<TimetableEntry[]> => {
+  try {
+    console.log(
+      `Getting timetable entries, userId: ${userId}, syncEnabled: ${syncEnabled}`
+    );
+
+    // Try to get local data first
+    const localTimetableStr = localStorage.getItem("timetableEntries");
+    let timetableEntries: TimetableEntry[] = [];
+
+    if (localTimetableStr) {
+      try {
+        timetableEntries = JSON.parse(localTimetableStr);
+        console.log(
+          `Loaded ${timetableEntries.length} entries from local storage`
+        );
+      } catch (e) {
+        console.error("Error parsing local timetable data:", e);
+        timetableEntries = [];
+      }
+    }
+
+    // If user is logged in and sync is enabled, get cloud data
+    if (userId && syncEnabled) {
+      console.log("Attempting to fetch cloud timetable entries");
+      try {
+        const cloudEntries = await getTimetableEntriesFromCloud(userId);
+
+        if (cloudEntries && cloudEntries.length > 0) {
+          console.log(
+            `Downloaded ${cloudEntries.length} timetable entries from cloud`
+          );
+
+          // Cloud data exists, replace local data
+          timetableEntries = cloudEntries;
+
+          // Update local storage with cloud data
+          localStorage.setItem(
+            "timetableEntries",
+            JSON.stringify(cloudEntries)
+          );
+          localStorage.setItem("lastTimetableSync", Date.now().toString());
+        } else if (timetableEntries.length > 0) {
+          // No cloud data but local data exists, push local to cloud
+          console.log("No cloud data found, pushing local data to cloud");
+          try {
+            await saveTimetableEntriesToCloud(timetableEntries, userId);
+          } catch (cloudError) {
+            console.error("Error pushing to cloud:", cloudError);
+          }
+        }
+      } catch (cloudFetchError) {
+        console.error("Error fetching from cloud:", cloudFetchError);
+      }
+    } else {
+      console.log(
+        "Cloud sync not enabled or user not logged in, using local data only"
+      );
+    }
+
+    return timetableEntries;
+  } catch (error) {
+    console.error("Error getting timetable entries:", error);
+    return [];
+  }
+};
+
+/**
+ * Save timetable entries to storage (local and cloud if enabled)
+ */
+export const saveTimetableEntries = async (
+  entries: TimetableEntry[],
+  userId?: string,
+  syncEnabled?: boolean
+): Promise<void> => {
+  try {
+    console.log(`Saving ${entries.length} timetable entries`);
+
+    // Ensure we have no duplicates (check by ID)
+    const uniqueEntries = Array.from(
+      new Map(entries.map((entry) => [entry.id, entry])).values()
+    );
+
+    if (uniqueEntries.length !== entries.length) {
+      console.log(
+        `Removed ${entries.length - uniqueEntries.length} duplicate entries`
+      );
+    }
+
+    // Save to local storage
+    localStorage.setItem("timetableEntries", JSON.stringify(uniqueEntries));
+
+    // If user is logged in and sync is enabled, save to cloud
+    if (userId && syncEnabled) {
+      console.log("Saving timetable entries to cloud");
+      await saveTimetableEntriesToCloud(uniqueEntries, userId);
+    }
+
+    // Trigger event for UI updates
+    window.dispatchEvent(new Event("timetableEntriesUpdated"));
+    console.log("Triggered timetableEntriesUpdated event");
+  } catch (error) {
+    console.error("Error saving timetable entries:", error);
+    throw error;
+  }
+};
+
+// Create a direct client for fallback situations
+let fallbackClient: Client | null = null;
+let fallbackDatabases: Databases | null = null;
+
+/**
+ * Initialize fallback Appwrite client if needed
+ */
+const initializeFallbackClient = () => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+    const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+
+    if (!endpoint || !projectId) {
+      console.error(
+        "Missing Appwrite fallback configuration: endpoint or projectId not set."
+      );
+      return null;
+    }
+
+    if (!fallbackClient) {
+      fallbackClient = new Client();
+      fallbackClient.setEndpoint(endpoint).setProject(projectId);
+      fallbackDatabases = new Databases(fallbackClient);
+      console.log("Fallback Appwrite client initialized");
+    }
+    return { client: fallbackClient, databases: fallbackDatabases };
+  } catch (error) {
+    console.error("Failed to initialize fallback Appwrite client:", error);
+    return null;
+  }
+};
+
+export function createOrGetClient() {
+  return getAppwriteClient();
 }

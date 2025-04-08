@@ -1,60 +1,71 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useAuth } from "@/contexts/AuthContext"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, Wifi, WifiOff } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertCircle, Wifi, WifiOff } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SignupFormProps {
-  onToggleForm: () => void
+  onToggleForm: () => void;
 }
 
 export function SignupForm({ onToggleForm }: SignupFormProps) {
-  const { signup, isOffline } = useAuth()
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { register, isOffline } = useAuth();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+    e.preventDefault();
+    setError(null);
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
+      setError("Passwords do not match");
+      return;
     }
 
     // Check if offline
     if (isOffline) {
-      setError("You are currently offline. Please check your internet connection and try again.")
-      return
+      setError(
+        "You are currently offline. Please check your internet connection and try again."
+      );
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      await signup(email, password, name)
+      await register(email, password, name);
     } catch (err: any) {
-      setError(err.message || "Failed to create account. Please try again.")
+      setError(err.message || "Failed to create account. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            Create an Account
+          </CardTitle>
           {isOffline ? (
             <div className="flex items-center text-destructive">
               <WifiOff className="h-4 w-4 mr-1" />
@@ -67,7 +78,9 @@ export function SignupForm({ onToggleForm }: SignupFormProps) {
             </div>
           )}
         </div>
-        <CardDescription>Sign up to save and sync your grades across devices</CardDescription>
+        <CardDescription>
+          Sign up to save and sync your grades across devices
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -79,7 +92,13 @@ export function SignupForm({ onToggleForm }: SignupFormProps) {
           )}
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
-            <Input id="name" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input
+              id="name"
+              placeholder="Your Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -116,7 +135,11 @@ export function SignupForm({ onToggleForm }: SignupFormProps) {
               minLength={8}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading || isOffline}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading || isOffline}
+          >
             {isLoading ? "Creating account..." : "Sign Up"}
           </Button>
         </form>
@@ -127,6 +150,5 @@ export function SignupForm({ onToggleForm }: SignupFormProps) {
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
-

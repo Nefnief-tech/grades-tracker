@@ -1,0 +1,130 @@
+<svg width="800" height="500" viewBox="0 0 800 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    /* Base colors (light mode) - darker version */
+    :root {
+      --bg-color: #F0F0F0;
+      --text-primary: #121212;
+      --text-secondary: #52525B;
+      --border-color: #D4D4D8;
+      --card-bg: #F8F8F8;
+      --hover-bg: #E4E4E7;
+    }
+    
+    /* Dark mode colors - darker version */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #121220;
+        --text-primary: #F8F8FB;
+        --text-secondary: #A1A1AA;
+        --border-color: #2C2C40;
+        --card-bg: #1E1E2E;
+        --hover-bg: #1A1A28;
+      }
+    }
+    
+    /* Support for parent element having .dark class */
+    :host-context(.dark) {
+      --bg-color: #121220;
+      --text-primary: #F8F8FB;
+      --text-secondary: #A1A1AA;
+      --border-color: #2C2C40;
+      --card-bg: #1E1E2E;
+      --hover-bg: #1A1A28;
+    }
+    
+    .bg-main { fill: var(--bg-color); }
+    .text-primary { fill: var(--text-primary); }
+    .text-secondary { fill: var(--text-secondary); }
+    .border-color { stroke: var(--border-color); }
+    .card-bg { fill: var(--card-bg); }
+    .hover-bg { fill: var(--hover-bg); }
+  </style>
+  
+  <!-- Background -->
+  <rect width="800" height="500" rx="12" class="bg-main" />
+  <rect width="800" height="500" rx="12" fill="url(#paint0_linear)" fill-opacity="0.1" />
+  
+  <!-- Header -->
+  <rect x="40" y="30" width="220" height="30" rx="6" class="text-primary" fill-opacity="0.8" />
+  <rect x="40" y="70" width="160" height="10" rx="4" class="text-secondary" fill-opacity="0.6" />
+  
+  <!-- Month Navigation -->
+  <rect x="40" y="110" width="160" height="20" rx="6" class="text-primary" fill-opacity="0.8" />
+  <rect x="660" y="110" width="100" height="20" rx="6" class="hover-bg" />
+  
+  <!-- Week Days -->
+  <rect x="40" y="150" width="102" height="20" rx="4" class="text-secondary" fill-opacity="0.2" />
+  <rect x="152" y="150" width="102" height="20" rx="4" class="text-secondary" fill-opacity="0.2" />
+  <rect x="264" y="150" width="102" height="20" rx="4" class="text-secondary" fill-opacity="0.2" />
+  <rect x="376" y="150" width="102" height="20" rx="4" class="text-secondary" fill-opacity="0.2" />
+  <rect x="488" y="150" width="102" height="20" rx="4" class="text-secondary" fill-opacity="0.2" />
+  <rect x="600" y="150" width="102" height="20" rx="4" class="text-secondary" fill-opacity="0.2" />
+  <rect x="712" y="150" width="48" height="20" rx="4" class="text-secondary" fill-opacity="0.2" />
+  
+  <!-- Calendar Grid -->
+  <!-- Row 1 -->
+  <rect x="40" y="180" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="152" y="180" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="264" y="180" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="376" y="180" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="488" y="180" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="600" y="180" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="712" y="180" width="48" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  
+  <!-- Row 2 -->
+  <rect x="40" y="270" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="152" y="270" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="264" y="270" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="376" y="270" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="488" y="270" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="600" y="270" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="712" y="270" width="48" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  
+  <!-- Row 3 -->
+  <rect x="40" y="360" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <circle cx="55" cy="375" r="10" fill="#3B82F6" fill-opacity="0.8" />
+  <rect x="152" y="360" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="264" y="360" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="376" y="360" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="488" y="360" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="600" y="360" width="102" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  <rect x="712" y="360" width="48" height="80" rx="6" class="border-color" stroke-width="1" fill="var(--card-bg)" />
+  
+  <!-- Calendar Events - Keep color consistent across themes -->
+  <!-- Math Test -->
+  <rect x="50" y="190" width="82" height="20" rx="4" fill="#EF4444" fill-opacity="0.2" />
+  <rect x="50" y="190" width="3" height="20" rx="1" fill="#EF4444" />
+  <rect x="58" y="195" width="65" height="4" rx="2" class="text-primary" fill-opacity="0.6" />
+  <rect x="58" y="202" width="40" height="3" rx="1.5" class="text-secondary" fill-opacity="0.6" />
+
+  <!-- Physics Class -->  
+  <rect x="162" y="190" width="82" height="20" rx="4" fill="#3B82F6" fill-opacity="0.2" />
+  <rect x="162" y="190" width="3" height="20" rx="1" fill="#3B82F6" />
+  <rect x="170" y="195" width="65" height="4" rx="2" class="text-primary" fill-opacity="0.6" />
+  <rect x="170" y="202" width="40" height="3" rx="1.5" class="text-secondary" fill-opacity="0.6" />
+
+  <!-- Grade -->
+  <rect x="274" y="190" width="82" height="20" rx="4" fill="#22C55E" fill-opacity="0.2" />
+  <rect x="274" y="190" width="3" height="20" rx="1" fill="#22C55E" />
+  <rect x="282" y="195" width="65" height="4" rx="2" class="text-primary" fill-opacity="0.6" />
+  <rect x="282" y="202" width="40" height="3" rx="1.5" class="text-secondary" fill-opacity="0.6" />
+
+  <!-- Assignment Due -->
+  <rect x="386" y="190" width="82" height="20" rx="4" fill="#A855F7" fill-opacity="0.2" />
+  <rect x="386" y="190" width="3" height="20" rx="1" fill="#A855F7" />
+  <rect x="394" y="195" width="65" height="4" rx="2" class="text-primary" fill-opacity="0.6" />
+  <rect x="394" y="202" width="40" height="3" rx="1.5" class="text-secondary" fill-opacity="0.6" />
+
+  <!-- Study Group -->
+  <rect x="274" y="220" width="82" height="20" rx="4" fill="#EAB308" fill-opacity="0.2" />
+  <rect x="274" y="220" width="3" height="20" rx="1" fill="#EAB308" />
+  <rect x="282" y="225" width="65" height="4" rx="2" class="text-primary" fill-opacity="0.6" />
+  <rect x="282" y="232" width="40" height="3" rx="1.5" class="text-secondary" fill-opacity="0.6" />
+  
+  <defs>
+    <linearGradient id="paint0_linear" x1="0" y1="0" x2="800" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6" stop-opacity="0.05" />
+      <stop offset="1" stop-color="#A855F7" stop-opacity="0.05" />
+    </linearGradient>
+  </defs>
+</svg>
