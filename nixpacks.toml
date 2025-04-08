@@ -3,7 +3,7 @@ nixPkgs = ['nodejs_20', 'openssl', 'gcc', 'python3']
 cmds = ['npm config set prefix "/usr/local" && npm install -g pnpm']
 
 [phases.install]
-cmds = ['npm install -g pnpm && pnpm install --frozen-lockfile']
+cmds = ['npm install -g pnpm && pnpm install ']
 
 [phases.build]
 cmds = ['pnpm build']
