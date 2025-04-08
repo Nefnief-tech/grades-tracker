@@ -6,8 +6,6 @@ import {
 } from "@/types/studySession";
 import { generateId } from "@/utils/idUtils";
 import { format, subDays, startOfWeek } from "date-fns";
-// Import encryption utilities
-import { encrypt, decrypt } from "@/lib/appwrite";
 
 // Local storage keys
 const SESSIONS_STORAGE_KEY = "studySessions";
@@ -28,48 +26,24 @@ export async function saveStudySession(
     if (!session.id) {
       session.id = generateId();
     }
-    
-    // Clone session to avoid modifying the original
-    const sessionToSave = { ...session };
-    
-    // IMPROVED ENCRYPTION - Always encrypt notes if they exist and userId is available
-    if (sessionToSave.notes && sessionToSave.userId) {
-      try {
-        console.log("⚙️ Encrypting notes for session", sessionToSave.id);
-        // Force string conversion to ensure compatibility
-        const notesStr = String(sessionToSave.notes);
-        
-        // Check if notes are already encrypted (to avoid double encryption)
-        if (!/^[A-Za-z0-9+/=]+$/.test(notesStr) || notesStr.length < 24) {
-          sessionToSave.notes = await encrypt(sessionToSave.userId, notesStr);
-          console.log("✓ Notes encrypted successfully");
-        } else {
-          console.log("⚠️ Notes appear to be already encrypted, skipping encryption");
-        }
-      } catch (encryptError) {
-        console.error("❌ Failed to encrypt notes:", encryptError);
-        // Don't fall back to plaintext - this ensures we notice the encryption failure
-        throw new Error("Failed to encrypt sensitive data: " + encryptError.message);
-      }
-    }
 
     // Get existing sessions from local storage
     const sessionsJson = localStorage.getItem(SESSIONS_STORAGE_KEY);
     let sessions: StudySession[] = sessionsJson ? JSON.parse(sessionsJson) : [];
 
     // Update if exists, otherwise add
-    const index = sessions.findIndex((s) => s.id === sessionToSave.id);
+    const index = sessions.findIndex((s) => s.id === session.id);
     if (index !== -1) {
-      sessions[index] = sessionToSave;
+      sessions[index] = session;
     } else {
-      sessions.push(sessionToSave);
+      sessions.push(session);
     }
 
     // Save to local storage
     localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessions));
 
     // If userId exists, save to cloud
-    if (sessionToSave.userId) {
+    if (session.userId) {
       try {
         const { databases, ID } = await getAppwriteClient();
         const databaseId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "";
@@ -78,29 +52,8 @@ export async function saveStudySession(
 
         // Check if document exists
         const docs = await databases.listDocuments(databaseId, collectionId, [
-          Query.equal("sessionId", sessionToSave.id),
+          Query.equal("sessionId", session.id),
         ]);
-
-        // IMPORTANT: Verify notes are encrypted before saving to the cloud
-        if (sessionToSave.notes && 
-            (!/^[A-Za-z0-9+/=]+$/.test(sessionToSave.notes) || 
-             sessionToSave.notes.length < 24)) {
-          console.error("❌ Attempting to save unencrypted notes to cloud. Aborting.");
-          throw new Error("Security check failed: Notes must be encrypted before saving to cloud");
-        }
-
-        // Prepare the document data - ensure all fields are properly typed
-        const documentData = {
-          userId: sessionToSave.userId,
-          sessionId: sessionToSave.id,
-          subjectId: sessionToSave.subjectId,
-          startTime: sessionToSave.startTime,
-          endTime: sessionToSave.endTime,
-          duration: sessionToSave.duration,
-          completed: sessionToSave.completed,
-          notes: sessionToSave.notes, // This should now be encrypted
-          pomodoros: sessionToSave.pomodoros,
-        };
 
         if (docs.documents.length > 0) {
           // Update existing document
@@ -108,29 +61,46 @@ export async function saveStudySession(
             databaseId,
             collectionId,
             docs.documents[0].$id,
-            documentData
+            {
+              userId: session.userId,
+              sessionId: session.id,
+              subjectId: session.subjectId,
+              startTime: session.startTime,
+              endTime: session.endTime,
+              duration: session.duration,
+              completed: session.completed,
+              notes: session.notes,
+              pomodoros: session.pomodoros,
+            }
           );
-          console.log("✓ Updated session in cloud with encrypted notes");
         } else {
           // Create new document
           await databases.createDocument(
             databaseId,
             collectionId,
             ID.unique(),
-            documentData
+            {
+              userId: session.userId,
+              sessionId: session.id,
+              subjectId: session.subjectId,
+              startTime: session.startTime,
+              endTime: session.endTime,
+              duration: session.duration,
+              completed: session.completed,
+              notes: session.notes,
+              pomodoros: session.pomodoros,
+            }
           );
-          console.log("✓ Created session in cloud with encrypted notes");
         }
       } catch (cloudError) {
-        console.error("❌ Error saving study session to cloud:", cloudError);
+        console.error("Error saving study session to cloud:", cloudError);
         // Continue without failing - local storage is the source of truth
       }
     }
 
-    // Return the original session (not the encrypted version)
     return session;
   } catch (error) {
-    console.error("❌ Error saving study session:", error);
+    console.error("Error saving study session:", error);
     throw error;
   }
 }
@@ -148,28 +118,6 @@ export async function getStudySessions(
     if (userId) {
       sessions = sessions.filter((s) => s.userId === userId);
 
-      // Decrypt notes in sessions
-      sessions = await Promise.all(
-        sessions.map(async (session) => {
-          // Create a copy to avoid mutating the original
-          const decryptedSession = { ...session };
-          
-          // Decrypt notes if they exist
-          if (decryptedSession.notes) {
-            try {
-              // Check if the notes appear to be encrypted
-              if (decryptedSession.notes.length > 24 && /^[A-Za-z0-9+/=]+$/.test(decryptedSession.notes)) {
-                decryptedSession.notes = await decrypt(userId, decryptedSession.notes);
-              }
-            } catch (decryptError) {
-              console.error("Failed to decrypt notes, using as is:", decryptError);
-            }
-          }
-          
-          return decryptedSession;
-        })
-      );
-
       // Try to fetch from cloud
       try {
         const { databases, Query } = await getAppwriteClient();
@@ -183,36 +131,18 @@ export async function getStudySessions(
         ]);
 
         if (docs.documents.length > 0) {
-          // Map cloud documents to StudySession objects with decrypted notes
-          const cloudSessions = await Promise.all(
-            docs.documents.map(async (doc) => {
-              let decryptedNotes = doc.notes || "";
-              
-              // Attempt to decrypt notes if they exist
-              if (decryptedNotes) {
-                try {
-                  // Check if the notes appear to be encrypted
-                  if (decryptedNotes.length > 24 && /^[A-Za-z0-9+/=]+$/.test(decryptedNotes)) {
-                    decryptedNotes = await decrypt(userId, decryptedNotes);
-                  }
-                } catch (decryptError) {
-                  console.error("Failed to decrypt cloud notes, using as is:", decryptError);
-                }
-              }
-
-              return {
-                id: doc.sessionId,
-                userId: doc.userId,
-                subjectId: doc.subjectId,
-                startTime: doc.startTime,
-                endTime: doc.endTime,
-                duration: doc.duration,
-                completed: doc.completed,
-                notes: decryptedNotes,
-                pomodoros: doc.pomodoros || 0,
-              };
-            })
-          );
+          // Map cloud documents to StudySession objects
+          const cloudSessions: StudySession[] = docs.documents.map((doc) => ({
+            id: doc.sessionId,
+            userId: doc.userId,
+            subjectId: doc.subjectId,
+            startTime: doc.startTime,
+            endTime: doc.endTime,
+            duration: doc.duration,
+            completed: doc.completed,
+            notes: doc.notes || "",
+            pomodoros: doc.pomodoros || 0,
+          }));
 
           // Merge cloud sessions with local sessions
           // Use a Map to deduplicate by ID, preferring cloud data
@@ -226,22 +156,8 @@ export async function getStudySessions(
 
           sessions = Array.from(sessionMap.values());
 
-          // Update local storage with merged data (with encrypted notes)
-          const sessionsForStorage = await Promise.all(
-            sessions.map(async (session) => {
-              const sessionForStorage = { ...session };
-              if (sessionForStorage.notes && sessionForStorage.userId) {
-                try {
-                  sessionForStorage.notes = await encrypt(sessionForStorage.userId, sessionForStorage.notes);
-                } catch (encryptError) {
-                  console.error("Failed to encrypt notes for storage:", encryptError);
-                }
-              }
-              return sessionForStorage;
-            })
-          );
-          
-          localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessionsForStorage));
+          // Update local storage with merged data
+          localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessions));
         }
       } catch (cloudError) {
         console.error("Error fetching study sessions from cloud:", cloudError);
