@@ -1,14 +1,19 @@
-/**
- * Utility functions for generating unique IDs
- */
+// Simple utility for ID generation using native methods (no external dependencies)
 
 /**
- * Generates a unique ID string
+ * Generates a unique ID string without external dependencies
  * @returns A random string ID
  */
 export function generateId(): string {
-  // Generate a random string with timestamp to ensure uniqueness
-  return Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+  // Create timestamp component (milliseconds since epoch)
+  const timestamp = new Date().getTime().toString(36);
+
+  // Create random component (multiple random numbers converted to base36)
+  const randomPart1 = Math.random().toString(36).substring(2, 10);
+  const randomPart2 = Math.random().toString(36).substring(2, 10);
+
+  // Combine for a reasonably unique ID
+  return `${timestamp}-${randomPart1}-${randomPart2}`;
 }
 
 /**

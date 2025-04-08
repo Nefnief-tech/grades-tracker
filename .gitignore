@@ -60,3 +60,6 @@ logs
 
 # Appwrite specific
 appwrite.json
+
+# Sound files
+/public/sounds/*.mp3
