@@ -3,7 +3,7 @@
     "steps": [
       {
         "name": "install",
-        "command": "pnpm install --no-frozen-lockfile"
+        "command": "pnpm install"
       },
       {
         "name": "build",

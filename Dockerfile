@@ -13,7 +13,7 @@ RUN apk add --no-cache libc6-compat python3 make g++
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
 
-# Install pnpm and dependencies - REMOVED frozen flag
+# Install pnpm and dependencies - REMOVED frozen flag entirely
 RUN npm install -g pnpm && \
     pnpm install
 
@@ -48,7 +48,7 @@ ENV NEXT_PUBLIC_OPTIMIZE_FONTS=true
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
 
-# Install pnpm and production dependencies only - REMOVED frozen flag
+# Install pnpm and production dependencies only - REMOVED frozen flag entirely
 RUN npm install -g pnpm && \
     pnpm install --prod
 

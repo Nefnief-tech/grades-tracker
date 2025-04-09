@@ -6,7 +6,7 @@
         "install": {
           "cmds": [
             "pnpm config set registry https://registry.npmjs.org",
-            "pnpm install --no-frozen-lockfile"
+            "pnpm install"
           ]
         },
         "build": {
