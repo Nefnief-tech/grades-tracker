@@ -76,7 +76,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { initializeAppwrite } from "@/lib/appwrite";
-import { formatTimeDisplay } from "@/utils/formatUtils";
+import { formatTimeDisplay as formatTimeFromUtils } from "@/utils/formatUtils";
 import {
   Popover,
   PopoverContent,
