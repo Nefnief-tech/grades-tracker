@@ -8,41 +8,77 @@ const withPWA = require("next-pwa")({
 });
 
 const nextConfig = {
-  // Enable image optimization
-  images: {
-    domains: ["localhost"],
-    formats: ["image/avif", "image/webp"],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  reactStrictMode: true,
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
+
+  output: "standalone",
+
+  // Define environment variables with defaults
+  env: {
+    NEXT_PUBLIC_APPWRITE_ENDPOINT:
+      process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "",
+    NEXT_PUBLIC_APPWRITE_PROJECT_ID:
+      process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "",
+    NEXT_PUBLIC_APPWRITE_DATABASE_ID:
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
+    NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID:
+      process.env.NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID || "",
+    NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID:
+      process.env.NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID || "",
+    NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID:
+      process.env.NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID || "",
+    NEXT_PUBLIC_APPWRITE_POMODORO_COLLECTION_ID:
+      process.env.NEXT_PUBLIC_APPWRITE_POMODORO_COLLECTION_ID || "",
+    NEXT_PUBLIC_ENABLE_CLOUD_FEATURES:
+      process.env.NEXT_PUBLIC_ENABLE_CLOUD_FEATURES || "true",
+    NEXT_PUBLIC_ENABLE_ENCRYPTION:
+      process.env.NEXT_PUBLIC_ENABLE_ENCRYPTION || "true",
+    NEXT_PUBLIC_DEBUG: process.env.NEXT_PUBLIC_DEBUG || "false",
   },
-  // Add content security policy
-  headers: async () => {
+
+  // Log environment setup during build time to help with debugging
+  onDemandEntries: {
+    // Add any specific config here
+  },
+
+  // Handle redirects
+  async redirects() {
     return [
       {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=3600, stale-while-revalidate=7200",
-          },
-        ],
+        source: "/app",
+        destination: "/",
+        permanent: true,
       },
     ];
   },
-  reactStrictMode: true,
-  // Disable TypeScript checking during build if environment variable is set
-  typescript: {
-    // This will completely ignore TypeScript errors during build
-    ignoreBuildErrors: true,
-  },
-  // Configure static generation to exclude problematic pages
-  output: "standalone",
-  // Move these from experimental to root level
-  skipTrailingSlashRedirect: true,
-  skipMiddlewareUrlNormalize: true,
-  experimental: {
-    // Remove the options that have been moved to root level
+
+  // Optimize image loading
+  images: {
+    domains: ["cloud.appwrite.io"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+    ],
   },
 };
+
+// Log environment variables during build (without revealing secrets)
+console.log("Building Next.js with environment:");
+console.log("- NODE_ENV:", process.env.NODE_ENV);
+console.log(
+  "- NEXT_PUBLIC_APPWRITE_ENDPOINT:",
+  process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT ? "Set ✓" : "Not set ✗"
+);
+console.log(
+  "- NEXT_PUBLIC_APPWRITE_PROJECT_ID:",
+  process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ? "Set ✓" : "Not set ✗"
+);
+console.log(
+  "- NEXT_PUBLIC_APPWRITE_DATABASE_ID:",
+  process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID ? "Set ✓" : "Not set ✗"
+);
 
 module.exports = withPWA(nextConfig);
