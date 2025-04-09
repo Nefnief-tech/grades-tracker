@@ -11,11 +11,12 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat python3 make g++
 
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json ./
+# Note: Don't copy pnpm-lock.yaml since it might not be compatible
 
-# Install pnpm and dependencies - REMOVED frozen flag entirely
+# Install pnpm and dependencies - EXPLICITLY use no-frozen-lockfile
 RUN npm install -g pnpm && \
-    pnpm install
+    pnpm install --no-frozen-lockfile
 
 # Copy application code
 COPY . .
@@ -46,11 +47,12 @@ ENV NEXT_PUBLIC_OPTIMIZE_CSS=true
 ENV NEXT_PUBLIC_OPTIMIZE_FONTS=true
 
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json ./
+# Note: Don't copy pnpm-lock.yaml since it might not be compatible
 
-# Install pnpm and production dependencies only - REMOVED frozen flag entirely
+# Install pnpm and production dependencies only - EXPLICITLY use no-frozen-lockfile
 RUN npm install -g pnpm && \
-    pnpm install --prod
+    pnpm install --no-frozen-lockfile --prod
 
 # Copy built application from builder stage
 COPY --from=builder /app/.next ./.next
