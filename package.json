@@ -10,6 +10,10 @@
     "deploy": "pnpm install --no-frozen-lockfile && next build",
     "railway:build": "bash ./scripts/build.sh"
   },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "dependencies": {
     "@dnd-kit/core": "^6.0.8",
     "@dnd-kit/sortable": "^7.0.2",
