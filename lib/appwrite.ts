@@ -366,6 +366,34 @@ if (ENABLE_CLOUD_FEATURES && isBrowser && !FORCE_LOCAL_MODE) {
   }
 }
 
+// Add or modify the cloud connection check function
+export async function checkCloudConnection(): Promise<boolean> {
+  try {
+    if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !appwriteClient) {
+      logAppwriteInfo("Cloud features are disabled or not initialized");
+      return false;
+    }
+
+    // Try a simple operation to test connection
+    const account = new Account(appwriteClient);
+
+    // Just check for the session status without requiring logged in user
+    await account.getSession("current").catch((err) => {
+      // 401 is expected if not logged in, but means the endpoint responded
+      if (err.code === 401) {
+        return { valid: true };
+      }
+      throw err;
+    });
+
+    logAppwriteInfo("Cloud connection check successful");
+    return true;
+  } catch (error) {
+    logAppwriteInfo("Cloud connection check failed:", error);
+    return false;
+  }
+}
+
 // Helper functions for authentication
 export const createAccount = async (
   email: string,

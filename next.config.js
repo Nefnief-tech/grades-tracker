@@ -14,6 +14,18 @@ const nextConfig = {
 
   output: "standalone",
 
+  // Add this to fix path resolution issues
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Fix duplicate module resolution paths
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "@/app": "/app",
+      };
+    }
+    return config;
+  },
+
   // Define environment variables with defaults
   env: {
     NEXT_PUBLIC_APPWRITE_ENDPOINT:
