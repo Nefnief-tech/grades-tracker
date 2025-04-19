@@ -26,14 +26,11 @@ const nextConfig = {
   typescript: {
     // This will completely ignore TypeScript errors during build
     ignoreBuildErrors: true,
-  },
-  // Configure static generation to exclude problematic pages
+  },  // Configure static generation to exclude problematic pages
   output: "standalone",
-  experimental: {
-    // Skip building the 404 page statically
-    skipTrailingSlashRedirect: true,
-    skipMiddlewareUrlNormalize: true,
-  },
+  // These options were moved out of experimental in Next.js 15
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
 };
 
 module.exports = nextConfig;

@@ -250,6 +250,27 @@ export function enableLocalModeOnly() {
   );
 }
 
+// Function to check if cloud connection is working
+export async function checkCloudConnection(): Promise<boolean> {
+  if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !appwriteClient) {
+    return false;
+  }
+
+  try {
+    if (!account) {
+      account = new Account(appwriteClient);
+    }
+    
+    // Try to get the account status - this is a lightweight API call
+    // that will succeed if connection is working
+    const status = await account.get();
+    return status.$id !== undefined;
+  } catch (error) {
+    logAppwriteInfo("Cloud connection check failed:", error);
+    return false;
+  }
+}
+
 // Clear initialization errors for tests
 if (typeof window !== "undefined") {
   // Add a global function to manually enable local mode (for debugging)
