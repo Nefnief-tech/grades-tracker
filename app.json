@@ -1,0 +1,42 @@
+{
+  "name": "grades-tracker",
+  "description": "A Next.js application for tracking academic grades",
+  "keywords": ["education", "grades", "nextjs", "react"],
+  "website": "https://grades.nief.tech/",
+  "repository": "https://github.com/Nefnief-tech/grades-tracker",
+  "logo": "https://grades.nief.tech/grade-tracker-logo.svg",
+  "success_url": "/",
+  "scripts": {
+    "postdeploy": "npm run build"
+  },
+  "env": {
+    "NEXT_PUBLIC_APPWRITE_ENDPOINT": {
+      "description": "Your Appwrite API endpoint URL",
+      "value": "https://cloud.appwrite.io/v1"
+    },
+    "NEXT_PUBLIC_APPWRITE_PROJECT_ID": {
+      "description": "Your Appwrite project ID",
+      "required": true
+    },
+    "NEXT_PUBLIC_APPWRITE_DATABASE_ID": {
+      "description": "Your Appwrite database ID",
+      "required": true
+    },
+    "NODE_ENV": {
+      "description": "Environment setting",
+      "value": "production"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "standard-1x"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "addons": []
+}

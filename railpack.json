@@ -1,0 +1,14 @@
+{
+  "build": {
+    "steps": [
+      {
+        "name": "install",
+        "command": "pnpm install"
+      },
+      {
+        "name": "build",
+        "command": "pnpm run build"
+      }
+    ]
+  }
+}

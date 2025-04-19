@@ -1,0 +1,21 @@
+{
+  "build": {
+    "builder": "nixpacks",
+    "nixpacksPlan": {
+      "phases": {
+        "install": {
+          "cmds": [
+            "pnpm config set registry https://registry.npmjs.org",
+            "pnpm install"
+          ]
+        },
+        "build": {
+          "cmds": ["pnpm run build"]
+        }
+      }
+    }
+  },
+  "deploy": {
+    "startCommand": "node .next/standalone/server.js"
+  }
+}
