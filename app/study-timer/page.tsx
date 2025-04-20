@@ -335,14 +335,25 @@ export default function StudyTimerPage() {
     }
   };
 
-  // Get the background color based on current mode
-  const getBackgroundColor = () => {
+  // Get the color for timer elements based on current mode
+  const getTimerColor = () => {
     if (mode === TimerMode.WORK) {
-      return "bg-gradient-to-br from-red-100/50 to-red-50 dark:from-red-950/20 dark:to-background";
+      return "text-red-600 dark:text-red-500";
     } else if (mode === TimerMode.SHORT_BREAK) {
-      return "bg-gradient-to-br from-green-100/50 to-green-50 dark:from-green-950/20 dark:to-background";
+      return "text-green-600 dark:text-green-500";
     } else {
-      return "bg-gradient-to-br from-blue-100/50 to-blue-50 dark:from-blue-950/20 dark:to-background";
+      return "text-blue-600 dark:text-blue-500";
+    }
+  };
+
+  // Get button background color based on mode for active buttons
+  const getButtonColor = () => {
+    if (mode === TimerMode.WORK) {
+      return "bg-red-600 hover:bg-red-700";
+    } else if (mode === TimerMode.SHORT_BREAK) {
+      return "bg-green-600 hover:bg-green-700";
+    } else {
+      return "bg-blue-600 hover:bg-blue-700";
     }
   };
 
@@ -373,9 +384,7 @@ export default function StudyTimerPage() {
   }
 
   return (
-    <div
-      className={`min-h-[calc(100vh-4rem)] ${getBackgroundColor()} transition-colors duration-500`}
-    >
+    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-background/50 to-background/80">
       <div className="container py-10 flex flex-col items-center">
         <div className="w-full max-w-3xl">
           <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">
@@ -393,9 +402,7 @@ export default function StudyTimerPage() {
                     <Button
                       variant={mode === TimerMode.WORK ? "default" : "outline"}
                       className={`flex gap-2 ${
-                        mode === TimerMode.WORK
-                          ? "bg-red-600 hover:bg-red-700"
-                          : ""
+                        mode === TimerMode.WORK ? getButtonColor() : ""
                       }`}
                       onClick={() => handleModeChange(TimerMode.WORK)}
                     >
@@ -407,9 +414,7 @@ export default function StudyTimerPage() {
                         mode === TimerMode.SHORT_BREAK ? "default" : "outline"
                       }
                       className={`flex gap-2 ${
-                        mode === TimerMode.SHORT_BREAK
-                          ? "bg-green-600 hover:bg-green-700"
-                          : ""
+                        mode === TimerMode.SHORT_BREAK ? getButtonColor() : ""
                       }`}
                       onClick={() => handleModeChange(TimerMode.SHORT_BREAK)}
                     >
@@ -421,9 +426,7 @@ export default function StudyTimerPage() {
                         mode === TimerMode.LONG_BREAK ? "default" : "outline"
                       }
                       className={`flex gap-2 ${
-                        mode === TimerMode.LONG_BREAK
-                          ? "bg-blue-600 hover:bg-blue-700"
-                          : ""
+                        mode === TimerMode.LONG_BREAK ? getButtonColor() : ""
                       }`}
                       onClick={() => handleModeChange(TimerMode.LONG_BREAK)}
                     >
@@ -459,30 +462,15 @@ export default function StudyTimerPage() {
                       strokeDasharray="283"
                       strokeLinecap="round"
                       strokeDashoffset={283 - (283 * calculateProgress()) / 100}
-                      className={`
-                        ${
-                          mode === TimerMode.WORK
-                            ? "text-red-600 dark:text-red-500"
-                            : ""
-                        }
-                        ${
-                          mode === TimerMode.SHORT_BREAK
-                            ? "text-green-600 dark:text-green-500"
-                            : ""
-                        }
-                        ${
-                          mode === TimerMode.LONG_BREAK
-                            ? "text-blue-600 dark:text-blue-500"
-                            : ""
-                        }
-                        transition-all duration-1000
-                      `}
+                      className={`${getTimerColor()} transition-all duration-1000`}
                     />
                   </svg>
 
                   {/* Time display */}
                   <div className="absolute inset-0 flex items-center justify-center flex-col">
-                    <div className="text-5xl font-mono font-semibold">
+                    <div
+                      className={`text-5xl font-mono font-semibold ${getTimerColor()}`}
+                    >
                       {formatTime(timeLeft)}
                     </div>
                     <div className="text-sm text-muted-foreground mt-2 capitalize">
@@ -498,7 +486,11 @@ export default function StudyTimerPage() {
                 {/* Controls */}
                 <div className="flex gap-2 mb-8">
                   {!isActive ? (
-                    <Button onClick={handleStart} size="lg" className="gap-2">
+                    <Button
+                      onClick={handleStart}
+                      size="lg"
+                      className={`gap-2 ${getButtonColor()}`}
+                    >
                       <Play className="h-4 w-4" />
                       Start
                     </Button>
@@ -534,7 +526,9 @@ export default function StudyTimerPage() {
                   <Card className="bg-background/50">
                     <CardContent className="p-4 flex flex-col items-center">
                       <p className="text-sm text-muted-foreground">Pomodoros</p>
-                      <p className="text-2xl font-bold">{completedPomodoros}</p>
+                      <p className={`text-2xl font-bold ${getTimerColor()}`}>
+                        {completedPomodoros}
+                      </p>
                     </CardContent>
                   </Card>
 
@@ -660,7 +654,7 @@ export default function StudyTimerPage() {
                               <Button
                                 onClick={() => setIsEndingSession(true)}
                                 variant="default"
-                                className="gap-2"
+                                className={`gap-2 ${getButtonColor()}`}
                                 disabled={!currentSession}
                               >
                                 <Check className="h-4 w-4" />
@@ -866,7 +860,12 @@ export default function StudyTimerPage() {
               <Button variant="outline" onClick={() => setShowSettings(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleUpdateSettings}>Save Changes</Button>
+              <Button
+                onClick={handleUpdateSettings}
+                className={getButtonColor()}
+              >
+                Save Changes
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -889,7 +888,9 @@ export default function StudyTimerPage() {
               >
                 Cancel
               </Button>
-              <Button onClick={handleEndSession}>End Session</Button>
+              <Button onClick={handleEndSession} className={getButtonColor()}>
+                End Session
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -4,7 +4,7 @@ const withPWA = require("next-pwa")({
   dest: "public",
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
+  disable: false, // Enable PWA in all environments
 });
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -46,9 +46,6 @@ const nextConfig = {
   // These options were moved out of experimental in Next.js 15
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,
-
-  // Fix CSS loading issues by ensuring proper style loading
-  cssModules: true,
 
   // Fix webpack path resolution
   webpack: (config, { isServer }) => {

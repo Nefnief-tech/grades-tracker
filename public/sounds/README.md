@@ -1,12 +1,16 @@
 # Sound Files for Study Timer
 
-This directory contains sound files used by the Study Timer feature:
+This directory contains sound files used by the Pomodoro study timer feature:
 
-- `bell.mp3` - Notification sound for when a timer completes
-- `tick.mp3` - Subtle tick sound for when the timer starts
+## Files
 
-If the sound files are missing, the application will fall back to generating sounds using the Web Audio API.
+- `bell.mp3`: A bell sound that plays when a timer session ends
+- `tick.mp3`: A subtle tick sound that plays periodically during active timer sessions
 
 ## Attribution
 
-These sound files should be free for non-commercial use. If replacing them, ensure you have proper licenses.
+These sounds should be free-to-use audio files. If you plan to distribute this application, please ensure you have appropriate licenses for these files or replace them with properly licensed alternatives.
+
+## Usage
+
+The study timer component automatically loads these files when the timer is used. Make sure these files are available in this directory for the Pomodoro timer to function properly.

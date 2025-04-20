@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "deploy": "pnpm install --no-frozen-lockfile && next build"
+    "deploy": "pnpm install --no-frozen-lockfile && next build",
+    "download-sounds": "node -e \"const { execSync } = require('child_process'); try { execSync('scripts/download-sounds.bat', {stdio: 'inherit'}); } catch(e) { try { execSync('bash scripts/download-sounds.sh', {stdio: 'inherit'}); } catch(e2) { console.error('Failed to download sounds:', e2); } }\""
   },
   "dependencies": {
     "@dnd-kit/core": "^6.0.8",
