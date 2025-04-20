@@ -21,12 +21,10 @@ const nextConfig = {
     ],
   },
 
-  // Explicitly set output to export static files
-  output: "standalone",
-  //before ^^^^^^^^^^-export
+  // Set output mode to export static files for standalone deployment
+  output: "export",
 
-  // Disable various optimizations that might be causing issues
-  swcMinify: false,
+  // Remove swcMinify as it's no longer supported in Next.js 15.1.0
 
   // Simplified webpack config focused on CSS reliability
   webpack: (config, { dev }) => {
