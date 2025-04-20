@@ -1,64 +1,73 @@
 "use client";
 
-import React, { useState, useRef, DragEvent } from "react";
-import {
-  KanbanColumn as ColumnType,
-  KanbanCard as CardType,
-} from "@/types/kanban";
-import { KanbanCardComponent } from "./KanbanCard";
+import React, { useState } from "react";
+import { KanbanColumn as ColumnType, KanbanCard } from "@/types/kanban";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  MoreHorizontal,
-  Plus,
-  X,
-  Check,
-  Trash,
-  Edit,
-  ChevronLeft,
-  ChevronRight,
-  MoveHorizontal,
-  Brush,
-} from "lucide-react";
-import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Empty } from "@/components/Empty";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
+import { KanbanCardComponent } from "./KanbanCard";
+import {
+  GripVertical,
+  MoreVertical,
+  Plus,
+  ArrowLeft,
+  ArrowRight,
+  X,
+  Calendar,
+  Tag,
+  ChevronDown,
+  Edit,
+  Trash2,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface KanbanColumnProps {
   column: ColumnType;
-  cards: CardType[];
+  cards: KanbanCard[];
   onCardCreate: (data: {
     title: string;
     description?: string;
-  }) => Promise<CardType>;
-  onCardUpdate: (id: string, data: Partial<CardType>) => Promise<CardType>;
+    priority?: "low" | "medium" | "high";
+    dueDate?: string;
+    subjectId?: string;
+    labels?: string[];
+  }) => Promise<KanbanCard>;
+  onCardUpdate: (id: string, data: Partial<KanbanCard>) => Promise<KanbanCard>;
   onCardDelete: (id: string) => Promise<boolean>;
   onColumnUpdate: (data: Partial<ColumnType>) => Promise<ColumnType>;
   onColumnDelete: () => Promise<boolean>;
@@ -66,12 +75,12 @@ interface KanbanColumnProps {
   onMoveRight: () => void;
   canMoveLeft: boolean;
   canMoveRight: boolean;
-  columnsMap: Record<string, string>; // Map of column IDs to titles for moving cards
+  columnsMap: Record<string, string>;
   onMoveCard: (
     cardId: string,
     sourceColumnId: string,
     destinationColumnId: string
-  ) => void;
+  ) => Promise<any>;
   highlightOverdue?: boolean;
 }
 
@@ -92,181 +101,20 @@ export function KanbanColumn({
   highlightOverdue = true,
 }: KanbanColumnProps) {
   const [newCardDialogOpen, setNewCardDialogOpen] = useState(false);
-  const [newCardTitle, setNewCardTitle] = useState("");
-  const [newCardDescription, setNewCardDescription] = useState("");
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(column.title);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [draggedOverIndex, setDraggedOverIndex] = useState<number | null>(null);
+  const [editColumnDialogOpen, setEditColumnDialogOpen] = useState(false);
+  const [newCardData, setNewCardData] = useState({
+    title: "",
+    description: "",
+    priority: "medium" as "low" | "medium" | "high",
+  });
+  const [editedColumnTitle, setEditedColumnTitle] = useState(column.title);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const { toast } = useToast();
 
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [columnColor, setColumnColor] = useState(column.color || "#e0e0e0");
-  const [showColorPicker, setShowColorPicker] = useState(false);
-
-  // Enhanced brighter color palette with better visibility
-  const columnColors = [
-    // Bright colors
-    "#FF5252", // bright red
-    "#FF9800", // bright orange
-    "#FFEB3B", // bright yellow
-    "#4CAF50", // bright green
-    "#2196F3", // bright blue
-    "#9C27B0", // bright purple
-    "#F06292", // bright pink
-
-    // Softer colors but still vibrant
-    "#81C784", // softer green
-    "#64B5F6", // softer blue
-    "#FFB74D", // softer orange
-    "#BA68C8", // softer purple
-    "#4DD0E1", // teal
-    "#FFF176", // softer yellow
-    "#E57373", // softer red
-
-    // Pastel options
-    "#B2EBF2", // pastel blue
-    "#C8E6C9", // pastel green
-    "#F8BBD0", // pastel pink
-    "#FFE0B2", // pastel orange
-    "#D1C4E9", // pastel purple
-
-    // Neutral options
-    "#E0E0E0", // light gray
-    "#BDBDBD", // medium gray
-    "#9E9E9E", // dark gray
-  ];
-
-  // Update column color with enhanced visual feedback
-  const handleColorChange = async (color: string) => {
-    setColumnColor(color);
-    setShowColorPicker(false);
-    await onColumnUpdate({ color });
-
-    // Provide feedback on color change
-    toast({
-      description: "Column color updated",
-    });
-  };
-
-  // Improved drag and drop handlers
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-    // Only set to false if we're leaving the column (not entering a child element)
-    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-    setIsDragOver(false);
-  };
-
-  // Improved drop handler to prevent duplication
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-
-    // Only process the drop once
-    e.stopPropagation();
-
-    const cardId = e.dataTransfer.getData("text/plain");
-    const sourceColumnId = e.dataTransfer.getData("source-column");
-
-    setIsDragOver(false);
-    setDraggedOverIndex(null);
-
-    if (!cardId) {
-      console.log("No card ID in drop data");
-      return;
-    }
-
-    // Log for debugging
-    console.log(
-      `Drop received for card ${cardId} from ${
-        sourceColumnId || "unknown"
-      } to ${column.id}`
-    );
-
-    // Skip if trying to drop in the same column
-    if (sourceColumnId === column.id) {
-      console.log("Card dropped in same column, skipping move");
-      return;
-    }
-
-    // Check if card already exists in this column to prevent duplicates
-    if (cards.some((card) => card.id === cardId)) {
-      console.log("Card already exists in this column, skipping move");
-      return;
-    }
-
-    // Move the card with the source column ID
-    if (sourceColumnId) {
-      onMoveCard(cardId, sourceColumnId, column.id);
-      return;
-    }
-
-    console.log("Could not determine source column for move");
-  };
-
-  // Group cards by priority for better visual organization
-  const getCardsGroupedByPriority = () => {
-    const highPriority = cards.filter((card) => card.priority === "high");
-    const mediumPriority = cards.filter((card) => card.priority === "medium");
-    const lowPriority = cards.filter((card) => card.priority === "low");
-    const noPriority = cards.filter((card) => !card.priority);
-
-    return [...highPriority, ...mediumPriority, ...lowPriority, ...noPriority];
-  };
-
-  // Handle column title edit
-  const handleTitleSave = async () => {
-    if (!editedTitle.trim()) {
-      toast({
-        title: "Column title required",
-        description: "Please enter a title for the column",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await onColumnUpdate({ title: editedTitle.trim() });
-      setIsEditingTitle(false);
-      toast({
-        description: "Column title updated",
-      });
-    } catch (error) {
-      console.error("Failed to update column title:", error);
-      toast({
-        title: "Update failed",
-        description: "Failed to update column title",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handle column deletion
-  const handleDeleteColumn = async () => {
-    try {
-      await onColumnDelete();
-      setDeleteDialogOpen(false);
-      toast({
-        description: "Column deleted successfully",
-      });
-    } catch (error) {
-      console.error("Failed to delete column:", error);
-      toast({
-        title: "Delete failed",
-        description: "Failed to delete column",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handle card creation
+  // Handle creating a new card
   const handleCreateCard = async () => {
-    if (!newCardTitle.trim()) {
+    if (!newCardData.title.trim()) {
       toast({
         title: "Card title required",
         description: "Please enter a title for the card",
@@ -276,302 +124,330 @@ export function KanbanColumn({
     }
 
     try {
-      await onCardCreate({
-        title: newCardTitle.trim(),
-        description: newCardDescription.trim() || undefined,
-      });
+      setIsSubmitting(true);
+      const cardData = {
+        ...newCardData,
+        dueDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined,
+      };
 
-      setNewCardTitle("");
-      setNewCardDescription("");
+      await onCardCreate(cardData);
+      setNewCardData({
+        title: "",
+        description: "",
+        priority: "medium",
+      });
+      setSelectedDate(undefined);
       setNewCardDialogOpen(false);
       toast({
-        description: "Card created successfully",
+        title: "Card created",
+        description: "Your new card has been created.",
       });
     } catch (error) {
       console.error("Failed to create card:", error);
       toast({
-        title: "Create failed",
-        description: "Failed to create card",
+        title: "Failed to create card",
+        description: "There was an error creating your card.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Enhanced column drag start with data transfer
-  const handleColumnDragStart = (e: DragEvent<HTMLDivElement>) => {
-    e.dataTransfer.setData("column-id", column.id);
-    e.dataTransfer.effectAllowed = "move";
-    setTimeout(() => setIsDragging(true), 0);
+  // Handle updating the column title
+  const handleUpdateColumn = async () => {
+    if (!editedColumnTitle.trim()) {
+      toast({
+        title: "Column title required",
+        description: "Please enter a title for the column",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await onColumnUpdate({ title: editedColumnTitle.trim() });
+      setEditColumnDialogOpen(false);
+      toast({
+        title: "Column updated",
+        description: "Your column has been updated.",
+      });
+    } catch (error) {
+      console.error("Failed to update column:", error);
+      toast({
+        title: "Failed to update column",
+        description: "There was an error updating your column.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleColumnDragEnd = () => {
-    setIsDragging(false);
-  };
-
-  const handleCardDragOver = (index: number) => {
-    setDraggedOverIndex(index);
+  // Handle deleting a column with confirmation
+  const handleDeleteColumn = async () => {
+    if (window.confirm(`Are you sure you want to delete "${column.title}"?`)) {
+      try {
+        const success = await onColumnDelete();
+        if (success) {
+          toast({
+            title: "Column deleted",
+            description: "Your column has been deleted.",
+          });
+        } else {
+          toast({
+            title: "Failed to delete column",
+            description: "There was an error deleting your column.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to delete column:", error);
+        toast({
+          title: "Failed to delete column",
+          description: "There was an error deleting your column.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   return (
-    <div
-      className={`flex flex-col bg-background border rounded-lg w-80 shrink-0 max-h-full ${
-        isDragging ? "opacity-50 z-10" : ""
-      } ${
-        isDragOver ? "border-primary border-dashed border-2 bg-primary/5" : ""
-      }`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      draggable="true"
-      onDragStart={handleColumnDragStart}
-      onDragEnd={handleColumnDragEnd}
-    >
-      {/* Column Header with enhanced color opacity for better visibility */}
-      <div
-        className="p-3 font-medium border-b flex items-center justify-between rounded-t-lg"
-        style={{
-          backgroundColor: columnColor ? `${columnColor}40` : "var(--muted)", // Increased opacity for better visibility
-          borderColor: columnColor ? `${columnColor}` : "var(--border)", // Solid border color
-        }}
-      >
-        <div className="flex items-center gap-2 flex-1">
-          {/* Column Title (Editable) */}
-          {isEditingTitle ? (
-            <div className="flex-1 flex items-center gap-1">
-              <Input
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                className="h-7 py-1 text-sm"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleTitleSave();
-                  if (e.key === "Escape") {
-                    setIsEditingTitle(false);
-                    setEditedTitle(column.title);
-                  }
-                }}
-              />
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6"
-                onClick={handleTitleSave}
-              >
-                <Check className="h-3 w-3" />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6"
-                onClick={() => {
-                  setIsEditingTitle(false);
-                  setEditedTitle(column.title);
-                }}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          ) : (
-            <div
-              className="flex-1 truncate cursor-pointer"
-              onDoubleClick={() => setIsEditingTitle(true)}
-            >
-              {column.title}
-            </div>
-          )}
-        </div>
-
-        {/* Column Actions */}
-        <div className="flex items-center">
-          <span className="text-xs text-muted-foreground mr-2 bg-background/80 px-2 py-0.5 rounded-full">
+    <div className="flex-shrink-0 w-80 flex flex-col bg-background rounded-md border shadow">
+      <div className="p-3 border-b flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 w-full">
+          <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+          <h3 className="font-medium text-sm flex-grow truncate">
+            {column.title}
+          </h3>
+          <Badge variant="outline" className="text-xs">
             {cards.length}
-          </span>
-
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={onMoveLeft}
-              disabled={!canMoveLeft}
-            >
-              <ChevronLeft className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={onMoveRight}
-              disabled={!canMoveRight}
-            >
-              <ChevronRight className="h-3 w-3" />
-            </Button>
-          </div>
-
+          </Badge>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <MoreVertical className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsEditingTitle(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Title
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setEditColumnDialogOpen(true)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit column
               </DropdownMenuItem>
-
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <Brush className="h-4 w-4 mr-2" />
-                  Change Color
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="p-2">
-                  <div className="grid grid-cols-5 gap-1 mb-2">
-                    {columnColors.map((color) => (
-                      <div
-                        key={color}
-                        className="w-6 h-6 rounded-full cursor-pointer hover:scale-110 transition-transform"
-                        style={{ backgroundColor: color }}
-                        onClick={() => handleColorChange(color)}
-                        title={color} // Add title for color identification
-                      />
-                    ))}
-                  </div>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-
-              <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => setDeleteDialogOpen(true)}
+                onClick={handleDeleteColumn}
+                className="text-destructive"
               >
-                <Trash className="h-4 w-4 mr-2" />
-                Delete Column
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete column
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onMoveLeft} disabled={!canMoveLeft}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Move left
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onMoveRight} disabled={!canMoveRight}>
+                <ArrowRight className="mr-2 h-4 w-4" />
+                Move right
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* Cards Container with improved drop target styling */}
-      <div
-        className={`p-2 flex-1 overflow-y-auto max-h-[calc(100vh-300px)] min-h-[100px] ${
-          isDragOver ? "bg-primary/5" : ""
-        }`}
+      <ScrollArea
+        className="flex-grow p-2"
+        style={{ height: "calc(100vh - 260px)" }}
       >
-        {cards.length > 0 ? (
-          <div className="space-y-2">
-            {cards.map((card, index) => (
-              <div
-                key={card.id}
-                className={
-                  draggedOverIndex === index
-                    ? "border-t-2 border-primary bg-primary/10 rounded-md"
-                    : ""
-                }
-              >
-                <KanbanCardComponent
-                  card={card}
-                  onUpdate={(data) => onCardUpdate(card.id, data)}
-                  onDelete={() => onCardDelete(card.id)}
-                  columnsMap={columnsMap}
-                  onMoveToColumn={(destinationColumnId) =>
-                    onMoveCard(card.id, column.id, destinationColumnId)
-                  }
-                  onDragOver={() => handleCardDragOver(index)}
-                  highlightOverdue={highlightOverdue}
-                  sourceColumnId={column.id} // Pass source column ID for better tracking
-                />
-              </div>
-            ))}
+        {cards.length === 0 ? (
+          <div className="p-2 text-center text-muted-foreground text-sm">
+            No cards yet
           </div>
         ) : (
-          <div
-            className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-md h-full flex items-center justify-center"
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          >
-            Drop cards here
+          <div className="space-y-2">
+            {cards.map((card) => (
+              <KanbanCardComponent
+                key={card.id}
+                card={card}
+                onUpdate={(data) => onCardUpdate(card.id, data)}
+                onDelete={() => onCardDelete(card.id)}
+                columnsMap={columnsMap}
+                currentColumnId={column.id}
+                onMoveCard={onMoveCard}
+                highlightOverdue={highlightOverdue}
+              />
+            ))}
           </div>
         )}
-      </div>
+      </ScrollArea>
 
-      {/* Add Card Button */}
       <div className="p-2 border-t">
         <Button
           variant="ghost"
+          size="sm"
           className="w-full justify-start text-muted-foreground hover:text-foreground"
           onClick={() => setNewCardDialogOpen(true)}
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Card
+          <Plus className="mr-1 h-4 w-4" />
+          Add a card
         </Button>
       </div>
 
-      {/* New Card Dialog */}
+      {/* Add new card dialog */}
       <Dialog open={newCardDialogOpen} onOpenChange={setNewCardDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add new card</DialogTitle>
+            <DialogTitle>Add a new card</DialogTitle>
             <DialogDescription>
-              Create a new card for this column.
+              Create a new card for the "{column.title}" column.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+
+          <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
+              <label htmlFor="title" className="text-sm font-medium">
+                Title <span className="text-destructive">*</span>
+              </label>
               <Input
-                placeholder="Card title"
-                value={newCardTitle}
-                onChange={(e) => setNewCardTitle(e.target.value)}
-                autoFocus
+                id="title"
+                value={newCardData.title}
+                onChange={(e) =>
+                  setNewCardData({ ...newCardData, title: e.target.value })
+                }
+                placeholder="Enter card title"
               />
             </div>
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Description (optional)
+              <label htmlFor="description" className="text-sm font-medium">
+                Description
               </label>
               <Textarea
-                placeholder="Card description"
-                value={newCardDescription}
-                onChange={(e) => setNewCardDescription(e.target.value)}
+                id="description"
+                value={newCardData.description}
+                onChange={(e) =>
+                  setNewCardData({
+                    ...newCardData,
+                    description: e.target.value,
+                  })
+                }
+                placeholder="Enter card description"
                 rows={3}
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="priority" className="text-sm font-medium">
+                  Priority
+                </label>
+                <Select
+                  value={newCardData.priority}
+                  onValueChange={(value) =>
+                    setNewCardData({
+                      ...newCardData,
+                      priority: value as "low" | "medium" | "high",
+                    })
+                  }
+                >
+                  <SelectTrigger id="priority">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Due Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {selectedDate
+                        ? format(selectedDate, "PPP")
+                        : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
           </div>
+
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setNewCardDialogOpen(false)}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button onClick={handleCreateCard}>Create Card</Button>
+            <Button onClick={handleCreateCard} disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Card"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Column Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Column</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this column? All cards in this
-              column will also be deleted. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteColumn}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      {/* Edit column dialog */}
+      <Dialog
+        open={editColumnDialogOpen}
+        onOpenChange={setEditColumnDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit column</DialogTitle>
+            <DialogDescription>
+              Change the title of this column.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="columnTitle" className="text-sm font-medium">
+                Column Title
+              </label>
+              <Input
+                id="columnTitle"
+                value={editedColumnTitle}
+                onChange={(e) => setEditedColumnTitle(e.target.value)}
+                placeholder="Enter column title"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditColumnDialogOpen(false)}
+              disabled={isSubmitting}
             >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateColumn} disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
