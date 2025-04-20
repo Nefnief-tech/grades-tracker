@@ -76,7 +76,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { initializeAppwrite } from "@/lib/appwrite";
-import { formatTimeDisplay } from "@/utils/formatUtils";
+// Rename the imported function to avoid conflict with the local function
+import { formatTimeDisplay as formatUtilTimeDisplay } from "@/utils/formatUtils";
 import {
   Popover,
   PopoverContent,
@@ -1204,8 +1205,8 @@ function WeeklyTimetable({
                     <div className="font-medium">{subject.name}</div>
                     <div className="text-sm text-muted-foreground flex items-center gap-2">
                       <Clock className="h-3 w-3" />
-                      {formatTimeDisplay(entry.startTime)} -{" "}
-                      {formatTimeDisplay(entry.endTime)}
+                      {formatUtilTimeDisplay(entry.startTime)} -{" "}
+                      {formatUtilTimeDisplay(entry.endTime)}
                     </div>
                     {entry.room && (
                       <div className="text-xs text-muted-foreground mt-1">

@@ -29,6 +29,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useSubjects } from "@/hooks/useSubjects"; // Assuming this hook exists
+import { Subject } from "@/types/grades"; // Assuming this type exists
 
 // SUPER SIMPLE COMPONENT - MAXIMUM RELIABILITY
 export default function SubjectPage() {
