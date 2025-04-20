@@ -697,7 +697,7 @@ export function useKanbanBoard(boardId: string) {
     [cards, user]
   );
 
-  // Move card between columns or reorder within column - Fixed to prevent duplication
+  // Move card between columns or reorder within column
   const moveCard = useCallback(
     async (
       cardId: string,
@@ -706,82 +706,89 @@ export function useKanbanBoard(boardId: string) {
       newIndex: number
     ) => {
       try {
-        // Find the card in the source column
-        const sourceCards = cards[sourceColumnId] || [];
-        const cardToMove = sourceCards.find((card) => card.id === cardId);
+        // Create a defensive copy of the current state
+        const currentCards = JSON.parse(JSON.stringify(cards));
 
-        if (!cardToMove) {
-          console.error(
-            `Card ${cardId} not found in source column ${sourceColumnId}`
+        // Verify source column exists
+        if (
+          !currentCards[sourceColumnId] ||
+          !Array.isArray(currentCards[sourceColumnId])
+        ) {
+          throw new Error(
+            `Source column ${sourceColumnId} not found or invalid`
           );
-          return null;
         }
 
-        // Create an immutable copy of the cards state
-        const updatedCards = JSON.parse(JSON.stringify(cards));
-
-        // Remove card from source column
-        updatedCards[sourceColumnId] = updatedCards[sourceColumnId].filter(
-          (card) => card.id !== cardId
+        // Find the card to move
+        const cardToMove = currentCards[sourceColumnId].find(
+          (card) => card.id === cardId
         );
+        if (!cardToMove) {
+          throw new Error(
+            `Card ${cardId} not found in source column ${sourceColumnId}`
+          );
+        }
 
-        // Create updated card with new column ID
+        // Create a new card object to avoid reference issues
         const updatedCard = {
           ...cardToMove,
           columnId: destinationColumnId,
           updatedAt: new Date().toISOString(),
         };
 
-        // Ensure destination column exists in our cards object
-        if (!updatedCards[destinationColumnId]) {
-          updatedCards[destinationColumnId] = [];
-        }
-
-        // Insert card at new index
-        updatedCards[destinationColumnId].splice(newIndex, 0, updatedCard);
-
-        // Update order of all cards in affected columns
-        updatedCards[sourceColumnId] = updatedCards[sourceColumnId].map(
-          (card, index) => ({
-            ...card,
-            order: index,
-          })
+        // Remove from source column - create a new array to avoid mutation
+        const updatedSourceCards = currentCards[sourceColumnId].filter(
+          (card) => card.id !== cardId
         );
 
-        updatedCards[destinationColumnId] = updatedCards[
-          destinationColumnId
-        ].map((card, index) => ({
-          ...card,
-          order: index,
-        }));
+        // Ensure destination column exists
+        if (!currentCards[destinationColumnId]) {
+          currentCards[destinationColumnId] = [];
+        }
 
-        // Update state with the new cards - use immutable update pattern
-        setCards(updatedCards);
+        // Create a new array for destination column
+        const updatedDestCards = [...currentCards[destinationColumnId]];
 
-        // Update local storage with a completely new array to avoid duplicates
-        const allCards = [];
-        Object.keys(updatedCards).forEach((colId) => {
-          updatedCards[colId].forEach((card) => {
-            // Verify card isn't already in the array
-            if (!allCards.some((c) => c.id === card.id)) {
-              allCards.push(card);
-            }
+        // Insert card at the correct position
+        updatedDestCards.splice(newIndex, 0, updatedCard);
+
+        // Update order for all cards in both columns
+        const finalCards = {
+          ...currentCards,
+          [sourceColumnId]: updatedSourceCards.map((card, index) => ({
+            ...card,
+            order: index,
+          })),
+          [destinationColumnId]: updatedDestCards.map((card, index) => ({
+            ...card,
+            order: index,
+          })),
+        };
+
+        // Update state with completely new object to ensure React detects the change
+        setCards(finalCards);
+
+        // Update local storage without risk of duplication
+        const allCardsArray = [];
+        Object.keys(finalCards).forEach((colId) => {
+          finalCards[colId].forEach((card) => {
+            allCardsArray.push({ ...card }); // Create a new object for each card
           });
         });
 
-        localStorage.setItem(CARDS_STORAGE_KEY, JSON.stringify(allCards));
+        localStorage.setItem(CARDS_STORAGE_KEY, JSON.stringify(allCardsArray));
 
         // Sync to cloud if user is logged in
         if (user?.id && user?.encryptionKey && user?.syncEnabled) {
+          // Sync updated card first
           await saveCardToCloud(user.id, updatedCard, user.encryptionKey);
 
-          // Update cards in source column
-          for (const card of updatedCards[sourceColumnId]) {
+          // Then sync all affected cards in both columns for order updates
+          for (const card of finalCards[sourceColumnId]) {
             await saveCardToCloud(user.id, card, user.encryptionKey);
           }
 
-          // Update cards in destination column
-          for (const card of updatedCards[destinationColumnId]) {
+          for (const card of finalCards[destinationColumnId]) {
             if (card.id !== cardId) {
               // Skip the already synced moved card
               await saveCardToCloud(user.id, card, user.encryptionKey);
@@ -789,7 +796,7 @@ export function useKanbanBoard(boardId: string) {
           }
         }
 
-        return updatedCards;
+        return finalCards;
       } catch (err) {
         console.error("Error moving card:", err);
         throw err;
