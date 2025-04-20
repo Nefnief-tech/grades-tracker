@@ -1,17 +1,27 @@
 module.exports = {
   plugins: {
-    "tailwindcss/nesting": {},
     tailwindcss: {},
     autoprefixer: {},
     ...(process.env.NODE_ENV === "production"
       ? {
           cssnano: {
-            preset: ["default", { discardComments: { removeAll: true } }],
-            // Adding more conservative settings to avoid CSS selector issues
-            reduceIdents: false,
-            zindex: false,
-            discardUnused: false,
-            mergeIdents: false,
+            preset: [
+              "default",
+              {
+                discardComments: {
+                  removeAll: true,
+                },
+                // Disable problematic CSS optimizations that could break selectors
+                mergeIdents: false,
+                reduceIdents: false,
+                zindex: false,
+                discardUnused: false,
+                minifySelectors: {
+                  // Disable complicated selector minification
+                  removeQuotedValues: false,
+                },
+              },
+            ],
           },
         }
       : {}),

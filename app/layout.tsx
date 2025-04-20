@@ -1,9 +1,9 @@
 import type React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
-import "@/styles/landing.css"; // Import landing styles
-import "@/styles/animations.css"; // Import animations
+import "@/app/globals.css"; // Use an absolute import path for clarity
+// import "@/styles/landing.css"; // Comment out potentially conflicting imports
+// import "@/styles/animations.css";
 import { Providers } from "@/components/Providers";
 import { AppLayout } from "@/components/AppLayout";
 import { CookieBanner } from "@/components/CookieBanner";
