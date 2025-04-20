@@ -7,7 +7,13 @@ const withPWA = require("next-pwa")({
   disable: process.env.NODE_ENV === "development",
 });
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const nextConfig = {
+  // Add base path configuration for production environment
+  basePath,
+  assetPrefix: basePath,
+
   // Enable image optimization
   images: {
     domains: ["localhost"],
