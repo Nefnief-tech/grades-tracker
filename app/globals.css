@@ -34,6 +34,7 @@
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 255 85% 60%;
     --sidebar-ring: 262 83% 58%;
+    --sidebar-background: 0 0% 98%;
 
     /* Chart colors */
     --chart-1: 255 92% 57%;
@@ -45,7 +46,6 @@
     --success: 142 76% 36%;
     --warning: 38 92% 50%;
     --info: 217 91% 60%;
-    --sidebar-background: 0 0% 98%;
   }
 
   .dark {
@@ -78,6 +78,7 @@
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 262 83% 25%;
     --sidebar-ring: 255 85% 65%;
+    --sidebar-background: 240 5.9% 10%;
 
     /* Chart colors */
     --chart-1: 255 92% 57%;
@@ -89,7 +90,6 @@
     --success: 142 76% 36%;
     --warning: 38 92% 50%;
     --info: 217 91% 60%;
-    --sidebar-background: 240 5.9% 10%;
   }
 }
 
@@ -100,4 +100,18 @@
   body {
     @apply bg-background text-foreground;
   }
+  h1 {
+    @apply text-4xl font-bold mb-4; /* Fix for h1 with no specified font-size */
+  }
+}
+
+/* Utility class for colorful backgrounds on study timer modes */
+.bg-work-mode {
+  @apply bg-gradient-to-br from-red-500/20 to-red-500/5 dark:from-red-900/20 dark:to-red-900/5;
+}
+.bg-short-break {
+  @apply bg-gradient-to-br from-green-500/20 to-green-500/5 dark:from-green-900/20 dark:to-green-900/5;
+}
+.bg-long-break {
+  @apply bg-gradient-to-br from-blue-500/20 to-blue-500/5 dark:from-blue-900/20 dark:to-blue-900/5;
 }

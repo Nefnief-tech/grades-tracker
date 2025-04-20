@@ -71,7 +71,8 @@
     "vaul": "^0.9.6",
     "uuid": "^9.0.0",
     "zod": "^3.24.1",
-    "cssnano": "^6.0.1"
+    "cssnano": "^6.0.1",
+    "cssnano-preset-default": "^6.0.1"
   },
   "devDependencies": {
     "@types/node": "^22",
@@ -81,6 +82,8 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.17",
     "typescript": "^5",
-    "cssnano": "^6.0.3"
+    "cssnano": "^6.0.3",
+    "postcss-import": "^15.1.0",
+    "postcss-nesting": "^12.0.1"
   }
 }
