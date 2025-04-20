@@ -22,7 +22,8 @@ const nextConfig = {
   },
 
   // Explicitly set output to export static files
-  output: "export",
+  output: "standalone",
+  //before ^^^^^^^^^^-export
 
   // Disable various optimizations that might be causing issues
   swcMinify: false,
