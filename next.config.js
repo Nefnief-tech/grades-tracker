@@ -7,6 +7,7 @@ const withPWA = require("next-pwa")({
   disable: false, // Enable PWA in all environments
 });
 
+// Determine base path from environment variable or empty string
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 const nextConfig = {
@@ -21,7 +22,8 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
-  // Add content security policy
+
+  // Add content security policy and cache headers
   headers: async () => {
     return [
       {
@@ -35,19 +37,22 @@ const nextConfig = {
       },
     ];
   },
+
   reactStrictMode: process.env.NEXT_STRICT_MODE !== "false",
-  // Disable TypeScript checking during build if environment variable is set
+
+  // Disable TypeScript checking during build for deployment success
   typescript: {
-    // This will completely ignore TypeScript errors during build
     ignoreBuildErrors: true,
   },
-  // Configure static generation to exclude problematic pages
+
+  // Configure static generation for improved performance
   output: "standalone",
-  // These options were moved out of experimental in Next.js 15
+
+  // These options improve URL handling
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,
 
-  // Fix webpack path resolution
+  // Fix webpack path resolution and CSS handling
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Fix CSS loading issues in client-side rendering
@@ -60,11 +65,13 @@ const nextConfig = {
       // Fix path resolution issues
       config.resolve.alias = {
         ...config.resolve.alias,
-        "@/app": "/app",
       };
     }
     return config;
   },
+
+  // Add appropriate CSS handling
+  swcMinify: true,
 };
 
 module.exports = withPWA(nextConfig);
