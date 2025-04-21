@@ -147,6 +147,49 @@ let databases: Databases | null = null;
 // Function to check if we're in a browser environment
 const isBrowser = typeof window !== "undefined";
 
+// Function to get the initialized client or create it if it doesn't exist yet
+export const getClient = () => {
+  if (!appwriteClient) {
+    try {
+      console.log("[Appwrite] Initializing client on demand");
+      appwriteClient = new Client();
+      appwriteClient.setEndpoint(config.endpoint).setProject(config.projectId);
+    } catch (error) {
+      console.error("[Appwrite] Error initializing client on demand:", error);
+      throw error;
+    }
+  }
+  return appwriteClient;
+};
+
+// Function to get the databases instance
+export const getDatabases = () => {
+  if (!databases) {
+    try {
+      databases = new Databases(getClient());
+    } catch (error) {
+      console.error("[Appwrite] Error getting databases instance:", error);
+      enableLocalModeOnly();
+      throw error;
+    }
+  }
+  return databases;
+};
+
+// Function to get the account instance
+export const getAccount = () => {
+  if (!account) {
+    try {
+      account = new Account(getClient());
+    } catch (error) {
+      console.error("[Appwrite] Error getting account instance:", error);
+      enableLocalModeOnly();
+      throw error;
+    }
+  }
+  return account;
+};
+
 // Function to check if Web Crypto API is available and compatible
 const isCryptoAvailable = () => {
   return (
@@ -1435,31 +1478,6 @@ export default {
   getSubjectsFromCloud,
   deleteGradeFromCloud,
   deleteSubjectFromCloud,
-};
-
-// Initialize Appwrite client
-const getClient = () => {
-  const client = new Client();
-
-  try {
-    console.log("[Appwrite] Initializing client");
-    client.setEndpoint(config.endpoint).setProject(config.projectId);
-
-    return client;
-  } catch (error) {
-    console.error("[Appwrite] Error initializing client:", error);
-    throw error;
-  }
-};
-
-// CRITICAL: Add the missing getDatabases function
-const getDatabases = () => {
-  try {
-    return new Databases(getClient());
-  } catch (error) {
-    console.error("[Appwrite] Error getting databases instance:", error);
-    throw error;
-  }
 };
 
 export const initializeAppwrite = () => {

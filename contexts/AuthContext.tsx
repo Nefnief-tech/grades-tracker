@@ -47,12 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const currentUser = await getCurrentUser();
         if (currentUser) {
+          console.log("[Auth] User is authenticated:", currentUser.email);
           setUser(currentUser);
         } else {
+          console.log("[Auth] No authenticated user found");
           setUser(null);
         }
       } catch (error) {
-        console.error("Error checking auth state:", error);
+        console.error("[Auth] Error checking auth state:", error);
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -60,12 +62,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     checkAuth();
-  }, []);
 
-  // Monitor online/offline status
+    // Add a periodic check every minute to ensure auth state is fresh
+    const interval = setInterval(() => {
+      if (!isOffline) {
+        checkAuth();
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [isOffline]);
+
+  // Monitor online/offline status and try to reconnect when back online
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => {
+      setIsOffline(false);
+      console.log("[Auth] Network connection restored, refreshing auth state");
+      getCurrentUser().then((currentUser) => {
+        if (currentUser) {
+          setUser(currentUser);
+        }
+      });
+    };
+
+    const handleOffline = () => {
+      setIsOffline(true);
+      console.log("[Auth] Network connection lost");
+    };
 
     // Check initial state
     setIsOffline(!navigator.onLine);
