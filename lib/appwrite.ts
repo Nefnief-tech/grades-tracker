@@ -46,20 +46,57 @@ function logAppwriteInfo(message: string, ...args: any[]) {
   }
 }
 
-// Appwrite configuration from environment variables
-const appwriteEndpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "";
-const appwriteProjectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "";
+// Add this function at the top of the file, after the imports
+function getEnvironmentVariable(
+  key: string,
+  defaultValue: string = ""
+): string {
+  // Try to get from process.env
+  const value = process.env[key] || "";
+
+  if (value) {
+    return value;
+  }
+
+  // For client-side, try to access window.__env if available (some deployment setups use this)
+  if (
+    typeof window !== "undefined" &&
+    (window as any).__env &&
+    (window as any).__env[key]
+  ) {
+    return (window as any).__env[key];
+  }
+
+  // Log the missing environment variable in development mode
+  if (process.env.NODE_ENV === "development") {
+    console.warn(
+      `[Appwrite] Missing environment variable: ${key}, using default value`
+    );
+  }
+
+  return defaultValue;
+}
+
+// Appwrite configuration from environment variables with better fallbacks
+const appwriteEndpoint =
+  process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://appwrite.nief.tech/v1";
+const appwriteProjectId =
+  process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "67d6ea990025fa097964";
 
 // Database configuration from environment variables
-export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "";
+export const DATABASE_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "67d6b079002144822b5e";
 export const USERS_COLLECTION_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID || "";
+  process.env.NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID ||
+  "67d6b0ac000fc4ecaaaf";
 export const SUBJECTS_COLLECTION_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID || "";
+  process.env.NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID ||
+  "67d6b0be003d69d6d863";
 export const GRADES_COLLECTION_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID || "";
+  process.env.NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID ||
+  "67d6b0c600002e8b01f5";
 
-// Add the missing config object
+// Add the missing config object with hardcoded fallbacks
 const config = {
   endpoint: appwriteEndpoint,
   projectId: appwriteProjectId,
