@@ -83,7 +83,7 @@ const appwriteEndpoint =
 const appwriteProjectId =
   process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "67d6ea990025fa097964";
 
-// Database configuration from environment variables
+// Database configuration from environment variables with explicit fallbacks for all collections
 export const DATABASE_ID =
   process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "67d6b079002144822b5e";
 export const USERS_COLLECTION_ID =
@@ -94,9 +94,33 @@ export const SUBJECTS_COLLECTION_ID =
   "67d6b0be003d69d6d863";
 export const GRADES_COLLECTION_ID =
   process.env.NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID ||
-  "67d6b0c600002e8b01f5";
+  "67d6b0c600002e7b01f5";
+export const TIMETABLE_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID ||
+  "67e0595c001fb247cd57";
+export const TESTS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID ||
+  "67e2f62c000e8723bd8d";
+export const GOALS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_GOALS_COLLECTION_ID || "goals";
+export const ACHIEVEMENTS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_ACHIEVEMENTS_COLLECTION_ID || "achievements";
+export const STUDY_SESSIONS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_STUDY_SESSIONS_COLLECTION_ID ||
+  "study_sessions";
+export const POMODORO_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_POMODORO_COLLECTION_ID ||
+  "pomodoro_sessions";
+export const KANBAN_BOARDS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_KANBAN_BOARDS_COLLECTION_ID ||
+  "kanban_boards";
+export const KANBAN_COLUMNS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_KANBAN_COLUMNS_COLLECTION_ID ||
+  "kanban_columns";
+export const KANBAN_CARDS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_KANBAN_CARDS_COLLECTION_ID || "kanban_cards";
 
-// Add the missing config object with hardcoded fallbacks
+// Add the config object with all collection IDs
 const config = {
   endpoint: appwriteEndpoint,
   projectId: appwriteProjectId,
@@ -104,6 +128,15 @@ const config = {
   usersCollectionId: USERS_COLLECTION_ID,
   subjectsCollectionId: SUBJECTS_COLLECTION_ID,
   gradesCollectionId: GRADES_COLLECTION_ID,
+  timetableCollectionId: TIMETABLE_COLLECTION_ID,
+  testsCollectionId: TESTS_COLLECTION_ID,
+  goalsCollectionId: GOALS_COLLECTION_ID,
+  achievementsCollectionId: ACHIEVEMENTS_COLLECTION_ID,
+  studySessionsCollectionId: STUDY_SESSIONS_COLLECTION_ID,
+  pomodoroCollectionId: POMODORO_COLLECTION_ID,
+  kanbanBoardsCollectionId: KANBAN_BOARDS_COLLECTION_ID,
+  kanbanColumnsCollectionId: KANBAN_COLUMNS_COLLECTION_ID,
+  kanbanCardsCollectionId: KANBAN_CARDS_COLLECTION_ID,
 };
 
 // Initialize Appwrite client only if cloud features are enabled
