@@ -32,41 +32,68 @@ import { Separator } from "@/components/ui/separator";
 
 export default function WikiPage() {
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
-      <div className="mb-8">
+    <div className="container mx-auto py-4 sm:py-6 md:py-8 px-3 sm:px-4 max-w-6xl">
+      <div className="mb-6 md:mb-8">
         <div className="flex items-center gap-2">
-          <Book className="h-8 w-8" />
-          <h1 className="text-4xl font-bold">Grade Tracker Wiki</h1>
+          <Book className="h-6 w-6 sm:h-8 sm:w-8" />
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">
+            Grade Tracker Wiki
+          </h1>
         </div>
-        <p className="text-lg text-muted-foreground mt-2">
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground mt-2">
           Everything you need to know about deploying, using, and customizing
           the Grade Tracker app.
         </p>
       </div>
 
-      <Tabs defaultValue="getting-started" className="mt-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full max-w-4xl mb-8">
-          <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
-          <TabsTrigger value="deployment">Deployment</TabsTrigger>
-          <TabsTrigger value="user-guide">User Guide</TabsTrigger>
-          <TabsTrigger value="configuration">Configuration</TabsTrigger>
-          <TabsTrigger value="troubleshooting">Troubleshooting</TabsTrigger>
+      <Tabs defaultValue="getting-started" className="mt-4 sm:mt-6">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 w-full max-w-4xl mb-6 md:mb-8 overflow-x-auto">
+          <TabsTrigger
+            value="getting-started"
+            className="text-xs sm:text-sm whitespace-nowrap"
+          >
+            Getting Started
+          </TabsTrigger>
+          <TabsTrigger
+            value="deployment"
+            className="text-xs sm:text-sm whitespace-nowrap"
+          >
+            Deployment
+          </TabsTrigger>
+          <TabsTrigger
+            value="user-guide"
+            className="text-xs sm:text-sm whitespace-nowrap"
+          >
+            User Guide
+          </TabsTrigger>
+          <TabsTrigger
+            value="configuration"
+            className="text-xs sm:text-sm whitespace-nowrap"
+          >
+            Configuration
+          </TabsTrigger>
+          <TabsTrigger
+            value="troubleshooting"
+            className="text-xs sm:text-sm whitespace-nowrap"
+          >
+            Troubleshooting
+          </TabsTrigger>
         </TabsList>
 
         {/* Getting Started Section */}
         <TabsContent value="getting-started">
-          <div className="grid gap-6">
+          <div className="grid gap-4 md:gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Info className="h-5 w-5" />
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+                  <Info className="h-4 w-4 sm:h-5 sm:w-5" />
                   About Grade Tracker
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Learn what Grade Tracker is and how it can help students
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4 sm:px-6">
                 <div className="space-y-4">
                   <div className="rounded-lg overflow-hidden border">
                     <img
@@ -79,16 +106,20 @@ export default function WikiPage() {
                     />
                   </div>
 
-                  <h3 className="text-xl font-bold">What is Grade Tracker?</h3>
-                  <p>
+                  <h3 className="text-lg sm:text-xl font-bold">
+                    What is Grade Tracker?
+                  </h3>
+                  <p className="text-xs sm:text-base">
                     Grade Tracker is a comprehensive academic performance
                     tracking application designed for students to monitor their
                     grades, track assignments, plan their schedules, and
                     visualize their academic progress.
                   </p>
 
-                  <h3 className="text-xl font-bold mt-6">Key Features</h3>
-                  <ul className="list-disc pl-6 space-y-2">
+                  <h3 className="text-lg sm:text-xl font-bold mt-4 sm:mt-6">
+                    Key Features
+                  </h3>
+                  <ul className="list-disc pl-4 sm:pl-6 space-y-1 sm:space-y-2 text-xs sm:text-base">
                     <li>
                       <strong>Grade Management:</strong> Track grades across all
                       subjects and calculate averages automatically
@@ -115,8 +146,10 @@ export default function WikiPage() {
                     </li>
                   </ul>
 
-                  <h3 className="text-xl font-bold mt-6">Technical Overview</h3>
-                  <p>
+                  <h3 className="text-lg sm:text-xl font-bold mt-4 sm:mt-6">
+                    Technical Overview
+                  </h3>
+                  <p className="text-xs sm:text-base">
                     Grade Tracker is built using Next.js with React, TypeScript,
                     and Tailwind CSS for the frontend. Data can be stored
                     locally in the browser or synchronized with an Appwrite
@@ -127,29 +160,33 @@ export default function WikiPage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Code className="h-5 w-5" />
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+                  <Code className="h-4 w-4 sm:h-5 sm:w-5" />
                   Quick Start for Developers
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Get the application up and running in development mode
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold">Prerequisites</h3>
-                  <ul className="list-disc pl-6 space-y-2">
+              <CardContent className="px-4 sm:px-6">
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-lg sm:text-xl font-bold">
+                    Prerequisites
+                  </h3>
+                  <ul className="list-disc pl-4 sm:pl-6 space-y-1 sm:space-y-2 text-xs sm:text-base">
                     <li>Node.js (v16.14.0 or higher)</li>
                     <li>npm, pnpm, or yarn package manager</li>
                     <li>Git (for cloning the repository)</li>
                   </ul>
 
-                  <h3 className="text-xl font-bold mt-6">Installation Steps</h3>
-                  <ol className="list-decimal pl-6 space-y-3">
+                  <h3 className="text-lg sm:text-xl font-bold mt-4 sm:mt-6">
+                    Installation Steps
+                  </h3>
+                  <ol className="list-decimal pl-4 sm:pl-6 space-y-2 sm:space-y-3 text-xs sm:text-base">
                     <li>
                       <p className="font-semibold">Clone the repository:</p>
-                      <pre className="bg-muted p-3 rounded-md overflow-x-auto">
+                      <pre className="bg-muted p-2 sm:p-3 rounded-md overflow-x-auto text-xs">
                         <code>
                           git clone
                           https://github.com/yourusername/grade-tracker-v2.git
@@ -160,13 +197,13 @@ export default function WikiPage() {
                       <p className="font-semibold">
                         Navigate to the project directory:
                       </p>
-                      <pre className="bg-muted p-3 rounded-md overflow-x-auto">
+                      <pre className="bg-muted p-2 sm:p-3 rounded-md overflow-x-auto text-xs">
                         <code>cd grade-tracker-v2</code>
                       </pre>
                     </li>
                     <li>
                       <p className="font-semibold">Install dependencies:</p>
-                      <pre className="bg-muted p-3 rounded-md overflow-x-auto">
+                      <pre className="bg-muted p-2 sm:p-3 rounded-md overflow-x-auto text-xs">
                         <code>npm install</code>
                         <br />
                         <span className="text-muted-foreground"># or</span>
@@ -178,49 +215,51 @@ export default function WikiPage() {
                       <p className="font-semibold">
                         Set up environment variables:
                       </p>
-                      <p>
+                      <p className="text-xs sm:text-sm">
                         Create a <code>.env.local</code> file in the project
                         root with the following variables:
                       </p>
-                      <pre className="bg-muted p-3 rounded-md overflow-x-auto">
-                        <code>
-                          NEXT_PUBLIC_APPWRITE_ENDPOINT=https://your-appwrite-endpoint.com/v1
-                        </code>
-                        <br />
-                        <code>
-                          NEXT_PUBLIC_APPWRITE_PROJECT_ID=your-project-id
-                        </code>
-                        <br />
-                        <code>
-                          NEXT_PUBLIC_APPWRITE_DATABASE_ID=your-database-id
-                        </code>
-                        <br />
-                        <code>
-                          NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID=your-users-collection-id
-                        </code>
-                        <br />
-                        <code>
-                          NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID=your-subjects-collection-id
-                        </code>
-                        <br />
-                        <code>
-                          NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID=your-grades-collection-id
-                        </code>
-                        <br />
-                        <code>
-                          NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID=your-tests-collection-id
-                        </code>
-                        <br />
-                        <code>
-                          NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID=your-timetable-collection-id
-                        </code>
-                      </pre>
+                      <div className="overflow-x-auto">
+                        <pre className="bg-muted p-2 sm:p-3 rounded-md text-xs whitespace-pre">
+                          <code>
+                            NEXT_PUBLIC_APPWRITE_ENDPOINT=https://your-appwrite-endpoint.com/v1
+                          </code>
+                          <br />
+                          <code>
+                            NEXT_PUBLIC_APPWRITE_PROJECT_ID=your-project-id
+                          </code>
+                          <br />
+                          <code>
+                            NEXT_PUBLIC_APPWRITE_DATABASE_ID=your-database-id
+                          </code>
+                          <br />
+                          <code>
+                            NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID=your-users-collection-id
+                          </code>
+                          <br />
+                          <code>
+                            NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID=your-subjects-collection-id
+                          </code>
+                          <br />
+                          <code>
+                            NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID=your-grades-collection-id
+                          </code>
+                          <br />
+                          <code>
+                            NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID=your-tests-collection-id
+                          </code>
+                          <br />
+                          <code>
+                            NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID=your-timetable-collection-id
+                          </code>
+                        </pre>
+                      </div>
                     </li>
                     <li>
                       <p className="font-semibold">
                         Start the development server:
                       </p>
-                      <pre className="bg-muted p-3 rounded-md overflow-x-auto">
+                      <pre className="bg-muted p-2 sm:p-3 rounded-md overflow-x-auto text-xs">
                         <code>npm run dev</code>
                         <br />
                         <span className="text-muted-foreground"># or</span>
@@ -230,12 +269,12 @@ export default function WikiPage() {
                     </li>
                   </ol>
 
-                  <p className="mt-4">
+                  <p className="mt-3 sm:mt-4 text-xs sm:text-base">
                     The application will be available at{" "}
                     <code>http://localhost:3000</code>. If you need to run the
                     app in local-only mode without Appwrite, you can use:
                   </p>
-                  <pre className="bg-muted p-3 rounded-md overflow-x-auto">
+                  <pre className="bg-muted p-2 sm:p-3 rounded-md overflow-x-auto text-xs">
                     <code>npm run local-mode</code>
                   </pre>
                 </div>
@@ -246,26 +285,28 @@ export default function WikiPage() {
 
         {/* Deployment Section */}
         <TabsContent value="deployment">
-          <div className="grid gap-6">
+          <div className="grid gap-4 md:gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+                  <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
                   Web Deployment Options
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   How to deploy Grade Tracker to various platforms
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
+              <CardContent className="px-4 sm:px-6">
+                <div className="space-y-4 sm:space-y-6">
                   <div>
-                    <h3 className="text-xl font-bold">Deploying to Vercel</h3>
-                    <p className="mt-2">
+                    <h3 className="text-lg sm:text-xl font-bold">
+                      Deploying to Vercel
+                    </h3>
+                    <p className="mt-2 text-xs sm:text-base">
                       Vercel offers the simplest deployment experience for
                       Next.js applications.
                     </p>
-                    <ol className="list-decimal pl-6 space-y-3 mt-4">
+                    <ol className="list-decimal pl-4 sm:pl-6 space-y-2 sm:space-y-3 mt-3 sm:mt-4 text-xs sm:text-base">
                       <li>
                         Create an account on{" "}
                         <a
@@ -283,7 +324,7 @@ export default function WikiPage() {
                           Configure environment variables in the Vercel
                           dashboard:
                         </p>
-                        <ul className="list-disc pl-6">
+                        <ul className="list-disc pl-4 sm:pl-6 text-xs sm:text-sm">
                           <li>NEXT_PUBLIC_APPWRITE_ENDPOINT</li>
                           <li>NEXT_PUBLIC_APPWRITE_PROJECT_ID</li>
                           <li>NEXT_PUBLIC_APPWRITE_DATABASE_ID</li>
@@ -298,16 +339,18 @@ export default function WikiPage() {
                     </ol>
                   </div>
 
-                  <div className="mt-8">
-                    <h3 className="text-xl font-bold">Deploying with Docker</h3>
-                    <p className="mt-2">
+                  <div className="mt-4 sm:mt-6">
+                    <h3 className="text-lg sm:text-xl font-bold">
+                      Deploying with Docker
+                    </h3>
+                    <p className="mt-2 text-xs sm:text-base">
                       The project includes Docker configuration for
                       containerized deployments.
                     </p>
-                    <ol className="list-decimal pl-6 space-y-3 mt-4">
+                    <ol className="list-decimal pl-4 sm:pl-6 space-y-2 sm:space-y-3 mt-3 sm:mt-4 text-xs sm:text-base">
                       <li>
                         <p className="font-semibold">Build the Docker image:</p>
-                        <pre className="bg-muted p-3 rounded-md overflow-x-auto">
+                        <pre className="bg-muted p-2 sm:p-3 rounded-md overflow-x-auto text-xs">
                           <code>docker build -t grade-tracker:latest .</code>
                         </pre>
                       </li>
@@ -315,7 +358,7 @@ export default function WikiPage() {
                         <p className="font-semibold">
                           Run the Docker container:
                         </p>
-                        <pre className="bg-muted p-3 rounded-md overflow-x-auto">
+                        <pre className="bg-muted p-2 sm:p-3 rounded-md overflow-x-auto text-xs">
                           <code>
                             docker run -p 3000:3000 --env-file .env.local
                             grade-tracker:latest
@@ -327,7 +370,7 @@ export default function WikiPage() {
                           For automated Docker builds, you can use the included
                           scripts:
                         </p>
-                        <pre className="bg-muted p-3 rounded-md overflow-x-auto">
+                        <pre className="bg-muted p-2 sm:p-3 rounded-md overflow-x-auto text-xs">
                           <code>./docker-build-skip-check.sh</code>
                           <br />
                           <span className="text-muted-foreground">
@@ -337,209 +380,189 @@ export default function WikiPage() {
                           <code>docker-build-skip-check.bat</code>
                         </pre>
                       </li>
-                      <li>
-                        <p className="font-semibold">Publish to Docker Hub:</p>
-                        <pre className="bg-muted p-3 rounded-md overflow-x-auto">
-                          <code>./docker-hub-publish.sh</code>
-                          <br />
-                          <span className="text-muted-foreground">
-                            # or for Windows
-                          </span>
-                          <br />
-                          <code>docker-hub-publish.bat</code>
-                        </pre>
-                      </li>
                     </ol>
-                    <p className="mt-4">
+                    <p className="mt-3 sm:mt-4 text-xs sm:text-base">
                       For detailed Docker deployment instructions, refer to the{" "}
                       <code>docker-build-instructions.md</code> file.
                     </p>
                   </div>
 
-                  <div className="mt-8">
-                    <h3 className="text-xl font-bold">Deploying to Railway</h3>
-                    <p className="mt-2">
-                      Railway offers an easy way to deploy containerized
-                      applications.
+                  <div className="mt-4 sm:mt-6">
+                    <h3 className="text-lg sm:text-xl font-bold">
+                      Other Deployment Options
+                    </h3>
+                    <p className="mt-2 text-xs sm:text-base">
+                      The application can also be deployed to platforms like
+                      Railway and Fly.io.
                     </p>
-                    <ol className="list-decimal pl-6 space-y-3 mt-4">
-                      <li>
-                        Create an account on{" "}
-                        <a
-                          href="https://railway.app"
-                          className="text-primary underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 sm:mt-4">
+                      <div className="bg-muted/30 rounded-lg p-3 sm:p-4">
+                        <h4 className="font-semibold text-sm sm:text-base">
                           Railway
-                        </a>
-                      </li>
-                      <li>Connect your GitHub repository</li>
-                      <li>Add the necessary environment variables</li>
-                      <li>
-                        Deploy using the <code>railway.toml</code> configuration
-                      </li>
-                    </ol>
-                  </div>
+                        </h4>
+                        <ol className="list-decimal pl-4 space-y-1 mt-2 text-xs sm:text-sm">
+                          <li>Create an account on Railway</li>
+                          <li>Connect your GitHub repository</li>
+                          <li>Add the necessary environment variables</li>
+                          <li>
+                            Deploy using the <code>railway.toml</code> config
+                          </li>
+                        </ol>
+                      </div>
 
-                  <div className="mt-8">
-                    <h3 className="text-xl font-bold">Deploying to Fly.io</h3>
-                    <p className="mt-2">
-                      Fly.io is another option for deploying containerized
-                      applications.
-                    </p>
-                    <ol className="list-decimal pl-6 space-y-3 mt-4">
-                      <li>Install the Fly CLI</li>
-                      <li>
-                        Authenticate with <code>fly auth login</code>
-                      </li>
-                      <li>
-                        Deploy using <code>fly launch</code> which will use the
-                        included <code>fly.toml</code> configuration
-                      </li>
-                    </ol>
+                      <div className="bg-muted/30 rounded-lg p-3 sm:p-4">
+                        <h4 className="font-semibold text-sm sm:text-base">
+                          Fly.io
+                        </h4>
+                        <ol className="list-decimal pl-4 space-y-1 mt-2 text-xs sm:text-sm">
+                          <li>Install the Fly CLI</li>
+                          <li>
+                            Run <code>fly auth login</code>
+                          </li>
+                          <li>
+                            Deploy with <code>fly launch</code>
+                          </li>
+                          <li>
+                            Configure using the included <code>fly.toml</code>
+                          </li>
+                        </ol>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+                  <Database className="h-4 w-4 sm:h-5 sm:w-5" />
                   Appwrite Setup Guide
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Configure the Appwrite backend for cloud synchronization
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold">Appwrite Installation</h3>
-                  <p>
+              <CardContent className="px-4 sm:px-6">
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-lg sm:text-xl font-bold">
+                    Appwrite Installation
+                  </h3>
+                  <p className="text-xs sm:text-base">
                     Grade Tracker uses Appwrite as its backend service for user
                     authentication and data storage. You can either use the
                     Appwrite Cloud service or self-host Appwrite on your own
                     infrastructure.
                   </p>
 
-                  <div className="mt-4">
-                    <h4 className="text-lg font-semibold">
-                      Option 1: Appwrite Cloud
-                    </h4>
-                    <ol className="list-decimal pl-6 space-y-2 mt-2">
-                      <li>
-                        Sign up for{" "}
-                        <a
-                          href="https://cloud.appwrite.io"
-                          className="text-primary underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Appwrite Cloud
-                        </a>
-                      </li>
-                      <li>Create a new project</li>
-                      <li>
-                        Get your API endpoint and project ID from the dashboard
-                      </li>
-                    </ol>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 sm:mt-4">
+                    <div className="border rounded-lg p-3 sm:p-4">
+                      <h4 className="text-base sm:text-lg font-semibold">
+                        Option 1: Appwrite Cloud
+                      </h4>
+                      <ol className="list-decimal pl-4 sm:pl-6 space-y-1 mt-2 text-xs sm:text-sm">
+                        <li>
+                          Sign up for{" "}
+                          <a
+                            href="https://cloud.appwrite.io"
+                            className="text-primary underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Appwrite Cloud
+                          </a>
+                        </li>
+                        <li>Create a new project</li>
+                        <li>
+                          Get your API endpoint and project ID from the
+                          dashboard
+                        </li>
+                      </ol>
+                    </div>
+
+                    <div className="border rounded-lg p-3 sm:p-4">
+                      <h4 className="text-base sm:text-lg font-semibold">
+                        Option 2: Self-hosted Appwrite
+                      </h4>
+                      <ol className="list-decimal pl-4 sm:pl-6 space-y-1 mt-2 text-xs sm:text-sm">
+                        <li>
+                          Follow the{" "}
+                          <a
+                            href="https://appwrite.io/docs/self-hosting"
+                            className="text-primary underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Appwrite Self-hosting Guide
+                          </a>
+                        </li>
+                        <li>Set up Docker and Docker Compose on your server</li>
+                        <li>
+                          Deploy Appwrite using the provided Docker Compose
+                          setup
+                        </li>
+                      </ol>
+                    </div>
                   </div>
 
-                  <div className="mt-4">
-                    <h4 className="text-lg font-semibold">
-                      Option 2: Self-hosted Appwrite
-                    </h4>
-                    <ol className="list-decimal pl-6 space-y-2 mt-2">
-                      <li>
-                        Follow the{" "}
-                        <a
-                          href="https://appwrite.io/docs/self-hosting"
-                          className="text-primary underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Appwrite Self-hosting Guide
-                        </a>
-                      </li>
-                      <li>Set up Docker and Docker Compose on your server</li>
-                      <li>
-                        Deploy Appwrite using the provided Docker Compose setup
-                      </li>
-                    </ol>
-                  </div>
-
-                  <h3 className="text-xl font-bold mt-6">
+                  <h3 className="text-lg sm:text-xl font-bold mt-4 sm:mt-6">
                     Configuring Appwrite for Grade Tracker
                   </h3>
-                  <ol className="list-decimal pl-6 space-y-3">
-                    <li>
-                      <p className="font-semibold">Create a Database:</p>
-                      <ul className="list-disc pl-6">
-                        <li>Go to Databases in the Appwrite console</li>
-                        <li>Create a new database (e.g., "grade-tracker")</li>
-                        <li>
-                          Note the Database ID for your environment variables
-                        </li>
-                      </ul>
-                    </li>
-                    <li>
-                      <p className="font-semibold">Create Collections:</p>
-                      <p>Create the following collections in your database:</p>
-                      <ul className="list-disc pl-6">
-                        <li>users</li>
-                        <li>subjects</li>
-                        <li>grades</li>
-                        <li>tests</li>
-                        <li>timetableEntries</li>
-                      </ul>
-                    </li>
-                    <li>
-                      <p className="font-semibold">
-                        Configure Collection Permissions:
-                      </p>
-                      <p>For each collection, add the following permissions:</p>
-                      <ul className="list-disc pl-6">
-                        <li>Read: Document (Allow)</li>
-                        <li>Create: Document (Allow)</li>
-                        <li>Update: Document (Allow)</li>
-                        <li>Delete: Document (Allow)</li>
-                      </ul>
-                    </li>
-                    <li>
-                      <p className="font-semibold">
-                        Create Attributes for Each Collection:
-                      </p>
-                      <p>
-                        Add appropriate attributes for each collection. For
-                        example, for the 'subjects' collection:
-                      </p>
-                      <ul className="list-disc pl-6">
-                        <li>userId: String (required)</li>
-                        <li>name: String (required)</li>
-                        <li>averageGrade: Double</li>
-                      </ul>
-                    </li>
-                    <li>
-                      <p className="font-semibold">
-                        Enable Email Authentication:
-                      </p>
-                      <ul className="list-disc pl-6">
-                        <li>Go to Auth → Settings → Providers</li>
-                        <li>Enable Email/Password authentication</li>
-                      </ul>
-                    </li>
-                    <li>
-                      <p className="font-semibold">Configure CORS:</p>
-                      <ul className="list-disc pl-6">
-                        <li>Go to Project → Settings → Security</li>
-                        <li>
-                          Add your web application domain to the allowed domains
-                          (e.g., http://localhost:3000 for development)
-                        </li>
-                      </ul>
-                    </li>
-                  </ol>
+                  <div className="bg-muted/30 p-3 sm:p-4 rounded-lg">
+                    <ol className="list-decimal pl-4 sm:pl-6 space-y-2 text-xs sm:text-sm">
+                      <li>
+                        <p className="font-semibold">Create a Database:</p>
+                        <ul className="list-disc pl-4 text-xs">
+                          <li>Go to Databases in the Appwrite console</li>
+                          <li>Create a new database (e.g., "grade-tracker")</li>
+                          <li>
+                            Note the Database ID for your environment variables
+                          </li>
+                        </ul>
+                      </li>
+                      <li>
+                        <p className="font-semibold">Create Collections:</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mt-1">
+                          <div className="bg-muted rounded p-1 text-center text-xs">
+                            users
+                          </div>
+                          <div className="bg-muted rounded p-1 text-center text-xs">
+                            subjects
+                          </div>
+                          <div className="bg-muted rounded p-1 text-center text-xs">
+                            grades
+                          </div>
+                          <div className="bg-muted rounded p-1 text-center text-xs">
+                            tests
+                          </div>
+                          <div className="bg-muted rounded p-1 text-center text-xs">
+                            timetableEntries
+                          </div>
+                        </div>
+                      </li>
+                      <li>
+                        <p className="font-semibold">
+                          Set Up Permissions and Attributes:
+                        </p>
+                        <ul className="list-disc pl-4 text-xs">
+                          <li>
+                            Configure read/write permissions for each collection
+                          </li>
+                          <li>
+                            Create necessary attributes (userId, name, etc.)
+                          </li>
+                          <li>Set up indexes for improved query performance</li>
+                        </ul>
+                      </li>
+                      <li>
+                        <p className="font-semibold">Enable Authentication:</p>
+                        <ul className="list-disc pl-4 text-xs">
+                          <li>Go to Auth → Settings → Providers</li>
+                          <li>Enable Email/Password authentication</li>
+                        </ul>
+                      </li>
+                    </ol>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -548,21 +571,23 @@ export default function WikiPage() {
 
         {/* User Guide Section */}
         <TabsContent value="user-guide">
-          <div className="grid gap-6">
+          <div className="grid gap-4 md:gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <LayoutDashboard className="h-5 w-5" />
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+                  <LayoutDashboard className="h-4 w-4 sm:h-5 sm:w-5" />
                   Using Grade Tracker
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Learn how to use the main features of Grade Tracker
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <h3 className="text-xl font-bold">Getting Started</h3>
-                  <ol className="list-decimal pl-6 space-y-3">
+              <CardContent className="px-4 sm:px-6">
+                <div className="space-y-4 sm:space-y-6">
+                  <h3 className="text-lg sm:text-xl font-bold">
+                    Getting Started
+                  </h3>
+                  <ol className="list-decimal pl-4 sm:pl-6 space-y-2 sm:space-y-3 text-xs sm:text-base">
                     <li>
                       <p className="font-semibold">
                         Create an account or use local mode:
@@ -606,142 +631,148 @@ export default function WikiPage() {
                     </li>
                   </ol>
 
-                  <h3 className="text-xl font-bold mt-8">Feature Guides</h3>
+                  <h3 className="text-lg sm:text-xl font-bold mt-4 sm:mt-6">
+                    Feature Guides
+                  </h3>
 
-                  <div className="mt-4">
-                    <h4 className="text-lg font-semibold">Grade Management</h4>
-                    <ul className="list-disc pl-6 space-y-2 mt-2">
-                      <li>Add grades to subjects with customizable weights</li>
-                      <li>View average grades calculated automatically</li>
-                      <li>Edit or delete existing grades</li>
-                      <li>Filter grades by type or date range</li>
-                    </ul>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 mt-3 sm:mt-4">
+                    <div className="border rounded-lg p-3 sm:p-4">
+                      <h4 className="text-base font-semibold">
+                        Grade Management
+                      </h4>
+                      <ul className="list-disc pl-4 space-y-1 mt-2 text-xs sm:text-sm">
+                        <li>Add grades with customizable weights</li>
+                        <li>View automatic average calculations</li>
+                        <li>Edit or delete existing grades</li>
+                        <li>Filter grades by type or date</li>
+                      </ul>
+                    </div>
+
+                    <div className="border rounded-lg p-3 sm:p-4">
+                      <h4 className="text-base font-semibold">
+                        Academic Calendar
+                      </h4>
+                      <ul className="list-disc pl-4 space-y-1 mt-2 text-xs sm:text-sm">
+                        <li>View schedule in calendar format</li>
+                        <li>Add recurring or one-time classes</li>
+                        <li>See upcoming tests and assignments</li>
+                        <li>Toggle day, week, and month views</li>
+                      </ul>
+                    </div>
+
+                    <div className="border rounded-lg p-3 sm:p-4">
+                      <h4 className="text-base font-semibold">Test Tracking</h4>
+                      <ul className="list-disc pl-4 space-y-1 mt-2 text-xs sm:text-sm">
+                        <li>Manage tests with priority levels</li>
+                        <li>Set reminders for important tests</li>
+                        <li>Mark tests as completed</li>
+                        <li>Filter and sort by various criteria</li>
+                      </ul>
+                    </div>
+
+                    <div className="border rounded-lg p-3 sm:p-4">
+                      <h4 className="text-base font-semibold">Analytics</h4>
+                      <ul className="list-disc pl-4 space-y-1 mt-2 text-xs sm:text-sm">
+                        <li>View visual performance reports</li>
+                        <li>Track grade trends over time</li>
+                        <li>Compare across different subjects</li>
+                        <li>Analyze grade distributions</li>
+                      </ul>
+                    </div>
                   </div>
 
-                  <div className="mt-4">
-                    <h4 className="text-lg font-semibold">Academic Calendar</h4>
-                    <ul className="list-disc pl-6 space-y-2 mt-2">
-                      <li>View your class schedule in a calendar format</li>
-                      <li>
-                        Add one-time or recurring classes to your timetable
-                      </li>
-                      <li>See upcoming tests and assignments</li>
-                      <li>Toggle between day, week, and month views</li>
-                    </ul>
-                  </div>
-
-                  <div className="mt-4">
-                    <h4 className="text-lg font-semibold">Test Tracking</h4>
-                    <ul className="list-disc pl-6 space-y-2 mt-2">
-                      <li>
-                        Manage upcoming tests with priority levels (high,
-                        medium, low)
-                      </li>
-                      <li>Set reminders for important tests</li>
-                      <li>Mark tests as completed when you're done</li>
-                      <li>
-                        Filter and sort tests by subject, date, or completion
-                        status
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="mt-4">
-                    <h4 className="text-lg font-semibold">Analytics</h4>
-                    <ul className="list-disc pl-6 space-y-2 mt-2">
-                      <li>
-                        View visual representations of your academic performance
-                      </li>
-                      <li>Track grade trends over time</li>
-                      <li>Compare performance across different subjects</li>
-                      <li>
-                        Analyze grade distributions to identify areas for
-                        improvement
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="mt-4">
-                    <h4 className="text-lg font-semibold">
+                  <div className="bg-muted/30 p-3 sm:p-4 rounded-lg mt-4 sm:mt-6">
+                    <h4 className="text-base font-semibold">
                       Cloud Synchronization
                     </h4>
-                    <ul className="list-disc pl-6 space-y-2 mt-2">
-                      <li>
-                        Enable cloud sync in Settings to access your data across
-                        devices
-                      </li>
-                      <li>Toggle sync on/off as needed</li>
-                      <li>All data is encrypted to ensure privacy</li>
-                      <li>
-                        Works offline with automatic sync when connection is
-                        restored
-                      </li>
-                    </ul>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                      <div>
+                        <h5 className="text-sm font-medium">Benefits:</h5>
+                        <ul className="list-disc pl-4 space-y-1 mt-1 text-xs sm:text-sm">
+                          <li>Access data across multiple devices</li>
+                          <li>Automatic backup of your information</li>
+                          <li>Never lose your grades and schedule</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <h5 className="text-sm font-medium">How to enable:</h5>
+                        <ol className="list-decimal pl-4 space-y-1 mt-1 text-xs sm:text-sm">
+                          <li>Create an account or log in</li>
+                          <li>Go to Settings</li>
+                          <li>Toggle "Enable Cloud Sync"</li>
+                          <li>Your data will sync automatically</li>
+                        </ol>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5" />
                   Administrator Guide
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Managing the Grade Tracker deployment as an administrator
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold">Administrative Tasks</h3>
-                  <p>
+              <CardContent className="px-4 sm:px-6">
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-lg sm:text-xl font-bold">
+                    Administrative Tasks
+                  </h3>
+                  <p className="text-xs sm:text-base">
                     As an administrator, you'll need to manage the deployment
                     and ensure the application is running correctly.
                   </p>
 
-                  <div className="mt-4">
-                    <h4 className="text-lg font-semibold">Monitoring</h4>
-                    <ul className="list-disc pl-6 space-y-2 mt-2">
-                      <li>Check server logs for errors and issues</li>
-                      <li>Monitor Appwrite usage and quotas</li>
-                      <li>
-                        Set up alerts for API failures or performance issues
-                      </li>
-                    </ul>
-                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6 mt-3 sm:mt-4">
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-sm sm:text-base font-semibold">
+                        Monitoring
+                      </h4>
+                      <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                        <li>Check server logs for errors</li>
+                        <li>Monitor Appwrite usage and quotas</li>
+                        <li>Set up alerts for API failures</li>
+                      </ul>
+                    </div>
 
-                  <div className="mt-4">
-                    <h4 className="text-lg font-semibold">Backups</h4>
-                    <ul className="list-disc pl-6 space-y-2 mt-2">
-                      <li>Set up regular backups of the Appwrite database</li>
-                      <li>Implement disaster recovery procedures</li>
-                      <li>Test data restoration periodically</li>
-                    </ul>
-                  </div>
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-sm sm:text-base font-semibold">
+                        Backups
+                      </h4>
+                      <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                        <li>Set up regular database backups</li>
+                        <li>Implement disaster recovery</li>
+                        <li>Test data restoration regularly</li>
+                      </ul>
+                    </div>
 
-                  <div className="mt-4">
-                    <h4 className="text-lg font-semibold">User Management</h4>
-                    <ul className="list-disc pl-6 space-y-2 mt-2">
-                      <li>Manage user accounts through the Appwrite console</li>
-                      <li>Handle password resets and account issues</li>
-                      <li>Monitor for suspicious account activities</li>
-                    </ul>
-                  </div>
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-sm sm:text-base font-semibold">
+                        User Management
+                      </h4>
+                      <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                        <li>Manage accounts in Appwrite console</li>
+                        <li>Handle password resets and issues</li>
+                        <li>Monitor for suspicious activity</li>
+                      </ul>
+                    </div>
 
-                  <div className="mt-4">
-                    <h4 className="text-lg font-semibold">
-                      Updates and Maintenance
-                    </h4>
-                    <ul className="list-disc pl-6 space-y-2 mt-2">
-                      <li>
-                        Keep both the frontend and Appwrite backend updated
-                      </li>
-                      <li>Schedule maintenance windows for updates</li>
-                      <li>
-                        Communicate changes to users through announcements
-                      </li>
-                    </ul>
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-sm sm:text-base font-semibold">
+                        Updates & Maintenance
+                      </h4>
+                      <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                        <li>Keep frontend and backend updated</li>
+                        <li>Schedule maintenance windows</li>
+                        <li>Communicate changes to users</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -751,215 +782,155 @@ export default function WikiPage() {
 
         {/* Configuration Section */}
         <TabsContent value="configuration">
-          <div className="grid gap-6">
+          <div className="grid gap-4 md:gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+                  <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
                   Configuration Options
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Customize the Grade Tracker application
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold">Environment Variables</h3>
-                  <p>
+              <CardContent className="px-4 sm:px-6">
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-lg sm:text-xl font-bold">
+                    Environment Variables
+                  </h3>
+                  <p className="text-xs sm:text-base">
                     The application can be configured using environment
                     variables. Here's a comprehensive list:
                   </p>
 
-                  <div className="overflow-x-auto mt-4">
+                  <div className="overflow-x-auto mt-2 sm:mt-4 border rounded-lg">
                     <table className="min-w-full divide-y divide-border">
-                      <thead>
+                      <thead className="bg-muted/50">
                         <tr>
-                          <th className="px-4 py-3 text-left text-sm font-semibold">
+                          <th className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-semibold">
                             Variable
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold">
+                          <th className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-semibold">
                             Description
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold">
+                          <th className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-semibold">
                             Default
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-border">
+                      <tbody className="divide-y divide-border text-xs">
                         <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-mono text-xs">
                             NEXT_PUBLIC_APPWRITE_ENDPOINT
                           </td>
-                          <td className="px-4 py-3 text-sm">
-                            The URL of your Appwrite API endpoint
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">
+                            API endpoint URL
                           </td>
-                          <td className="px-4 py-3 text-sm">
-                            https://appwrite.nief.tech/v1
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">
+                            appwrite.nief.tech/v1
                           </td>
                         </tr>
                         <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-mono text-xs">
                             NEXT_PUBLIC_APPWRITE_PROJECT_ID
                           </td>
-                          <td className="px-4 py-3 text-sm">
-                            Your Appwrite project ID
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">
+                            Project ID
                           </td>
-                          <td className="px-4 py-3 text-sm">-</td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">-</td>
                         </tr>
                         <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-mono text-xs">
                             NEXT_PUBLIC_APPWRITE_DATABASE_ID
                           </td>
-                          <td className="px-4 py-3 text-sm">
-                            Your Appwrite database ID
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">
+                            Database ID
                           </td>
-                          <td className="px-4 py-3 text-sm">-</td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">-</td>
                         </tr>
                         <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
-                            NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            Collection ID for users
-                          </td>
-                          <td className="px-4 py-3 text-sm">-</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
-                            NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            Collection ID for subjects
-                          </td>
-                          <td className="px-4 py-3 text-sm">-</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
-                            NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            Collection ID for grades
-                          </td>
-                          <td className="px-4 py-3 text-sm">-</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
-                            NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            Collection ID for tests
-                          </td>
-                          <td className="px-4 py-3 text-sm">-</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
-                            NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            Collection ID for timetable entries
-                          </td>
-                          <td className="px-4 py-3 text-sm">-</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-mono text-xs">
                             NEXT_PUBLIC_ENABLE_ANALYTICS
                           </td>
-                          <td className="px-4 py-3 text-sm">
-                            Enable or disable analytics features
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">
+                            Enable analytics
                           </td>
-                          <td className="px-4 py-3 text-sm">true</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
-                            NEXT_PUBLIC_FORCE_LOCAL_MODE
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            Force the application to use local storage only
-                          </td>
-                          <td className="px-4 py-3 text-sm">false</td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">true</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-
-                  <h3 className="text-xl font-bold mt-8">Feature Flags</h3>
-                  <p>
-                    You can enable or disable certain features in the code using
-                    feature flags. These are primarily located in{" "}
-                    <code>lib/appwrite.ts</code>.
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Scroll horizontally to see all environment variables
                   </p>
 
-                  <div className="overflow-x-auto mt-4">
-                    <table className="min-w-full divide-y divide-border">
-                      <thead>
-                        <tr>
-                          <th className="px-4 py-3 text-left text-sm font-semibold">
-                            Flag
-                          </th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold">
-                            Description
-                          </th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold">
-                            Default
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
-                            ENABLE_CLOUD_FEATURES
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            Enable or disable all cloud synchronization features
-                          </td>
-                          <td className="px-4 py-3 text-sm">true</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
-                            ENABLE_ENCRYPTION
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            Enable or disable client-side encryption of data
-                          </td>
-                          <td className="px-4 py-3 text-sm">true</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
-                            FORCE_LOCAL_MODE
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            Forces the application to use local storage only
-                          </td>
-                          <td className="px-4 py-3 text-sm">false</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <h3 className="text-lg sm:text-xl font-bold mt-4 sm:mt-6">
+                    Feature Flags
+                  </h3>
+                  <p className="text-xs sm:text-base">
+                    You can enable or disable features using these flags in{" "}
+                    <code>lib/appwrite.ts</code>:
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 sm:mt-4">
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <div className="font-mono text-xs">
+                        ENABLE_CLOUD_FEATURES
+                      </div>
+                      <p className="text-xs mt-1">
+                        Enable or disable cloud synchronization
+                      </p>
+                      <div className="text-xs mt-1 text-muted-foreground">
+                        Default: true
+                      </div>
+                    </div>
+
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <div className="font-mono text-xs">ENABLE_ENCRYPTION</div>
+                      <p className="text-xs mt-1">
+                        Enable client-side encryption of data
+                      </p>
+                      <div className="text-xs mt-1 text-muted-foreground">
+                        Default: true
+                      </div>
+                    </div>
+
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <div className="font-mono text-xs">FORCE_LOCAL_MODE</div>
+                      <p className="text-xs mt-1">
+                        Force local storage mode only
+                      </p>
+                      <div className="text-xs mt-1 text-muted-foreground">
+                        Default: false
+                      </div>
+                    </div>
                   </div>
 
-                  <h3 className="text-xl font-bold mt-8">Customization</h3>
-                  <p>
-                    You can customize the look and feel of the application by
-                    modifying the following files:
-                  </p>
-
-                  <ul className="list-disc pl-6 space-y-2 mt-4">
-                    <li>
-                      <code>tailwind.config.ts</code>: Customize colors, fonts,
-                      and other design tokens
-                    </li>
-                    <li>
-                      <code>app/layout.tsx</code>: Modify the main layout
-                      structure
-                    </li>
-                    <li>
-                      <code>components/ui/*</code>: UI component library that
-                      can be customized
-                    </li>
-                    <li>
-                      <code>public/*</code>: Replace logos and other static
-                      assets
-                    </li>
-                  </ul>
+                  <h3 className="text-lg sm:text-xl font-bold mt-4 sm:mt-6">
+                    Customization Files
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 sm:mt-4">
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <code className="font-mono text-xs">
+                        tailwind.config.ts
+                      </code>
+                      <p className="text-xs mt-1">
+                        Colors, fonts, and design tokens
+                      </p>
+                    </div>
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <code className="font-mono text-xs">app/layout.tsx</code>
+                      <p className="text-xs mt-1">Main layout structure</p>
+                    </div>
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <code className="font-mono text-xs">components/ui/*</code>
+                      <p className="text-xs mt-1">UI component library</p>
+                    </div>
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <code className="font-mono text-xs">public/*</code>
+                      <p className="text-xs mt-1">Logos and static assets</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -968,167 +939,112 @@ export default function WikiPage() {
 
         {/* Troubleshooting Section */}
         <TabsContent value="troubleshooting">
-          <div className="grid gap-6">
+          <div className="grid gap-4 md:gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HelpCircle className="h-5 w-5" />
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+                  <HelpCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                   Common Issues & Solutions
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Troubleshoot typical problems with Grade Tracker
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <h3 className="text-xl font-bold">Authentication Issues</h3>
+              <CardContent className="px-4 sm:px-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg sm:text-xl font-bold">
+                    Authentication Issues
+                  </h3>
 
-                  <div className="bg-muted p-4 rounded-lg">
-                    <h4 className="text-lg font-semibold">
+                  <div className="bg-muted/30 p-3 sm:p-4 rounded-lg">
+                    <h4 className="text-sm sm:text-lg font-semibold">
                       Problem: Unable to log in
                     </h4>
-                    <div className="mt-2">
-                      <p className="font-semibold">Possible causes:</p>
-                      <ul className="list-disc pl-6 space-y-1 mt-2">
-                        <li>
-                          Incorrect Appwrite endpoint or project ID
-                          configuration
-                        </li>
-                        <li>Network connectivity problems</li>
-                        <li>
-                          Email/password authentication not enabled in Appwrite
-                        </li>
-                      </ul>
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <p className="font-semibold text-xs sm:text-sm">
+                          Possible causes:
+                        </p>
+                        <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                          <li>Incorrect Appwrite configuration</li>
+                          <li>Network connectivity problems</li>
+                          <li>Email authentication not enabled</li>
+                        </ul>
+                      </div>
 
-                      <p className="font-semibold mt-4">Solutions:</p>
-                      <ul className="list-disc pl-6 space-y-1 mt-2">
-                        <li>
-                          Verify your Appwrite credentials in environment
-                          variables
-                        </li>
-                        <li>
-                          Check browser console for specific error messages
-                        </li>
-                        <li>
-                          Ensure email authentication is enabled in Appwrite
-                          console
-                        </li>
-                        <li>
-                          Check CORS settings in Appwrite to allow your domain
-                        </li>
-                      </ul>
+                      <div>
+                        <p className="font-semibold text-xs sm:text-sm">
+                          Solutions:
+                        </p>
+                        <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                          <li>Verify environment variables</li>
+                          <li>Check browser console for errors</li>
+                          <li>Enable authentication in Appwrite</li>
+                          <li>Check CORS settings</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-muted p-4 rounded-lg mt-6">
-                    <h4 className="text-lg font-semibold">
-                      Problem: Data not syncing to cloud
-                    </h4>
-                    <div className="mt-2">
-                      <p className="font-semibold">Possible causes:</p>
-                      <ul className="list-disc pl-6 space-y-1 mt-2">
-                        <li>Network connectivity issues</li>
-                        <li>Cloud sync option disabled in user settings</li>
-                        <li>
-                          Insufficient permissions in Appwrite collections
-                        </li>
-                        <li>
-                          Mismatch between collection IDs in config and Appwrite
-                        </li>
-                      </ul>
-
-                      <p className="font-semibold mt-4">Solutions:</p>
-                      <ul className="list-disc pl-6 space-y-1 mt-2">
-                        <li>Check if user has enabled sync in settings</li>
-                        <li>Verify network connectivity</li>
-                        <li>
-                          Confirm collection permissions in Appwrite console
-                        </li>
-                        <li>
-                          Validate collection IDs match between app config and
-                          Appwrite
-                        </li>
-                        <li>Check browser console for API errors</li>
-                      </ul>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-4">
+                    <div className="bg-muted/30 p-3 sm:p-4 rounded-lg">
+                      <h4 className="text-sm sm:text-base font-semibold">
+                        Data not syncing to cloud
+                      </h4>
+                      <div className="mt-2">
+                        <p className="font-semibold text-xs">Solutions:</p>
+                        <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                          <li>Check sync is enabled in settings</li>
+                          <li>Verify network connectivity</li>
+                          <li>Check Appwrite permissions</li>
+                          <li>Validate collection IDs</li>
+                        </ul>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="bg-muted p-4 rounded-lg mt-6">
-                    <h4 className="text-lg font-semibold">
-                      Problem: Data appears to be lost
-                    </h4>
-                    <div className="mt-2">
-                      <p className="font-semibold">Possible causes:</p>
-                      <ul className="list-disc pl-6 space-y-1 mt-2">
-                        <li>Browser local storage cleared</li>
-                        <li>Sync conflicts between devices</li>
-                        <li>
-                          Browser privacy mode (incognito/private) being used
-                        </li>
-                      </ul>
-
-                      <p className="font-semibold mt-4">Solutions:</p>
-                      <ul className="list-disc pl-6 space-y-1 mt-2">
-                        <li>Enable cloud sync and log in to restore data</li>
-                        <li>
-                          Check if data exists in Appwrite database directly
-                        </li>
-                        <li>
-                          Avoid using the application in private browsing mode
-                        </li>
-                        <li>
-                          Use the "Force refresh from cloud" option in settings
-                        </li>
-                      </ul>
+                    <div className="bg-muted/30 p-3 sm:p-4 rounded-lg">
+                      <h4 className="text-sm sm:text-base font-semibold">
+                        Data appears to be lost
+                      </h4>
+                      <div className="mt-2">
+                        <p className="font-semibold text-xs">Solutions:</p>
+                        <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                          <li>Enable cloud sync and log in</li>
+                          <li>Check Appwrite database directly</li>
+                          <li>Avoid private browsing mode</li>
+                          <li>Use "Force refresh from cloud" option</li>
+                        </ul>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="bg-muted p-4 rounded-lg mt-6">
-                    <h4 className="text-lg font-semibold">
-                      Problem: Application is slow or unresponsive
-                    </h4>
-                    <div className="mt-2">
-                      <p className="font-semibold">Possible causes:</p>
-                      <ul className="list-disc pl-6 space-y-1 mt-2">
-                        <li>Large amount of data stored locally</li>
-                        <li>Network latency when fetching cloud data</li>
-                        <li>Browser performance issues</li>
-                      </ul>
-
-                      <p className="font-semibold mt-4">Solutions:</p>
-                      <ul className="list-disc pl-6 space-y-1 mt-2">
-                        <li>
-                          Enable cloud sync to offload data from local storage
-                        </li>
-                        <li>Archive old subjects that are no longer needed</li>
-                        <li>Clear browser cache and reload the application</li>
-                        <li>Update to the latest browser version</li>
-                      </ul>
+                    <div className="bg-muted/30 p-3 sm:p-4 rounded-lg">
+                      <h4 className="text-sm sm:text-base font-semibold">
+                        App is slow or unresponsive
+                      </h4>
+                      <div className="mt-2">
+                        <p className="font-semibold text-xs">Solutions:</p>
+                        <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                          <li>Enable cloud sync to offload data</li>
+                          <li>Archive old subjects</li>
+                          <li>Clear browser cache and reload</li>
+                          <li>Update to latest browser version</li>
+                        </ul>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="bg-muted p-4 rounded-lg mt-6">
-                    <h4 className="text-lg font-semibold">
-                      Problem: Docker deployment issues
-                    </h4>
-                    <div className="mt-2">
-                      <p className="font-semibold">Possible causes:</p>
-                      <ul className="list-disc pl-6 space-y-1 mt-2">
-                        <li>Missing environment variables in container</li>
-                        <li>Network configuration problems</li>
-                        <li>Docker build errors</li>
-                      </ul>
-
-                      <p className="font-semibold mt-4">Solutions:</p>
-                      <ul className="list-disc pl-6 space-y-1 mt-2">
-                        <li>
-                          Ensure all environment variables are properly passed
-                          to container
-                        </li>
-                        <li>Check Docker logs for specific error messages</li>
-                        <li>Verify Docker network settings</li>
-                        <li>Check for port conflicts</li>
-                      </ul>
+                    <div className="bg-muted/30 p-3 sm:p-4 rounded-lg">
+                      <h4 className="text-sm sm:text-base font-semibold">
+                        Docker deployment issues
+                      </h4>
+                      <div className="mt-2">
+                        <p className="font-semibold text-xs">Solutions:</p>
+                        <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                          <li>Check environment variables</li>
+                          <li>Review Docker logs for errors</li>
+                          <li>Verify Docker network settings</li>
+                          <li>Check for port conflicts</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1136,108 +1052,85 @@ export default function WikiPage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <LifeBuoy className="h-5 w-5" />
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+                  <LifeBuoy className="h-4 w-4 sm:h-5 sm:w-5" />
                   Getting Help
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Where to find additional support
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p>
+              <CardContent className="px-4 sm:px-6">
+                <div className="space-y-3 sm:space-y-4">
+                  <p className="text-xs sm:text-base">
                     If you're encountering issues not covered in the
                     troubleshooting guide, there are several resources available
                     for getting help:
                   </p>
 
-                  <div className="grid gap-4 mt-4">
-                    <div className="flex items-start gap-3">
-                      <Github className="h-5 w-5 mt-1" />
-                      <div>
-                        <h4 className="text-lg font-semibold">GitHub Issues</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Report bugs or request features by creating an issue
-                          on the GitHub repository.
-                        </p>
-                        <Button
-                          variant="link"
-                          className="pl-0 h-auto mt-1"
-                          asChild
-                        >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-3 sm:mt-4">
+                    <div className="border rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <Github className="h-3 w-3 sm:h-4 sm:w-4 mt-1 flex-shrink-0" />
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-semibold">
+                            GitHub Issues
+                          </h4>
+                          <p className="text-xs mt-1">
+                            Report bugs or request features
+                          </p>
                           <a
                             href="https://github.com/yourusername/grade-tracker-v2/issues"
+                            className="text-xs text-primary inline-block mt-1"
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            Open an issue on GitHub
+                            Open an issue →
                           </a>
-                        </Button>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3">
-                      <FileText className="h-5 w-5 mt-1" />
-                      <div>
-                        <h4 className="text-lg font-semibold">Documentation</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Review the documentation files in the project
-                          repository for detailed information.
-                        </p>
-                        <Button
-                          variant="link"
-                          className="pl-0 h-auto mt-1"
-                          asChild
-                        >
+                    <div className="border rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <FileText className="h-3 w-3 sm:h-4 sm:w-4 mt-1 flex-shrink-0" />
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-semibold">
+                            Documentation
+                          </h4>
+                          <p className="text-xs mt-1">Review detailed docs</p>
                           <a
                             href="/docs"
+                            className="text-xs text-primary inline-block mt-1"
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            Browse documentation
+                            Browse docs →
                           </a>
-                        </Button>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3">
-                      <HardDrive className="h-5 w-5 mt-1" />
-                      <div>
-                        <h4 className="text-lg font-semibold">
-                          Appwrite Documentation
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          For Appwrite-specific issues, refer to their
-                          comprehensive documentation.
-                        </p>
-                        <Button
-                          variant="link"
-                          className="pl-0 h-auto mt-1"
-                          asChild
-                        >
+                    <div className="border rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <HardDrive className="h-3 w-3 sm:h-4 sm:w-4 mt-1 flex-shrink-0" />
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-semibold">
+                            Appwrite Docs
+                          </h4>
+                          <p className="text-xs mt-1">For backend issues</p>
                           <a
                             href="https://appwrite.io/docs"
+                            className="text-xs text-primary inline-block mt-1"
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            Visit Appwrite Documentation
+                            Visit Appwrite →
                           </a>
-                        </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="p-4 border rounded-lg mt-6">
-                    <h4 className="text-lg font-semibold">
-                      Need to contact an administrator?
-                    </h4>
-                    <p className="mt-2">
-                      If you've deployed this application for an organization
-                      and users need assistance, consider adding contact
-                      information here for your organization's support team.
-                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -1246,29 +1139,29 @@ export default function WikiPage() {
         </TabsContent>
       </Tabs>
 
-      <div className="mt-16 border-t pt-8">
-        <div className="flex flex-col sm:flex-row justify-between items-center">
-          <div className="flex items-center gap-2 mb-4 sm:mb-0">
-            <Home className="h-5 w-5" />
-            <Link href="/" className="text-primary hover:underline">
+      <div className="mt-8 sm:mt-12 lg:mt-16 border-t pt-4 sm:pt-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Home className="h-4 w-4 sm:h-5 sm:w-5" />
+            <Link href="/" className="text-primary hover:underline text-sm">
               Return to Dashboard
             </Link>
           </div>
 
-          <div className="flex items-center gap-8">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs">
             <Link
               href="/privacy-policy"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground"
             >
               Privacy Policy
             </Link>
             <Link
               href="/terms-of-service"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground"
             >
               Terms of Service
             </Link>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground">
               Last updated: April 22, 2025
             </p>
           </div>
