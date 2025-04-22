@@ -15,6 +15,14 @@ console.log(
 
 const MAINTENANCE_DOCUMENT_ID = "maintenance"; // Single document to store settings
 
+// Provide a simple in-memory fallback for maintenance settings
+let fallbackMaintenanceSettings = {
+  enabled: false,
+  message: "System under maintenance",
+  updatedAt: new Date().toISOString(),
+  createdBy: "system",
+};
+
 async function ensureCollectionExists() {
   if (!DATABASE_ID) {
     console.error(
@@ -147,8 +155,14 @@ export async function GET() {
     }
   } catch (error) {
     console.error("Error fetching maintenance settings:", error);
+
+    // Return fallback settings if there's an issue with Appwrite
     return NextResponse.json(
-      { isMaintenanceMode: false, maintenanceMessage: "Maintenance" },
+      {
+        isMaintenanceMode: fallbackMaintenanceSettings.enabled,
+        maintenanceMessage: fallbackMaintenanceSettings.message,
+        _note: "Using fallback settings due to database error",
+      },
       { status: 200 }
     );
   }
@@ -220,13 +234,34 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error("Error updating maintenance settings:", error);
-    return NextResponse.json(
-      {
-        error: `Failed to update maintenance settings: ${
-          error.message || error
-        }`,
-      },
-      { status: 500 }
-    );
+
+    // Update fallback settings and return them
+    try {
+      const data = await request.json();
+      fallbackMaintenanceSettings = {
+        ...fallbackMaintenanceSettings,
+        enabled: !!data.isMaintenanceMode,
+        message: data.maintenanceMessage || "",
+        updatedAt: new Date().toISOString(),
+      };
+
+      return NextResponse.json(
+        {
+          isMaintenanceMode: fallbackMaintenanceSettings.enabled,
+          maintenanceMessage: fallbackMaintenanceSettings.message,
+          _note: "Using fallback settings due to database error",
+        },
+        { status: 200 }
+      );
+    } catch (parseError) {
+      return NextResponse.json(
+        {
+          error: `Failed to update maintenance settings: ${
+            error.message || error
+          }`,
+        },
+        { status: 500 }
+      );
+    }
   }
 }
