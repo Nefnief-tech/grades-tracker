@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [summaryData, setSummaryData] = useState({
     totalUsers: 0,
@@ -38,16 +38,30 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
+    // Don't perform any redirects until authentication has finished loading
+    if (authLoading) {
+      console.log("Admin page: Auth is still loading, waiting...");
+      return;
+    }
+
     // Check if user is authenticated and is an admin
     if (!user) {
+      console.log("Admin page: User not authenticated, redirecting to login");
       router.push("/login?redirect=/admin");
       return;
     }
 
+    // Log the user object for debugging
+    console.log("Admin page: User authenticated", user);
+    console.log("Admin page: User isAdmin value:", user.isAdmin);
+
     if (!user.isAdmin) {
+      console.log("Admin page: User is not an admin, redirecting to home");
       router.push("/");
       return;
     }
+
+    console.log("Admin page: User is authenticated and is an admin", user);
 
     // Fetch summary data
     const fetchSummaryData = async () => {
@@ -72,7 +86,32 @@ export default function AdminPage() {
     };
 
     fetchSummaryData();
-  }, [user, router]);
+  }, [user, router, authLoading]);
+
+  // Show loading state when auth is still loading
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
+          <p className="mt-4 text-lg">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // We only reach this code if authLoading is false
+  if (!user) {
+    // If we're here, we've completed auth loading and there's no user
+    // Don't render anything as the useEffect will handle the redirect
+    return null;
+  }
+
+  if (!user.isAdmin) {
+    // If we're here, the user is authenticated but not an admin
+    // Don't render anything as the useEffect will handle the redirect
+    return null;
+  }
 
   if (isLoading) {
     return (
@@ -85,6 +124,7 @@ export default function AdminPage() {
     );
   }
 
+  // Only render the admin dashboard if we have a user and they are an admin
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">

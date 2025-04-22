@@ -10,13 +10,25 @@ export function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/admin")) {
     // If not authenticated at all, redirect to login
     if (!isAuthenticated) {
+      console.log(
+        "[Middleware] User not authenticated, redirecting to login from admin page"
+      );
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("from", request.nextUrl.pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    // For authenticated users, the admin check happens in the page component
-    // because we need to fetch user data from Appwrite
+    // If authenticated, allow access - the admin check happens in the page component
+    console.log(
+      "[Middleware] User appears authenticated, allowing access to admin page"
+    );
+
+    // Add a custom header so the client knows the middleware allowed the request
+    // This can help with debugging
+    const response = NextResponse.next();
+    response.headers.set("x-middleware-cache", "no-cache");
+    response.headers.set("x-middleware-authenticated", "true");
+    return response;
   }
 
   return NextResponse.next();
