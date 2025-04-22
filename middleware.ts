@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  // Get session cookie/token
-  const session = request.cookies.get("appwrite-session");
+  // Get Appwrite session cookie and admin-status
+  const allCookies = request.cookies.getAll();
+  const sessionCookie = allCookies.find((c) => c.name.startsWith("a_session"));
+  const isAuthenticated = !!sessionCookie;
   const adminSession = request.cookies.get("admin-status");
-  const isAuthenticated = !!session;
   const isAdmin = adminSession?.value === "true";
 
   // For admin pages, we'll redirect to login if not authenticated
