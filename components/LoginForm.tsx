@@ -1,47 +1,75 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useAuth } from "@/contexts/AuthContext"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, Wifi, WifiOff } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertCircle, Wifi, WifiOff } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface LoginFormProps {
-  onToggleForm: () => void
+  onToggleForm: () => void;
 }
 
 export function LoginForm({ onToggleForm }: LoginFormProps) {
-  const { login, isOffline } = useAuth()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { login, isOffline, user } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams?.get("redirect") || "/";
+
+  // Handle redirection after successful login
+  useEffect(() => {
+    if (user) {
+      console.log(
+        "[LoginForm] User authenticated, redirecting to:",
+        redirectPath
+      );
+      router.push(redirectPath);
+    }
+  }, [user, router, redirectPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+    e.preventDefault();
+    setError(null);
 
     // Check if offline
     if (isOffline) {
-      setError("You are currently offline. Please check your internet connection and try again.")
-      return
+      setError(
+        "You are currently offline. Please check your internet connection and try again."
+      );
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      await login(email, password)
+      await login(email, password);
+      // Redirection handled in useEffect
     } catch (err: any) {
-      setError(err.message || "Failed to login. Please check your credentials.")
+      console.error("[LoginForm] Login error:", err);
+      setError(
+        err.message || "Failed to login. Please check your credentials."
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -60,7 +88,14 @@ export function LoginForm({ onToggleForm }: LoginFormProps) {
             </div>
           )}
         </div>
-        <CardDescription>Enter your email and password to access your account</CardDescription>
+        <CardDescription>
+          Enter your email and password to access your account
+        </CardDescription>
+        {redirectPath !== "/" && (
+          <p className="text-sm text-muted-foreground mt-2">
+            You'll be redirected back after login
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -92,7 +127,11 @@ export function LoginForm({ onToggleForm }: LoginFormProps) {
               required
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading || isOffline}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading || isOffline}
+          >
             {isLoading ? "Logging in..." : "Login"}
           </Button>
         </form>
@@ -103,6 +142,5 @@ export function LoginForm({ onToggleForm }: LoginFormProps) {
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
-

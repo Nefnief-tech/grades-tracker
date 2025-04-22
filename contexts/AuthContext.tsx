@@ -8,13 +8,14 @@ import {
   getCurrentUser,
   updateUserSyncPreference,
 } from "@/lib/appwrite";
+import { setCookie, deleteCookie } from "cookies-next"; // Import cookie functions
 
 export type User = {
   id: string;
   email: string;
   name?: string;
   syncEnabled?: boolean;
-  isAdmin?: boolean; // Added isAdmin field
+  isAdmin?: boolean;
 };
 
 interface AuthContextType {
@@ -38,8 +39,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isOffline, setIsOffline] = useState(false);
 
+  // Helper function to consistently manage the admin cookie
+  const manageAdminCookie = (isAdmin: boolean | undefined) => {
+    if (isAdmin) {
+      setCookie("admin-status", "true", {
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
+    } else {
+      deleteCookie("admin-status");
+    }
+  };
+
   const updateUserState = (updatedUser: Partial<User>) => {
-    setUser((prevUser) => ({ ...prevUser, ...updatedUser }));
+    setUser((prevUser) => {
+      if (prevUser === null) return prevUser;
+      const newUser = { ...prevUser, ...updatedUser };
+
+      // Update admin cookie if isAdmin status changes
+      if (
+        prevUser?.isAdmin !== newUser.isAdmin &&
+        newUser.isAdmin !== undefined
+      ) {
+        manageAdminCookie(newUser.isAdmin);
+      }
+
+      return newUser as User;
+    });
   };
 
   // Check if user is logged in on mount
@@ -50,13 +78,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (currentUser) {
           console.log("[Auth] User is authenticated:", currentUser.email);
           setUser(currentUser);
+
+          // Set admin cookie if user is admin
+          manageAdminCookie(currentUser.isAdmin);
         } else {
           console.log("[Auth] No authenticated user found");
           setUser(null);
+          manageAdminCookie(false);
         }
       } catch (error) {
         console.error("[Auth] Error checking auth state:", error);
         setUser(null);
+        manageAdminCookie(false);
       } finally {
         setIsLoading(false);
       }
@@ -82,6 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       getCurrentUser().then((currentUser) => {
         if (currentUser) {
           setUser(currentUser);
+          manageAdminCookie(currentUser.isAdmin);
         }
       });
     };
@@ -115,6 +149,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await appwriteLogin(email, password);
       const currentUser = await getCurrentUser();
       setUser(currentUser);
+
+      // Set admin cookie if the user is an admin
+      manageAdminCookie(currentUser?.isAdmin);
     } catch (error) {
       throw error;
     } finally {
@@ -129,6 +166,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await appwriteLogin(email, password); // Auto-login after registration
       const currentUser = await getCurrentUser();
       setUser(currentUser);
+
+      // New users typically aren't admins, but check anyway
+      manageAdminCookie(currentUser?.isAdmin);
     } catch (error) {
       throw error;
     } finally {
@@ -141,6 +181,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await appwriteLogout();
       setUser(null);
+      // Remove admin cookie on logout
+      manageAdminCookie(false);
     } catch (error) {
       throw error;
     } finally {
