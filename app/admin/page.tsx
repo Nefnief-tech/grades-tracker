@@ -38,25 +38,12 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
-    // Don't perform any redirects until authentication has finished loading
-    if (authLoading) {
-      console.log("Admin page: Auth is still loading, waiting...");
-      return;
-    }
+    if (authLoading) return;
 
-    // Check if user is authenticated and is an admin
-    if (!user) {
-      console.log("Admin page: User not authenticated, redirecting to login");
-      router.push("/login?redirect=/admin");
-      return;
-    }
-
-    // Log the user object for debugging
-    console.log("Admin page: User authenticated", user);
-    console.log("Admin page: User isAdmin value:", user.isAdmin);
-
-    if (!user.isAdmin) {
-      console.log("Admin page: User is not an admin, redirecting to home");
+    if (!user || user.id !== "67d6f7fe0019adf0fd95") {
+      console.log(
+        `Admin page: User ${user?.id} not authorized, redirecting to home`
+      );
       router.push("/");
       return;
     }
@@ -101,15 +88,7 @@ export default function AdminPage() {
   }
 
   // We only reach this code if authLoading is false
-  if (!user) {
-    // If we're here, we've completed auth loading and there's no user
-    // Don't render anything as the useEffect will handle the redirect
-    return null;
-  }
-
-  if (!user.isAdmin) {
-    // If we're here, the user is authenticated but not an admin
-    // Don't render anything as the useEffect will handle the redirect
+  if (!user || user.id !== "67d6f7fe0019adf0fd95") {
     return null;
   }
 
