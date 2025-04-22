@@ -39,6 +39,9 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (authLoading) return;
+    console.log(
+      `[AdminPage] current user ID: ${user?.id}, expected ID: 67d6f7fe0019adf0fd95`
+    );
 
     if (!user || user.id !== "67d6f7fe0019adf0fd95") {
       console.log(
