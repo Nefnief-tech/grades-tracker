@@ -23,6 +23,7 @@ import {
   Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import MaintenanceGuard from "@/components/MaintenanceGuard";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -35,47 +36,31 @@ export default function AdminPage() {
     totalSubjects: 0,
     totalGrades: 0,
     averageGpa: 0,
+    uptimeSeconds: 0,
+    totalMem: 0,
+    freeMem: 0,
+    githubStars: null,
   });
 
   useEffect(() => {
     if (authLoading) return;
-    console.log(
-      `[AdminPage] current user ID: ${user?.id}, expected ID: 67d6f7fe0019adf0fd95`
-    );
-
-    if (!user || user.id !== "67d6f7fe0019adf0fd95") {
-      console.log(
-        `Admin page: User ${user?.id} not authorized, redirecting to home`
-      );
+    if (!user || user.id !== process.env.NEXT_PUBLIC_ADMIN_ID) {
       router.push("/");
       return;
     }
-
-    console.log("Admin page: User is authenticated and is an admin", user);
-
     // Fetch summary data
-    const fetchSummaryData = async () => {
+    async function fetchData() {
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Simulated data
-        setSummaryData({
-          totalUsers: 156,
-          activeUsers: 89,
-          newUsersToday: 7,
-          totalSubjects: 423,
-          totalGrades: 1862,
-          averageGpa: 3.42,
-        });
+        const res = await fetch("/api/admin/summary");
+        const data = await res.json();
+        setSummaryData(data);
       } catch (error) {
         console.error("Error fetching summary data:", error);
       } finally {
         setIsLoading(false);
       }
-    };
-
-    fetchSummaryData();
+    }
+    fetchData();
   }, [user, router, authLoading]);
 
   // Show loading state when auth is still loading
@@ -91,7 +76,7 @@ export default function AdminPage() {
   }
 
   // We only reach this code if authLoading is false
-  if (!user || user.id !== "67d6f7fe0019adf0fd95") {
+  if (!user || user.id !== process.env.NEXT_PUBLIC_ADMIN_ID) {
     return null;
   }
 
@@ -108,93 +93,141 @@ export default function AdminPage() {
 
   // Only render the admin dashboard if we have a user and they are an admin
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-muted-foreground">
-            Manage application settings, users, and analytics
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="bg-primary/10 text-primary rounded-full px-3 py-1 text-sm font-medium flex items-center">
-            <Shield className="w-4 h-4 mr-1" />
-            Admin Access
+    <MaintenanceGuard>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Admin Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              Manage application settings, users, and analytics
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="bg-primary/10 text-primary rounded-full px-3 py-1 text-sm font-medium flex items-center">
+              <Shield className="w-4 h-4 mr-1" />
+              Admin Access
+            </div>
           </div>
         </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{summaryData.totalUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                {summaryData.activeUsers} active now
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Grades
+              </CardTitle>
+              <BarChart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {summaryData.totalGrades}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Across {summaryData.totalSubjects} subjects
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Average GPA</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {summaryData.averageGpa.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                +0.2 from last month
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Server Uptime</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {Math.floor(summaryData.uptimeSeconds / 3600)}h{" "}
+                {Math.floor((summaryData.uptimeSeconds % 3600) / 60)}m
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Memory Usage</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-lg">
+                {(
+                  (summaryData.totalMem - summaryData.freeMem) /
+                  (1024 * 1024)
+                ).toFixed(1)}{" "}
+                / {(summaryData.totalMem / (1024 * 1024)).toFixed(1)}MB
+              </div>
+            </CardContent>
+          </Card>
+
+          {summaryData.githubStars != null && (
+            <Card>
+              <CardHeader>
+                <CardTitle>GitHub Stars</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {summaryData.githubStars}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        <Tabs defaultValue="users" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="users" className="flex items-center">
+              <Users className="mr-2 h-4 w-4" />
+              Users
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center">
+              <PieChart className="mr-2 h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center">
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="users" className="space-y-4">
+            <AdminUserManagement />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-4">
+            <AdminAnalytics />
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-4">
+            <AdminSystemSettings />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summaryData.totalUsers}</div>
-            <p className="text-xs text-muted-foreground">
-              {summaryData.activeUsers} active now
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Grades</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summaryData.totalGrades}</div>
-            <p className="text-xs text-muted-foreground">
-              Across {summaryData.totalSubjects} subjects
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average GPA</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {summaryData.averageGpa.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              +0.2 from last month
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="users" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="users" className="flex items-center">
-            <Users className="mr-2 h-4 w-4" />
-            Users
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center">
-            <PieChart className="mr-2 h-4 w-4" />
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center">
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="users" className="space-y-4">
-          <AdminUserManagement />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <AdminAnalytics />
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-4">
-          <AdminSystemSettings />
-        </TabsContent>
-      </Tabs>
-    </div>
+    </MaintenanceGuard>
   );
 }
