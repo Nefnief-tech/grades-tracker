@@ -6,8 +6,6 @@ export function middleware(request: NextRequest) {
   const allCookies = request.cookies.getAll();
   const sessionCookie = allCookies.find((c) => c.name.startsWith("a_session"));
   const isAuthenticated = !!sessionCookie;
-  const adminSession = request.cookies.get("admin-status");
-  const isAdmin = adminSession?.value === "true";
 
   // For admin pages, we'll redirect to login if not authenticated
   if (request.nextUrl.pathname.startsWith("/admin")) {
@@ -22,22 +20,31 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // Check admin status
-    if (!isAdmin) {
+    // If authenticated, allow access only if user ID matches
+    // Decode the Appwrite JWT from the session cookie
+    const token = sessionCookie?.value || "";
+    const parts = token.split(".");
+    let userId = "";
+    try {
+      const payload = parts[1] || "";
+      const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+      const decoded = JSON.parse(json);
+      userId = decoded.userId ?? decoded.sub;
+    } catch (err) {
+      console.error("[Middleware] Failed to decode session JWT:", err);
+    }
+    if (userId !== "67d6f7fe0019adf0fd95") {
       console.log(
-        "[Middleware] User authenticated but not an admin, redirecting to dashboard"
+        `[Middleware] User ID ${userId} not authorized for admin, redirecting to home`
       );
       return NextResponse.redirect(new URL("/", request.url));
     }
-
-    // If authenticated and admin, allow access
-    console.log("[Middleware] User is authenticated as admin, allowing access");
+    console.log("[Middleware] Authorized admin user, allowing access");
 
     // Add custom headers to help with debugging
     const response = NextResponse.next();
     response.headers.set("x-middleware-cache", "no-cache");
     response.headers.set("x-middleware-authenticated", "true");
-    response.headers.set("x-middleware-admin", "true");
 
     // Setting cache control headers to prevent caching issues
     response.headers.set("Cache-Control", "no-store, max-age=0");
