@@ -14,6 +14,7 @@ export type User = {
   email: string;
   name?: string;
   syncEnabled?: boolean;
+  isAdmin?: boolean; // Added isAdmin field
 };
 
 interface AuthContextType {

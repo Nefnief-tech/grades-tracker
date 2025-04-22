@@ -625,6 +625,7 @@ export const getCurrentUser = async () => {
           email: currentAccount.email,
           name: userData.name,
           syncEnabled: userData.syncEnabled,
+          isAdmin: userData.isAdmin || false, // Fetch isAdmin status from user document
         };
       } else {
         // If user document doesn't exist, create it
@@ -638,6 +639,7 @@ export const getCurrentUser = async () => {
               email: currentAccount.email,
               name: currentAccount.name || "User",
               syncEnabled: false,
+              isAdmin: false, // Default non-admin
             }
           );
         } catch (dbError) {
@@ -650,6 +652,7 @@ export const getCurrentUser = async () => {
           email: currentAccount.email,
           name: currentAccount.name || "User",
           syncEnabled: false,
+          isAdmin: false, // Default non-admin
         };
       }
     } catch (dbError) {
@@ -661,6 +664,7 @@ export const getCurrentUser = async () => {
         email: currentAccount.email,
         name: currentAccount.name || "User",
         syncEnabled: false,
+        isAdmin: false, // Default non-admin
       };
     }
   } catch (error: any) {
