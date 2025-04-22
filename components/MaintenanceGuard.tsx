@@ -4,11 +4,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Banner } from "@/components/ui/Banner";
-import { AlertTriangle, X } from "lucide-react";
+import {
+  AlertTriangle,
+  X,
+  LineChart,
+  Settings,
+  RefreshCw,
+  BookOpen,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Settings, RefreshCw } from "lucide-react";
 
 type MaintenanceSettings = {
   isMaintenanceMode: boolean;
@@ -91,14 +97,10 @@ export default function MaintenanceGuard({
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-background to-muted p-4">
         <div className="w-full max-w-md bg-background border rounded-xl shadow-lg p-8 text-center space-y-6">
-          <div className="mb-4">
-            <Image
-              src="/grade-tracker-logo.svg"
-              alt="Grade Tracker Logo"
-              width={120}
-              height={120}
-              className="mx-auto"
-            />
+          <div className="mb-4 flex justify-center">
+            <div className="p-4 rounded-full bg-primary/10 text-primary">
+              <BookOpen size={64} strokeWidth={1.5} />
+            </div>
           </div>
 
           <div className="relative flex items-center py-4">

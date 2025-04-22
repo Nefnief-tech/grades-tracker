@@ -30,6 +30,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUserState: (updatedUser: Partial<User>) => void;
   isOffline: boolean;
+  isAdmin: boolean; // Add isAdmin to the context
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isOffline, setIsOffline] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false); // Add isAdmin state
 
   // Helper function to consistently manage the admin cookie
   const manageAdminCookie = (isAdmin: boolean | undefined) => {
@@ -64,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         newUser.isAdmin !== undefined
       ) {
         manageAdminCookie(newUser.isAdmin);
+        setIsAdmin(!!newUser.isAdmin); // Update isAdmin state
       }
 
       return newUser as User;
@@ -76,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
-        setIsAdmin(currentUser?.isAdmin || false);
+        setIsAdmin(!!currentUser?.isAdmin); // Set isAdmin based on currentUser
       } catch (error) {
         // Handle specific error cases
         if (
@@ -117,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       getCurrentUser().then((currentUser) => {
         if (currentUser) {
           setUser(currentUser);
+          setIsAdmin(!!currentUser.isAdmin); // Update isAdmin on reconnect
           manageAdminCookie(currentUser.isAdmin);
         }
       });
@@ -151,6 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await appwriteLogin(email, password);
       const currentUser = await getCurrentUser();
       setUser(currentUser);
+      setIsAdmin(!!currentUser?.isAdmin); // Update isAdmin on login
 
       // Set admin cookie if the user is an admin
       manageAdminCookie(currentUser?.isAdmin);
@@ -168,6 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await appwriteLogin(email, password); // Auto-login after registration
       const currentUser = await getCurrentUser();
       setUser(currentUser);
+      setIsAdmin(!!currentUser?.isAdmin); // Update isAdmin on register
 
       // New users typically aren't admins, but check anyway
       manageAdminCookie(currentUser?.isAdmin);
@@ -183,6 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await appwriteLogout();
       setUser(null);
+      setIsAdmin(false); // Reset isAdmin on logout
       // Remove admin cookie on logout
       manageAdminCookie(false);
     } catch (error) {
@@ -202,6 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         updateUserState,
         isOffline,
+        isAdmin, // Expose isAdmin to consumers
       }}
     >
       {children}
