@@ -6,13 +6,20 @@ export const DATABASE_ID =
   process.env.APPWRITE_DATABASE_ID ||
   "";
 export const MAINTENANCE_COLLECTION_ID =
+  process.env.APPWRITE_MAINTENANCE_COLLECTION_ID ||
   process.env.NEXT_PUBLIC_APPWRITE_MAINTENANCE_COLLECTION_ID ||
-  "maintenanceSettings";
+  "";
 
 // Check for required configuration
 if (!DATABASE_ID) {
   console.error(
     "Missing required environment variable: APPWRITE_DATABASE_ID or NEXT_PUBLIC_APPWRITE_DATABASE_ID"
+  );
+}
+
+if (!MAINTENANCE_COLLECTION_ID) {
+  console.error(
+    "Missing required environment variable: APPWRITE_MAINTENANCE_COLLECTION_ID or NEXT_PUBLIC_APPWRITE_MAINTENANCE_COLLECTION_ID"
   );
 }
 
