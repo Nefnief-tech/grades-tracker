@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Get Appwrite session cookie and admin-status
   const allCookies = request.cookies.getAll();
   const sessionCookie = allCookies.find((c) => c.name.startsWith("a_session"));
@@ -20,22 +20,29 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // If authenticated, allow access only if user ID matches
-    // Decode the Appwrite JWT from the session cookie
-    const token = sessionCookie?.value || "";
-    const parts = token.split(".");
-    let userId = "";
-    try {
-      const payload = parts[1] || "";
-      const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-      const decoded = JSON.parse(json);
-      userId = decoded.userId ?? decoded.sub;
-    } catch (err) {
-      console.error("[Middleware] Failed to decode session JWT:", err);
-    }
-    if (userId !== "67d6f7fe0019adf0fd95") {
+    // Fetch current user directly from Appwrite REST API
+    const cookieHeader = request.headers.get("cookie") || "";
+    const accountRes = await fetch(
+      `${process.env.APPWRITE_ENDPOINT}/v1/account`,
+      {
+        headers: {
+          "X-Appwrite-Project": process.env.APPWRITE_PROJECT_ID || "",
+          cookie: cookieHeader,
+        },
+      }
+    );
+    if (!accountRes.ok) {
       console.log(
-        `[Middleware] User ID ${userId} not authorized for admin, redirecting to home`
+        `[Middleware] Appwrite account fetch failed (${accountRes.status}), redirecting to login`
+      );
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", request.nextUrl.pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    const user = await accountRes.json();
+    if (user.$id !== "67d6f7fe0019adf0fd95") {
+      console.log(
+        `[Middleware] User ${user.$id} not authorized for admin, redirecting to home`
       );
       return NextResponse.redirect(new URL("/", request.url));
     }
