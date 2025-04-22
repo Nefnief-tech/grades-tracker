@@ -64,6 +64,7 @@ const nextConfig = {
       },
     ];
   },
+<<<<<<< ours
 
   // Optimize image loading
   images: {
@@ -74,6 +75,34 @@ const nextConfig = {
         hostname: "**",
       },
     ],
+||||||| ancestor
+  reactStrictMode: process.env.NEXT_STRICT_MODE !== "false",
+  // Disable TypeScript checking during build if environment variable is set
+  typescript: {
+    // This will completely ignore TypeScript errors during build
+    ignoreBuildErrors: true,
+  },
+  // Configure static generation to exclude problematic pages
+  output: "standalone",
+  experimental: {
+    // Skip building the 404 page statically
+    skipTrailingSlashRedirect: true,
+    skipMiddlewareUrlNormalize: true,
+=======
+  reactStrictMode: process.env.NEXT_STRICT_MODE !== "false",
+  // Disable TypeScript checking during build if environment variable is set
+  typescript: {
+    // This will completely ignore TypeScript errors during build
+    ignoreBuildErrors: true,
+  },
+  // Configure static generation to exclude problematic pages
+  output: "standalone",
+  // Move these properties out of experimental as they're now top-level options
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
+  experimental: {
+    // ...existing experimental options...
+>>>>>>> theirs
   },
 };
 

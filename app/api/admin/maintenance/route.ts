@@ -6,9 +6,23 @@ import {
   serverID,
 } from "@/lib/appwrite-server";
 
+// Add logging to help debug environment variables
+console.log("API Route - Database ID:", DATABASE_ID);
+console.log(
+  "API Route - Maintenance Collection ID:",
+  MAINTENANCE_COLLECTION_ID
+);
+
 const MAINTENANCE_DOCUMENT_ID = "maintenance"; // Single document to store settings
 
 async function ensureCollectionExists() {
+  if (!DATABASE_ID) {
+    console.error(
+      "Database ID is missing. Cannot proceed with collection operations."
+    );
+    throw new Error("Database ID is missing. Check environment variables.");
+  }
+
   try {
     // Check if collection exists by trying to list documents
     await databases.listDocuments(DATABASE_ID, MAINTENANCE_COLLECTION_ID);
