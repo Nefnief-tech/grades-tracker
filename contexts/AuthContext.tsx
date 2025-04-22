@@ -75,21 +75,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkAuth = async () => {
       try {
         const currentUser = await getCurrentUser();
-        if (currentUser) {
-          console.log("[Auth] User is authenticated:", currentUser.email);
-          setUser(currentUser);
-
-          // Set admin cookie if user is admin
-          manageAdminCookie(currentUser.isAdmin);
-        } else {
-          console.log("[Auth] No authenticated user found");
-          setUser(null);
-          manageAdminCookie(false);
-        }
+        setUser(currentUser);
+        setIsAdmin(currentUser?.isAdmin || false);
       } catch (error) {
-        console.error("[Auth] Error checking auth state:", error);
-        setUser(null);
-        manageAdminCookie(false);
+        // Handle specific error cases
+        if (
+          error.toString().includes("missing scope (account)") ||
+          error.toString().includes("Unauthorized") ||
+          error.code === 401
+        ) {
+          // User is not authenticated - this is normal for guests
+          setUser(null);
+          setIsAdmin(false);
+        } else {
+          console.error("Authentication error:", error);
+          setUser(null);
+          setIsAdmin(false);
+        }
       } finally {
         setIsLoading(false);
       }

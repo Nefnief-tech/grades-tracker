@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -49,6 +49,36 @@ export function AdminSystemSettings() {
     maintenanceMessage:
       "The system is currently under maintenance. Please check back later.",
   });
+  // Track loading state for maintenance settings
+  const [isLoadingMaintenanceSettings, setIsLoadingMaintenanceSettings] =
+    useState(true);
+
+  // Load initial maintenance settings from server
+  useEffect(() => {
+    async function loadMaintenanceSettings() {
+      try {
+        const res = await fetch("/api/admin/maintenance");
+        if (res.ok) {
+          const data = await res.json();
+          setIsMaintenanceMode(data.isMaintenanceMode);
+          setSettings((prev) => ({
+            ...prev,
+            maintenanceMessage: data.maintenanceMessage,
+          }));
+        } else {
+          console.error(
+            "Failed to fetch maintenance settings",
+            await res.text()
+          );
+        }
+      } catch (err) {
+        console.error("Error loading maintenance settings", err);
+      } finally {
+        setIsLoadingMaintenanceSettings(false);
+      }
+    }
+    loadMaintenanceSettings();
+  }, []);
 
   const handleSaveSettings = async () => {
     setIsSaving(true);
@@ -73,20 +103,35 @@ export function AdminSystemSettings() {
 
   const handleMaintenanceToggle = async () => {
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      setIsMaintenanceMode(!isMaintenanceMode);
-
+      // Send update to server
+      const newMode = !isMaintenanceMode;
+      const payload = {
+        isMaintenanceMode: newMode,
+        maintenanceMessage: settings.maintenanceMessage,
+      };
+      const res = await fetch("/api/admin/maintenance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      // Update local state
+      setIsMaintenanceMode(data.isMaintenanceMode);
+      setSettings((prev) => ({
+        ...prev,
+        maintenanceMessage: data.maintenanceMessage,
+      }));
       toast({
-        title: isMaintenanceMode
-          ? "Maintenance mode disabled"
-          : "Maintenance mode enabled",
-        description: isMaintenanceMode
-          ? "The application is now accessible to all users."
-          : "The application is now in maintenance mode.",
+        title: data.isMaintenanceMode
+          ? "Maintenance mode enabled"
+          : "Maintenance mode disabled",
+        description: data.isMaintenanceMode
+          ? "The application is now in maintenance mode."
+          : "The application is now accessible to all users.",
       });
     } catch (error) {
+      console.error("Failed to toggle maintenance mode", error);
       toast({
         title: "Error",
         description: "Failed to toggle maintenance mode. Please try again.",
@@ -270,6 +315,7 @@ export function AdminSystemSettings() {
                     variant={isMaintenanceMode ? "destructive" : "outline"}
                     size="sm"
                     onClick={handleMaintenanceToggle}
+                    disabled={isLoadingMaintenanceSettings}
                     className="min-w-[120px]"
                   >
                     {isMaintenanceMode ? "Disable" : "Enable"}

@@ -13,6 +13,7 @@ import Script from "next/script";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { PLAUSIBLE_URL, PLAUSIBLE_DOMAIN } from "@/config/analytics";
 import { ClipboardList } from "lucide-react"; // Add this import for the icon
+import MaintenanceGuard from "@/components/MaintenanceGuard";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -72,8 +73,10 @@ export default function RootLayout({
           <AuthProvider>
             <Providers>
               <AnalyticsProvider>
-                <AppLayout>{children}</AppLayout>
-                <CookieBanner />
+                <MaintenanceGuard>
+                  <AppLayout>{children}</AppLayout>
+                  <CookieBanner />
+                </MaintenanceGuard>
               </AnalyticsProvider>
             </Providers>
           </AuthProvider>

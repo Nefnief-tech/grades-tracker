@@ -331,7 +331,7 @@ const showNetworkErrorOnce = () => {
     toast.className =
       "fixed top-4 right-4 bg-destructive text-destructive-foreground p-4 rounded-md shadow-lg z-50 flex items-center gap-2 max-w-md";
     toast.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wifi-off"><line x1="2" x2="22" y1="2" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 12.03a10 10 0 0 1 5.17-2.8"/><path d="M10.71 19.71a1 1 0 1 1-1.42-1.42 1 1 0 0 1 1.42 1.42z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wifi-off"><line x1="2" x2="22" y1="2" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14 1.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 12.03a10 10 0 0 1 5.17-2.8"/><path d="M10.71 19.71a1 1 0 1 1-1.42-1.42 1 1 0 0 1 1.42 1.42z"/></svg>
       <span>Network error connecting to cloud. Using local storage instead.</span>
       <button class="ml-auto text-destructive-foreground/70 hover:text-destructive-foreground">×</button>
     `;
@@ -761,6 +761,7 @@ export const syncSubjectsToCloud = async (
   userId: string,
   subjects: Subject[]
 ): Promise<boolean> => {
+  await ensureNotInMaintenance();
   console.log(
     `[Cloud] Starting sync for user ${userId} with ${subjects.length} subjects`
   );
@@ -950,6 +951,7 @@ export const syncSubjectsToCloud = async (
 export const getSubjectsFromCloud = async (
   userId: string
 ): Promise<Subject[]> => {
+  await ensureNotInMaintenance();
   try {
     console.log(`[Cloud] Fetching subjects for user ${userId}`);
     const databases = getDatabases();
@@ -1145,6 +1147,7 @@ export const deleteGradeFromCloud = async (
   subjectId: string,
   grade: Grade
 ): Promise<boolean> => {
+  await ensureNotInMaintenance();
   try {
     const databases = getDatabases();
 
@@ -1202,6 +1205,7 @@ export const syncGradesToCloud = async (
   subjectid: string,
   grades: any[]
 ) => {
+  await ensureNotInMaintenance();
   if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
     return false;
   }
@@ -1286,6 +1290,7 @@ export const deleteSubjectFromCloud = async (
   userId: string,
   subjectId: string
 ): Promise<boolean> => {
+  await ensureNotInMaintenance();
   try {
     const databases = getDatabases();
 
@@ -1331,6 +1336,7 @@ export const deleteSubjectFromCloud = async (
 
 // Delete all cloud data for a user but keep their account
 export const deleteAllCloudData = async (userId: string) => {
+  await ensureNotInMaintenance();
   if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
     showNetworkErrorOnce();
     throw new Error("Cloud features are unavailable. Please try again later.");
@@ -1508,3 +1514,45 @@ export const getAppwriteClient = () => {
   }
   return { client: appwriteClient, databases };
 };
+
+// Helper to check maintenance mode status
+let maintenanceStatusCache: {
+  isMaintenanceMode: boolean;
+  maintenanceMessage?: string;
+  timestamp: number;
+} | null = null;
+const MAINTENANCE_CACHE_DURATION = 60 * 1000; // 1 minute
+
+export async function checkMaintenanceMode(
+  forceRefresh = false
+): Promise<{ isMaintenanceMode: boolean; maintenanceMessage?: string }> {
+  const now = Date.now();
+  if (
+    !forceRefresh &&
+    maintenanceStatusCache &&
+    now - maintenanceStatusCache.timestamp < MAINTENANCE_CACHE_DURATION
+  ) {
+    return maintenanceStatusCache;
+  }
+  try {
+    const res = await fetch("/api/admin/maintenance");
+    if (!res.ok) throw new Error("Failed to fetch maintenance status");
+    const data = await res.json();
+    maintenanceStatusCache = { ...data, timestamp: now };
+    return data;
+  } catch (e) {
+    // If fetch fails, assume not in maintenance
+    return { isMaintenanceMode: false };
+  }
+}
+
+// Wrap sync functions to check maintenance mode
+async function ensureNotInMaintenance() {
+  const { isMaintenanceMode, maintenanceMessage } =
+    await checkMaintenanceMode();
+  if (isMaintenanceMode) {
+    throw new Error(
+      maintenanceMessage || "Sync is disabled during maintenance mode."
+    );
+  }
+}
