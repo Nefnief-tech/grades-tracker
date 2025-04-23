@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Banner } from "@/components/ui/Banner";
+import { Input } from "@/components/ui/input";
 import {
   AlertTriangle,
   X,
@@ -11,6 +12,7 @@ import {
   Settings,
   RefreshCw,
   BookOpen,
+  Lock,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -32,6 +34,59 @@ export default function MaintenanceGuard({
   const [settings, setSettings] = useState<MaintenanceSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [dismissed, setDismissed] = useState(false);
+  const [password, setPassword] = useState("");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check if user was previously authenticated in this session
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const authenticated =
+        sessionStorage.getItem("maintenanceAuthenticated") === "true";
+      setIsAuthenticated(authenticated);
+    }
+  }, []);
+
+  // Function to handle password authentication
+  const handleAuthentication = () => {
+    setIsAuthenticating(true);
+
+    // Simple authentication - in a real app, you would validate against a secure API
+    // Using a dedicated maintenance password from env or fallback to default
+    const adminPassword =
+      process.env.NEXT_PUBLIC_MAINTENANCE_PASSWORD || "admin123";
+
+    if (password === adminPassword) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem("maintenanceAuthenticated", "true");
+
+      // Disable FORCE_LOCAL_MODE to allow Appwrite sync during maintenance
+      try {
+        // Import dynamically to avoid circular dependencies
+        import("@/lib/appwrite").then((appwrite) => {
+          // Set FORCE_LOCAL_MODE to false to enable cloud sync
+          appwrite.FORCE_LOCAL_MODE = false;
+          console.log(
+            "[MaintenanceGuard] Disabled FORCE_LOCAL_MODE to allow cloud sync"
+          );
+        });
+      } catch (error) {
+        console.error("Failed to disable local mode:", error);
+      }
+    } else {
+      // Show error toast
+      alert("Invalid password");
+    }
+
+    setIsAuthenticating(false);
+  };
+
+  // Handle Enter key press
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleAuthentication();
+    }
+  };
 
   useEffect(() => {
     async function fetchSettings() {
@@ -87,8 +142,8 @@ export default function MaintenanceGuard({
     return <>{children}</>;
   }
 
-  // If admin, always show content with banner
-  if (isAdmin) {
+  // If admin or authenticated, always show content with banner
+  if (isAdmin || isAuthenticated) {
     return <>{children}</>;
   }
 
@@ -120,6 +175,40 @@ export default function MaintenanceGuard({
               "Our system is currently undergoing scheduled maintenance to improve your experience."}
           </p>
 
+          {/* Password authentication section */}
+          <div className="mt-6 border-t border-muted pt-6">
+            <div className="flex flex-col gap-2">
+              <div className="relative">
+                <div className="flex items-center">
+                  <div className="relative flex-1">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      <Lock className="h-4 w-4" />
+                    </div>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Enter admin password"
+                      className="w-full pl-9 pr-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
+                      disabled={isAuthenticating}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Enter admin password to bypass maintenance mode
+                </p>
+              </div>
+              <Button
+                onClick={handleAuthentication}
+                disabled={isAuthenticating || !password.trim()}
+                className="w-full"
+              >
+                {isAuthenticating ? "Authenticating..." : "Authenticate"}
+              </Button>
+            </div>
+          </div>
+
           <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               variant="outline"
@@ -148,7 +237,9 @@ export default function MaintenanceGuard({
   }
 
   // Show a shadcn/ui Alert at the top for all other routes (except /admin)
-  if (dismissed) return <>{children}</>;
+  // If authenticated or dismissed, just show the children
+  if (isAuthenticated || dismissed) return <>{children}</>;
+
   return (
     <>
       <div

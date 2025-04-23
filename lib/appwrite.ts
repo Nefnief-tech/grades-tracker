@@ -11,6 +11,18 @@ export const ENABLE_ENCRYPTION = true; // Set to true to enable encryption
 // Add a local mode flag that can be controlled at runtime
 export let FORCE_LOCAL_MODE = false;
 
+// Make FORCE_LOCAL_MODE accessible globally for maintenance mode override
+if (typeof window !== "undefined") {
+  // Create a getter/setter to allow external modification
+  Object.defineProperty(window, "FORCE_LOCAL_MODE", {
+    get: () => FORCE_LOCAL_MODE,
+    set: (value) => {
+      console.log(`[Appwrite] Setting FORCE_LOCAL_MODE to ${value}`);
+      FORCE_LOCAL_MODE = value;
+    },
+  });
+}
+
 // Flag to track if we've already shown the network error
 let hasShownNetworkError = false;
 
@@ -1550,9 +1562,13 @@ export async function checkMaintenanceMode(
 async function ensureNotInMaintenance() {
   const { isMaintenanceMode, maintenanceMessage } =
     await checkMaintenanceMode();
-  if (isMaintenanceMode) {
+
+  // Only throw error if in maintenance mode AND FORCE_LOCAL_MODE is true
+  // This allows authenticated users to bypass the maintenance restriction
+  if (isMaintenanceMode && FORCE_LOCAL_MODE) {
     throw new Error(
-      maintenanceMessage || "Sync is disabled during maintenance mode."
+      maintenanceMessage ||
+        "Sync is disabled during maintenance mode. Authenticate to enable sync."
     );
   }
 }
