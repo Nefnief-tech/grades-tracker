@@ -773,6 +773,18 @@ export default function WikiPage() {
                         <li>Communicate changes to users</li>
                       </ul>
                     </div>
+
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-sm sm:text-base font-semibold">
+                        Maintenance Mode
+                      </h4>
+                      <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                        <li>Enable via Admin Panel → System → Maintenance</li>
+                        <li>Set custom maintenance message for users</li>
+                        <li>Settings sync across all app instances</li>
+                        <li>Admin users can always access the system</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -796,6 +808,34 @@ export default function WikiPage() {
               <CardContent className="px-4 sm:px-6">
                 <div className="space-y-3 sm:space-y-4">
                   <h3 className="text-lg sm:text-xl font-bold">
+                    Maintenance Mode
+                  </h3>
+                  <p className="text-xs sm:text-base">
+                    Grade Tracker includes a maintenance mode feature that
+                    allows administrators to temporarily restrict access to the
+                    application while performing updates or maintenance tasks.
+                  </p>
+                  <ul className="list-disc pl-4 sm:pl-6 space-y-1 sm:space-y-2 text-xs sm:text-base">
+                    <li>
+                      <strong>How it works:</strong> When enabled, regular users
+                      are shown a maintenance page instead of the application.
+                    </li>
+                    <li>
+                      <strong>Cloud Storage:</strong> Maintenance settings are
+                      stored in Appwrite and synchronized across all instances.
+                    </li>
+                    <li>
+                      <strong>Admin Access:</strong> Administrators (users with
+                      ID matching NEXT_PUBLIC_ADMIN_ID) can still access the
+                      application.
+                    </li>
+                    <li>
+                      <strong>Password Bypass:</strong> Users can bypass
+                      maintenance mode by entering the admin password.
+                    </li>
+                  </ul>
+
+                  <h3 className="text-lg sm:text-xl font-bold mt-4">
                     Environment Variables
                   </h3>
                   <p className="text-xs sm:text-base">
@@ -819,6 +859,57 @@ export default function WikiPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border text-xs">
+                        <tr>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 font-mono">
+                            NEXT_PUBLIC_MAINTENANCE_PASSWORD
+                          </td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">
+                            Password that allows users to bypass maintenance
+                            mode
+                          </td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">
+                            admin123
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 font-mono">
+                            NEXT_PUBLIC_APPWRITE_MAINTENANCE_COLLECTION_ID
+                          </td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">
+                            Appwrite collection ID for storing maintenance
+                            settings
+                          </td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 font-mono">
+                            APPWRITE_MAINTENANCE_COLLECTION_ID
+                          </td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">
+                            Server-side version of the maintenance collection ID
+                          </td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 font-mono">
+                            APPWRITE_API_KEY
+                          </td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">
+                            Server-side API key for Appwrite (required for
+                            maintenance mode)
+                          </td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3 font-mono">
+                            NEXT_PUBLIC_ADMIN_ID
+                          </td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">
+                            Appwrite user ID of the administrator who can bypass
+                            maintenance mode
+                          </td>
+                          <td className="px-2 py-2 sm:px-4 sm:py-3">-</td>
+                        </tr>
                         <tr>
                           <td className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-mono text-xs">
                             NEXT_PUBLIC_APPWRITE_ENDPOINT
@@ -953,6 +1044,55 @@ export default function WikiPage() {
               <CardContent className="px-4 sm:px-6">
                 <div className="space-y-4">
                   <h3 className="text-lg sm:text-xl font-bold">
+                    Maintenance Mode
+                  </h3>
+                  <p className="text-xs sm:text-base">
+                    If you encounter a maintenance page when trying to access
+                    the application:
+                  </p>
+                  <div className="bg-muted/30 p-3 sm:p-4 rounded-lg">
+                    <h4 className="text-sm sm:text-lg font-semibold">
+                      Problem: "System Maintenance" page appears
+                    </h4>
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <p className="font-semibold text-xs sm:text-sm">
+                          What it means:
+                        </p>
+                        <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                          <li>
+                            The system administrator has temporarily restricted
+                            access
+                          </li>
+                          <li>Updates or maintenance are being performed</li>
+                          <li>All users are affected by this restriction</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <p className="font-semibold text-xs sm:text-sm">
+                          Solutions:
+                        </p>
+                        <ul className="list-disc pl-4 space-y-1 mt-1 text-xs">
+                          <li>Check back later when maintenance is complete</li>
+                          <li>
+                            Contact your administrator for an estimated
+                            completion time
+                          </li>
+                          <li>
+                            If you're an admin, enter the maintenance password
+                            to bypass
+                          </li>
+                          <li>
+                            Administrators can disable maintenance mode in Admin
+                            Panel → System → Maintenance
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-lg sm:text-xl font-bold mt-4">
                     Authentication Issues
                   </h3>
 
