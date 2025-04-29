@@ -1,15 +1,14 @@
 {
   "name": "my-v0-project",
   "version": "0.1.0",
-  "private": true,
-  "scripts": {
+  "private": true,  "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "deploy": "pnpm install --no-frozen-lockfile && next build",
-    "railway:build": "bash ./scripts/build.sh"
-  },  "engines": {
+    "railway:build": "node -v && pnpm install --no-frozen-lockfile && next build"
+  },"engines": {
     "node": ">=20.10.0",
     "npm": ">=8.0.0"
   },
