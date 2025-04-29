@@ -515,9 +515,9 @@ export default function AcademicCalendarPage() {
                 <div className="space-y-4">
                   <div
                     className="bg-muted/50 p-4 rounded-lg border"
-                    style={{
-                      borderLeft: selectedGrade.subject.color
-                        ? `4px solid ${selectedGrade.subject.color}`
+                  style={{
+                      borderLeft: (selectedGrade.subject as any).color
+                        ? `4px solid ${(selectedGrade.subject as any).color}`
                         : undefined,
                     }}
                   >
@@ -619,10 +619,9 @@ export default function AcademicCalendarPage() {
               <div className="py-4">
                 <div className="space-y-4">
                   <div
-                    className="bg-muted/50 p-4 rounded-lg border"
-                    style={{
-                      borderLeft: selectedTest.subject.color
-                        ? `4px solid ${selectedTest.subject.color}`
+                    className="bg-muted/50 p-4 rounded-lg border"                    style={{
+                      borderLeft: (selectedTest.subject as any).color
+                        ? `4px solid ${(selectedTest.subject as any).color}`
                         : undefined,
                     }}
                   >
@@ -762,10 +761,9 @@ export default function AcademicCalendarPage() {
               <div className="py-4">
                 <div className="space-y-4">
                   <div
-                    className="bg-muted/50 p-4 rounded-lg border"
-                    style={{
-                      borderLeft: selectedTimetableEntry.subject.color
-                        ? `4px solid ${selectedTimetableEntry.subject.color}`
+                    className="bg-muted/50 p-4 rounded-lg border"                    style={{
+                      borderLeft: (selectedTimetableEntry.subject as any).color
+                        ? `4px solid ${(selectedTimetableEntry.subject as any).color}`
                         : undefined,
                     }}
                   >
@@ -859,8 +857,7 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">
-            <div className="space-y-4 mb-4">
+          <div className="py-2">            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -873,10 +870,10 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
+                        {(subject as any).color && (
                           <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
+                            style={{ backgroundColor: (subject as any).color }}
                           ></div>
                         )}
                         {subject.name}
@@ -913,8 +910,7 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">
-            <div className="space-y-4 mb-4">
+          <div className="py-2">            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select-test">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -927,10 +923,10 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
+                        {(subject as any).color && (
                           <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
+                            style={{ backgroundColor: (subject as any).color }}
                           ></div>
                         )}
                         {subject.name}
@@ -980,8 +976,7 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">
-            <div className="space-y-4 mb-4">
+          <div className="py-2">            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select-timetable">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -994,10 +989,10 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
+                        {(subject as any).color && (
                           <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
+                            style={{ backgroundColor: (subject as any).color }}
                           ></div>
                         )}
                         {subject.name}
@@ -1180,10 +1175,8 @@ function WeeklyTimetable({
             <div className="space-y-2">
               {day.entries.map((entry) => {
                 const subject = subjects.find((s) => s.id === entry.subjectId);
-                if (!subject) return null;
-
-                // Use entry color if available, otherwise fall back to subject color
-                const entryColor = entry.color || subject.color;
+                if (!subject) return null;                // Use entry color if available, otherwise fall back to subject color
+                const entryColor = (entry as any).color || (subject as any).color;
 
                 return (
                   <div
