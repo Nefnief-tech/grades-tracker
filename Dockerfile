@@ -1,5 +1,5 @@
 # Multi-architecture build stage
-FROM --platform=$BUILDPLATFORM node:23-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
 
 # Set target architecture explicitly
 ARG TARGETARCH
@@ -11,12 +11,12 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat python3 make g++
 
 # Copy package files
-COPY package.json ./
-# Note: Don't copy pnpm-lock.yaml since it might not be compatible
+COPY package*.json ./
+COPY pnpm-lock.yaml ./
 
-# Install pnpm and dependencies - EXPLICITLY use no-frozen-lockfile
+# Install pnpm and dependencies - EXPLICITLY use frozen-lockfile
 RUN npm install -g pnpm && \
-    pnpm install --no-frozen-lockfile
+    pnpm install --frozen-lockfile
 
 # Copy application code
 COPY . .
@@ -28,7 +28,7 @@ ENV NEXT_STRICT_MODE=false
 ENV NEXT_TYPECHECK=false
 ENV NEXT_PUBLIC_OPTIMIZE_CSS=true
 ENV NEXT_PUBLIC_OPTIMIZE_FONTS=true
-RUN pnpm build
+RUN pnpm run build
 
 # Production stage
 FROM --platform=$TARGETPLATFORM node:20-alpine
@@ -47,12 +47,12 @@ ENV NEXT_PUBLIC_OPTIMIZE_CSS=true
 ENV NEXT_PUBLIC_OPTIMIZE_FONTS=true
 
 # Copy package files
-COPY package.json ./
-# Note: Don't copy pnpm-lock.yaml since it might not be compatible
+COPY package*.json ./
+COPY pnpm-lock.yaml ./
 
-# Install pnpm and production dependencies only - EXPLICITLY use no-frozen-lockfile
+# Install pnpm and production dependencies only - EXPLICITLY use frozen-lockfile
 RUN npm install -g pnpm && \
-    pnpm install --no-frozen-lockfile --prod
+    pnpm install --frozen-lockfile --prod
 
 # Copy built application from builder stage
 COPY --from=builder /app/.next ./.next
