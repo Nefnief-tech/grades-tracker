@@ -35,7 +35,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { useRouter } from "next/navigation";
-import { Subject, Grade, TimetableEntry } from "@/types/grades";
+import { Subject, Grade, TimetableEntry, Test } from "@/types/grades";
 import { useSettings } from "@/contexts/SettingsContext";
 import { format, parseISO } from "date-fns";
 import { GradeForm } from "@/components/GradeForm";
