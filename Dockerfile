@@ -1,5 +1,5 @@
 # Multi-architecture build stage
-FROM --platform=$BUILDPLATFORM node:23-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:20.10.0-alpine AS builder
 
 # Set target architecture explicitly
 ARG TARGETARCH
@@ -31,7 +31,7 @@ ENV NEXT_PUBLIC_OPTIMIZE_FONTS=true
 RUN pnpm build
 
 # Production stage
-FROM --platform=$TARGETPLATFORM node:20-alpine
+FROM --platform=$TARGETPLATFORM node:20.10.0-alpine
 
 WORKDIR /app
 
