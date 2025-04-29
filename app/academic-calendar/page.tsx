@@ -38,7 +38,7 @@ import { useRouter } from "next/navigation";
 import { Subject, Grade, TimetableEntry, Test } from "@/types/grades";
 import { useSettings } from "@/contexts/SettingsContext";
 import { format, parseISO } from "date-fns";
-import { GradeForm } from "@/components/GradeForm";
+import { CalendarGradeForm } from "@/components/CalendarGradeForm";
 import { TimetableForm } from "@/components/TimetableForm";
 import {
   Dialog,
@@ -882,11 +882,8 @@ export default function AcademicCalendarPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <GradeForm
+            </div>            <CalendarGradeForm
               onSubmit={handleAddGrade}
-              onCancel={() => setAddGradeOpen(false)}
               initialGrade={{
                 id: generateId(),
                 value: 1.0,
@@ -895,6 +892,7 @@ export default function AcademicCalendarPage() {
                 type: "",
               }}
               requireDate={true}
+              onCancel={() => setAddGradeOpen(false)}
             />
           </div>
         </DialogContent>
