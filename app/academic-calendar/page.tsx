@@ -883,13 +883,12 @@ export default function AcademicCalendarPage() {
                 </SelectContent>
               </Select>
             </div>            <CalendarGradeForm
-              onSubmit={handleAddGrade}
-              initialGrade={{
+              onSubmit={handleAddGrade}              initialGrade={{
                 id: generateId(),
                 value: 1.0,
                 date: new Date().toISOString().split("T")[0],
                 weight: 1.0,
-                type: "",
+                type: "Test",
               }}
               requireDate={true}
               onCancel={() => setAddGradeOpen(false)}
