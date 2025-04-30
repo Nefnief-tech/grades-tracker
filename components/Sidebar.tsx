@@ -130,7 +130,7 @@ export function Sidebar() {
       href: "/settings",
       icon: Settings,
       current: pathname === "/settings",
-    },
+    }
   ];
 
   return (

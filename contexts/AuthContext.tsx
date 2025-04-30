@@ -16,6 +16,7 @@ export type User = {
   name?: string;
   syncEnabled?: boolean;
   isAdmin?: boolean;
+  twoFactorEnabled?: boolean;
 };
 
 interface AuthContextType {
@@ -26,7 +27,7 @@ interface AuthContextType {
     password: string,
     rememberMe?: boolean
   ) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<any>;
   logout: () => Promise<void>;
   updateUserState: (updatedUser: Partial<User>) => void;
   isOffline: boolean;
@@ -143,41 +144,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []);
-
-  const login = async (
+  }, []);  const login = async (
     email: string,
     password: string,
     rememberMe?: boolean
   ) => {
     setIsLoading(true);
     try {
-      await appwriteLogin(email, password);
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-      setIsAdmin(!!currentUser?.isAdmin); // Update isAdmin on login
-
-      // Set admin cookie if the user is an admin
-      manageAdminCookie(currentUser?.isAdmin);
+      const { enhancedLogin } = await import('@/lib/enhanced-auth');
+      await enhancedLogin(email, password, setUser, setIsAdmin, manageAdminCookie);
     } catch (error) {
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   const register = async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
-      await createAccount(email, password, name);
-      await appwriteLogin(email, password); // Auto-login after registration
+      // Import the registration service
+      const { RegistrationService } = await import('@/lib/registration-service');
+      
+      // Create a redirect URL for verification
+      const verificationRedirectUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/verify-email` 
+        : 'https://gradetracker.app/verify-email';
+      
+      // Initialize the service and register the user
+      const registrationService = new RegistrationService(verificationRedirectUrl);
+      const result = await registrationService.registerUser(email, password, name);
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
+      // Auto-login after registration
+      await appwriteLogin(email, password);
       const currentUser = await getCurrentUser();
       setUser(currentUser);
-      setIsAdmin(!!currentUser?.isAdmin); // Update isAdmin on register
-
+      setIsAdmin(!!currentUser?.isAdmin);
+      
       // New users typically aren't admins, but check anyway
       manageAdminCookie(currentUser?.isAdmin);
+      
+      // Return success with message about verification email
+      return {
+        success: true,
+        message: 'Registration successful. Please check your email to verify your account.'
+      };
     } catch (error) {
+      console.error("Registration error:", error);
       throw error;
     } finally {
       setIsLoading(false);

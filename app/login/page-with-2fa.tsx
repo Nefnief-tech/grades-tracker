@@ -38,12 +38,19 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      // 2FA will be handled in the login function
+      // It will redirect to the 2FA verification page if needed
       await login(email, password);
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      window.location.href = "/";
+      
+      // Only show this toast if we're not redirected to 2FA
+      if (window.location.pathname !== '/verify-2fa') {
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        // If no 2FA needed, proceed to dashboard
+        window.location.href = "/";
+      }
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

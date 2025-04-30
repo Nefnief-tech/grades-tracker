@@ -547,6 +547,20 @@ export const createAccount = async (
             syncEnabled: false,
           }
         );
+        
+        // Send verification email with custom template
+        const verificationRedirectUrl = typeof window !== 'undefined' 
+          ? `${window.location.origin}/verify-email` 
+          : 'https://gradetracker.app/verify-email';
+          
+        try {
+          // Create verification URL
+          await account.createVerification(verificationRedirectUrl);
+          console.log("Verification email sent to:", email);
+        } catch (verifyError) {
+          console.error("Error sending verification email:", verifyError);
+          // We continue even if verification email fails
+        }
       } catch (dbError) {
         console.error("Error creating user document:", dbError);
       }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -21,6 +22,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const router = useRouter();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,7 +45,7 @@ export default function LoginPage() {
         title: "Login successful",
         description: "Welcome back!",
       });
-      window.location.href = "/";
+      window.location.href = "/"; // Use direct navigation instead of router
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
@@ -114,7 +116,7 @@ export default function LoginPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => window.location.href = "/"}
+                  onClick={() => window.location.href = "/"} // Direct navigation
                   type="button"
                 >
                   Continue without logging in
