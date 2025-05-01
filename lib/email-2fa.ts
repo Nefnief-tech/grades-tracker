@@ -23,7 +23,7 @@ export class Email2FAService {
     
     this.databases = new Databases(this.client);
     this.functions = new Functions(this.client);
-    this.databaseId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '68121d5f002cc0967d46';
+    this.databaseId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '67d6b079002144822b5e';
     this.collectionId = process.env.NEXT_PUBLIC_APPWRITE_2FA_CODES_COLLECTION_ID || 'two_factor_codes';
     this.userPrefsCollectionId = process.env.NEXT_PUBLIC_APPWRITE_USER_PREFS_COLLECTION_ID || 'user_preferences';
     this.emailFunctionId = process.env.NEXT_PUBLIC_APPWRITE_EMAIL_FUNCTION_ID || '';
@@ -91,13 +91,61 @@ export class Email2FAService {
     try {
       if (typeof window === 'undefined') return false;
       
+      const value = localStorage.getItem(`2fa_enabled_${userId}`);
+      return value === 'true';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Set 2FA enabled/disabled for a user
+   * @param userId The user ID
+   * @param enabled Whether 2FA should be enabled
+   */
+  async set2FAEnabled(userId: string, enabled: boolean): Promise<boolean> {
+    try {
+      // If using localStorage only mode, store in localStorage
+      if (this.useLocalStorageOnly) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`2fa_enabled_${userId}`, enabled ? 'true' : 'false');
+        }
+        return true;
+      }
+
+      try {
+        // Look for existing preferences
+        const preferences = await this.databases.listDocuments(
+          this.databaseId,
+          this.userPrefsCollectionId,
+          [Query.equal('userId', userId)]
+        );
+        
+        if (preferences.documents.length > 0) {
+          // Update existing preferences
+          const prefDoc = preferences.documents[0];
+          await this.databases.updateDocument(
+            this.databaseId,
+            this.userPrefsCollectionId,
+            prefDoc.$id,
+            { twoFactorEnabled: enabled }
+          );
+        } else {
+          // Create new preferences
+          await this.databases.createDocument(
+            this.databaseId,
+            this.userPrefsCollectionId,
+            ID.unique(),
+            {
+              userId,
               twoFactorEnabled: enabled
             }
           );
         }
         
         return true;
-      } catch (error: any) {        // Handle missing collection error
+      } catch (error: any) {
+        // Handle missing collection error
         if (error.message && error.message.includes('could not be found')) {
           console.warn(`${this.userPrefsCollectionId} collection not found. Please create it using setup-2fa.bat`);
           
@@ -119,7 +167,8 @@ export class Email2FAService {
   /**
    * Generate and store a verification code
    * @param userId The user ID
-   */  async generateAndStoreCode(userId: string): Promise<string> {
+   */
+  async generateAndStoreCode(userId: string): Promise<string> {
     try {
       // Generate a new code
       const code = this.generateVerificationCode();
@@ -214,7 +263,8 @@ export class Email2FAService {
    * Verify a code entered by the user
    * @param userId The user ID
    * @param code The verification code
-   */  async verifyCode(userId: string, code: string): Promise<boolean> {
+   */
+  async verifyCode(userId: string, code: string): Promise<boolean> {
     try {
       try {
         // Find the code in the database
@@ -269,7 +319,8 @@ export class Email2FAService {
       return false;
     }
   }
-    /**
+
+  /**
    * Verify code using localStorage fallback
    */
   private verifyLocalCode(userId: string, code: string): boolean {
@@ -318,7 +369,8 @@ export class Email2FAService {
   /**
    * Delete old or expired codes for a user
    * @param userId The user ID
-   */  private async cleanupOldCodes(userId: string): Promise<void> {
+   */
+  private async cleanupOldCodes(userId: string): Promise<void> {
     try {
       try {
         const results = await this.databases.listDocuments(

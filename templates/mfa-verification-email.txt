@@ -1,0 +1,19 @@
+Hello {{user}},
+
+{{emails.mfaChallenge.body}}
+
+Your verification code: {{code}}
+
+Please use this verification code to complete the authentication process.
+This code will expire in 10 minutes.
+
+If you didn't request this code, please ignore this email or contact support if you have concerns.
+
+Verify by clicking this link: {{redirect}}
+
+{{emails.mfaChallenge.footer}}
+
+Thanks,
+The {{project}} Team
+
+© {{currentYear}} {{project}}. All rights reserved.

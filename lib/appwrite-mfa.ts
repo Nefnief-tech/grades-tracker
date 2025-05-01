@@ -1,9 +1,9 @@
-import { Client, Account } from 'appwrite';
+import { Client, Account, ID, AppwriteException, AuthenticationFactor, Models } from 'appwrite';
 
 /**
- * Service for handling two-factor authentication using Appwrite
+ * Service for handling two-factor authentication using Appwrite's official MFA API
  */
-export class AppwriteMFAService {
+export class AppwriteMFA {
   private client: Client;
   private account: Account;
 
@@ -16,13 +16,13 @@ export class AppwriteMFAService {
   }
 
   /**
-   * Get MFA factors for the current user
+   * Get the current user's MFA factors
    */
-  async getFactors() {
+  async listFactors(): Promise<Models.MfaFactors> {
     try {
       return await this.account.listMfaFactors();
     } catch (error) {
-      console.error('Error getting MFA factors:', error);
+      console.error('Error listing MFA factors:', error);
       throw error;
     }
   }
@@ -30,10 +30,10 @@ export class AppwriteMFAService {
   /**
    * Check if MFA is enabled for the current user
    */
-  async isMFAEnabled() {
+  async isMfaEnabled(): Promise<boolean> {
     try {
       const factors = await this.account.listMfaFactors();
-      return !!(factors.totp?.length || factors.phone || factors.email);
+      return !!(factors.totp || factors.phone || factors.email);
     } catch (error) {
       console.error('Error checking MFA status:', error);
       return false;
@@ -41,45 +41,71 @@ export class AppwriteMFAService {
   }
 
   /**
-   * Create a TOTP authenticator factor for the user
+   * Create a challenge for email verification
    */
-  async createTOTPFactor() {
+  async createEmailChallenge(): Promise<Models.MfaChallenge> {
     try {
-      return await this.account.createMfaAuthenticator();
+      return await this.account.createMfaChallenge(AuthenticationFactor.Email);
     } catch (error) {
-      console.error('Error creating TOTP factor:', error);
+      console.error('Error creating email challenge:', error);
       throw error;
     }
   }
 
   /**
-   * Complete TOTP setup with verification code
+   * Create a challenge for TOTP verification
    */
-  async completeTOTPSetup(secret: string, code: string) {
+  async createTotpChallenge(): Promise<Models.MfaChallenge> {
     try {
-      return await this.account.updateMfaAuthenticator(secret, code);
+      return await this.account.createMfaChallenge(AuthenticationFactor.Totp);
     } catch (error) {
-      console.error('Error completing TOTP setup:', error);
+      console.error('Error creating TOTP challenge:', error);
       throw error;
     }
   }
 
   /**
-   * Create a recovery codes for MFA
+   * Create a challenge for SMS verification
    */
-  async createRecoveryCodes() {
+  async createPhoneChallenge(): Promise<Models.MfaChallenge> {
     try {
-      return await this.account.createMfaRecoveryCodes();
+      return await this.account.createMfaChallenge(AuthenticationFactor.Phone);
     } catch (error) {
-      console.error('Error creating recovery codes:', error);
+      console.error('Error creating phone challenge:', error);
       throw error;
     }
   }
 
   /**
-   * Get recovery codes
+   * Create a challenge for recovery code verification
    */
-  async getRecoveryCodes() {
+  async createRecoveryChallenge(): Promise<Models.MfaChallenge> {
+    try {
+      return await this.account.createMfaChallenge(AuthenticationFactor.Recoverycode);
+    } catch (error) {
+      console.error('Error creating recovery challenge:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify a challenge with a code
+   * @param challengeId The ID of the challenge to verify
+   * @param code The verification code
+   */
+  async verifyChallenge(challengeId: string, code: string): Promise<Models.MfaChallenge> {
+    try {
+      return await this.account.updateMfaChallenge(challengeId, code);
+    } catch (error) {
+      console.error('Error verifying challenge:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get recovery codes for the account
+   */
+  async getRecoveryCodes(): Promise<Models.MfaRecoveryCodes> {
     try {
       return await this.account.getMfaRecoveryCodes();
     } catch (error) {
@@ -91,7 +117,7 @@ export class AppwriteMFAService {
   /**
    * Regenerate recovery codes
    */
-  async regenerateRecoveryCodes() {
+  async regenerateRecoveryCodes(): Promise<Models.MfaRecoveryCodes> {
     try {
       return await this.account.updateMfaRecoveryCodes();
     } catch (error) {
@@ -99,28 +125,9 @@ export class AppwriteMFAService {
       throw error;
     }
   }
-
-  /**
-   * Create challenge during login process
-   */
-  async createChallenge(factorId: string) {
-    try {
-      return await this.account.createMfaChallenge(factorId);
-    } catch (error) {
-      console.error('Error creating MFA challenge:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Verify challenge during login process
-   */
-  async verifyChallenge(challengeId: string, code: string) {
-    try {
-      return await this.account.updateMfaChallenge(challengeId, code);
-    } catch (error) {
-      console.error('Error verifying challenge:', error);
-      throw error;
-    }
-  }
 }
+
+// Create a singleton instance
+const appwriteMFA = new AppwriteMFA();
+
+export default appwriteMFA;

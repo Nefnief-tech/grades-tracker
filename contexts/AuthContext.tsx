@@ -2,7 +2,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from "react";
 import {
-  createAccount,
   login as appwriteLogin,
   logout as appwriteLogout,
   getCurrentUser,
@@ -19,6 +18,22 @@ export type User = {
   twoFactorEnabled?: boolean;
 };
 
+export type MFAChallengeInfo = {
+  challengeId: string;
+  email: string;
+};
+
+export type LoginResult = {
+  success: boolean;
+  user?: User;
+  requiresMFA?: boolean;
+  mfaChallenge?: {
+    challengeId: string;
+    email: string;
+  };
+  error?: string;
+};
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -26,7 +41,7 @@ interface AuthContextType {
     email: string,
     password: string,
     rememberMe?: boolean
-  ) => Promise<void>;
+  ) => Promise<LoginResult>;
   register: (email: string, password: string, name: string) => Promise<any>;
   logout: () => Promise<void>;
   updateUserState: (updatedUser: Partial<User>) => void;
@@ -73,7 +88,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return newUser as User;
     });
   };
-
   // Check if user is logged in on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -81,18 +95,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
         setIsAdmin(!!currentUser?.isAdmin); // Set isAdmin based on currentUser
-      } catch (error) {
-        // Handle specific error cases
+      } catch (authError: any) {      // Check for MFA requirement first
         if (
-          error.toString().includes("missing scope (account)") ||
-          error.toString().includes("Unauthorized") ||
-          error.code === 401
+          authError?.message?.includes("More factors are required") ||
+          authError?.code === 412
+        ) {
+          console.log("MFA verification required, redirecting to verification page");
+          
+          // Set a cookie to indicate MFA is required
+          // This will be picked up by our middleware
+          document.cookie = "mfa_required=true; path=/; max-age=300; SameSite=Strict";
+          
+          if (typeof window !== 'undefined' && 
+              !window.location.pathname.startsWith('/verify-mfa') &&
+              !window.location.pathname.startsWith('/login')) {
+            
+            // Create a new MFA challenge and redirect directly
+            try {
+              // Import the MFA handler dynamically
+              const appwriteMFA = (await import('@/lib/appwrite-mfa')).default;
+              const challenge = await appwriteMFA.createEmailChallenge();
+              
+              // Hard redirect to the verification page with challenge ID
+              window.location.href = `/verify-mfa?challengeId=${challenge.$id}&returnTo=${encodeURIComponent(window.location.pathname)}`;
+              return;
+            } catch (mfaError) {
+              console.error("Failed to create MFA challenge:", mfaError);
+              // Still redirect to verification page without challenge ID
+              window.location.href = `/verify-mfa?returnTo=${encodeURIComponent(window.location.pathname)}`;
+              return;
+            }
+          }
+          // We're already on the verification page, do nothing
+        }
+        // Handle other error cases
+        else if (
+          authError?.toString().includes("missing scope (account)") ||
+          authError?.toString().includes("Unauthorized") ||
+          authError?.code === 401
         ) {
           // User is not authenticated - this is normal for guests
           setUser(null);
           setIsAdmin(false);
         } else {
-          console.error("Authentication error:", error);
+          console.error("Authentication error:", authError);
           setUser(null);
           setIsAdmin(false);
         }
@@ -124,6 +170,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsAdmin(!!currentUser.isAdmin); // Update isAdmin on reconnect
           manageAdminCookie(currentUser.isAdmin);
         }
+      }).catch(err => {
+        console.log("[Auth] Error refreshing user after network reconnect:", err);
       });
     };
 
@@ -148,13 +196,98 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string,
     rememberMe?: boolean
-  ) => {
+  ): Promise<LoginResult> => {
     setIsLoading(true);
     try {
-      const { enhancedLogin } = await import('@/lib/enhanced-auth');
-      await enhancedLogin(email, password, setUser, setIsAdmin, manageAdminCookie);
-    } catch (error) {
-      throw error;
+      console.log('******************************');
+      console.log('*** AUTH CONTEXT - LOGIN STARTED');
+      console.log('*** Email:', email);
+      console.log('******************************');
+      
+      // Use our improved MFA handler
+      const { handleMfaLogin } = await import('@/lib/mfa-handler');
+      console.log('*** MFA handler imported successfully');
+      
+      // Call the handler
+      console.log('*** Calling MFA handler');
+      const result = await handleMfaLogin(email, password);
+      console.log('*** MFA handler result:', result);
+      
+      // If login was successful
+      if (result.success && result.user) {
+        setUser(result.user);
+        setIsAdmin(!!result.user?.isAdmin);
+        manageAdminCookie(result.user?.isAdmin);
+        return result;
+      }
+        // If MFA is required
+      if (result.requiresMFA && result.mfaChallenge) {
+        console.log('MFA challenge detected in login, redirecting to verification page');
+        console.log('Challenge ID:', result.mfaChallenge.challengeId);
+        
+        // Set a cookie to indicate MFA is required
+        document.cookie = "mfa_required=true; path=/; max-age=300; SameSite=Strict";
+        
+        // Hard redirect to verify-mfa page
+        const url = `/verify-mfa?email=${encodeURIComponent(email)}&challengeId=${result.mfaChallenge.challengeId}`;
+        console.log('Redirecting to:', url);
+        
+        if (typeof window !== 'undefined') {
+          // Force a complete page load rather than a client-side navigation
+          window.location.replace(url);
+        }
+      }
+      
+      // Return the result which includes MFA challenge info if needed
+      return result;
+    } catch (error: any) {
+      console.error('Login error in AuthContext:', error);
+      
+      // Special handling for MFA-related errors
+      if (error.message?.includes('More factors are required')) {
+        console.log('MFA challenge detected in login error');
+        
+        // Set a cookie to indicate MFA is required
+        document.cookie = "mfa_required=true; path=/; max-age=300; SameSite=Strict";
+        
+        try {
+          // Try to create a challenge
+          const appwriteMFA = (await import('@/lib/appwrite-mfa')).default;
+          const challenge = await appwriteMFA.createEmailChallenge();
+          
+          // Redirect to verification page
+          if (typeof window !== 'undefined') {
+            window.location.href = `/verify-mfa?email=${encodeURIComponent(email)}&challengeId=${challenge.$id}`;
+          }
+          
+          return {
+            success: false,
+            requiresMFA: true,
+            mfaChallenge: {
+              challengeId: challenge.$id,
+              email
+            }
+          };
+        } catch (challengeError) {
+          console.error('Error creating challenge:', challengeError);
+          
+          // Still redirect
+          if (typeof window !== 'undefined') {
+            window.location.href = `/verify-mfa?email=${encodeURIComponent(email)}`;
+          }
+        }
+        
+        return {
+          success: false,
+          requiresMFA: true,
+          error: error.message
+        };
+      }
+      
+      return {
+        success: false,
+        error: error.message || 'Login failed'
+      };
     } finally {
       setIsLoading(false);
     }
@@ -193,14 +326,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         success: true,
         message: 'Registration successful. Please check your email to verify your account.'
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
-
   const logout = async () => {
     setIsLoading(true);
     try {
@@ -209,6 +341,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAdmin(false); // Reset isAdmin on logout
       // Remove admin cookie on logout
       manageAdminCookie(false);
+      
+      // Force a hard redirect to the login page on logout
+      // This ensures any MFA state is completely cleared
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     } catch (error) {
       throw error;
     } finally {

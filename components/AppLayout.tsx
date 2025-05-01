@@ -26,6 +26,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     pathname === "/datenschutz" ||
     pathname?.startsWith("/reset-password") ||
     pathname?.startsWith("/verify-email") ||
+    pathname?.startsWith("/verify-mfa") ||   // Add MFA verification path
     pathname?.startsWith("/verify-2fa") ||
     pathname?.startsWith("/auth/");
 

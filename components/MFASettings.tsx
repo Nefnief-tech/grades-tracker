@@ -10,6 +10,9 @@ import { useToast } from '@/components/ui/use-toast';
 import { Shield, Loader2, CheckCircle, AlertCircle, Mail, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Email2FAService } from '@/lib/email-2fa';
+import appwriteMFA from '@/lib/appwrite-mfa';
+import { RecoveryCodesDisplay } from '@/components/RecoveryCodesDisplay';
+import { MFAVerificationDialog } from '@/components/MFAVerificationDialog';
 
 export function MFASettings() {
   const [isEnabled, setIsEnabled] = useState(false);
@@ -20,38 +23,32 @@ export function MFASettings() {
   const { toast } = useToast();
   const { user, updateUserState } = useAuth();
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
-    useEffect(() => {
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
+  const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);  useEffect(() => {
     const checkMFAStatus = async () => {
       if (!user) return;
       
       try {
-        const twoFactorService = new Email2FAService();
+        // Use the Appwrite MFA API to check if MFA is enabled
+        const enabled = await appwriteMFA.isMFAEnabled();
+        console.log('MFA status from Appwrite:', enabled);
+        setIsEnabled(enabled);
         
-        try {
-          const enabled = await twoFactorService.is2FAEnabled(user.id);
-          setIsEnabled(enabled);
-          
-          // Update user object if needed
-          if (user.twoFactorEnabled !== enabled) {
-            updateUserState({ twoFactorEnabled: enabled });
-          }
-        } catch (error) {
-          console.error('Error checking MFA status:', error);
-          
-          // Fallback to user object if database check fails
-          setIsEnabled(!!user.twoFactorEnabled);
-          
-          // Only show toast for errors other than missing collection
-          if (!String(error).includes('not found')) {
-            toast({
-              title: 'Error',
-              description: 'Failed to check two-factor authentication status',
-              variant: 'destructive',
-            });
-          }
+        // Update user object if needed
+        if (user.twoFactorEnabled !== enabled) {
+          updateUserState({ twoFactorEnabled: enabled });
         }
       } catch (error) {
-        console.error('Error in MFA check:', error);
+        console.error('Error checking MFA status:', error);
+        
+        // Fallback to user object if API check fails
+        setIsEnabled(!!user.twoFactorEnabled);
+        
+        toast({
+          title: 'Error',
+          description: 'Failed to check two-factor authentication status',
+          variant: 'destructive',
+        });
       } finally {
         setIsLoading(false);
       }
@@ -62,41 +59,42 @@ export function MFASettings() {
     } else {
       setIsLoading(false);
     }
-  }, [user, toast, updateUserState]);
-  
-  const handleEnableMFA = async () => {
+  }, [user, toast, updateUserState]);  const handleEnableMFA = async () => {
     if (!user) return;
     
     setSetupMode(true);
     setIsLoading(true);
     
     try {
-      // Generate verification code
-      const twoFactorService = new Email2FAService();
-      const code = await twoFactorService.generateAndStoreCode(user.id);
-      setGeneratedCode(code);
+      console.log('Starting MFA setup process');
       
-      // Send verification email
-      if (user.email) {
-        const sent = await twoFactorService.sendVerificationEmail(
-          user.email,
-          user.name || 'User',
-          code
-        );
-        
-        if (sent) {
-          setVerificationSent(true);
-          toast({
-            title: 'Verification Code Sent',
-            description: `Check your email (${user.email}) for the verification code.`,
-          });
-        } else {
-          toast({
-            title: 'Error',
-            description: 'Failed to send verification code. Please try again.',
-            variant: 'destructive',
-          });
-        }
+      // Create recovery codes first
+      const recoveryCodesResponse = await appwriteMFA.createRecoveryCodes();
+      console.log('Recovery codes created:', recoveryCodesResponse);
+      
+      // Store the recovery codes for display
+      if (recoveryCodesResponse && Array.isArray(recoveryCodesResponse.recoveryCodes)) {
+        setRecoveryCodes(recoveryCodesResponse.recoveryCodes);
+      } else {
+        console.error('Invalid recovery codes response:', recoveryCodesResponse);
+        setRecoveryCodes([]);
+      }
+      
+      // Create an email challenge (this will send the verification email)
+      const challenge = await appwriteMFA.createEmailChallenge();
+      console.log('Email challenge created:', challenge);
+      
+      setVerificationSent(true);
+      toast({
+        title: 'Verification Code Sent',
+        description: `Check your email for the verification code.`,
+      });
+      
+      // Store challenge ID for verification
+      if (challenge && challenge.$id) {
+        setGeneratedCode(challenge.$id);
+      } else {
+        throw new Error('Invalid challenge response');
       }
     } catch (error) {
       console.error('Error sending verification code:', error);
@@ -105,69 +103,32 @@ export function MFASettings() {
         description: 'Failed to begin setup process. Please try again.',
         variant: 'destructive',
       });
+      setSetupMode(false);
     } finally {
       setIsLoading(false);
     }
   };
-  
+  // This method is no longer needed since verification is handled by MFAVerificationDialog
+  // Kept for compatibility with existing code references
   const handleVerifyAndEnable = async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    
-    try {
-      const twoFactorService = new Email2FAService();
-      
-      // For testing purposes, also accept the generated code
-      let verified = false;
-      if (generatedCode && verifyCode === generatedCode) {
-        verified = true;
-      } else {
-        // Verify the entered code
-        verified = await twoFactorService.verifyCode(user.id, verifyCode);
-      }
-      
-      if (verified) {
-        // Enable 2FA for the user
-        await twoFactorService.set2FAEnabled(user.id, true);
-        
-        // Update local state
-        setIsEnabled(true);
-        updateUserState({ twoFactorEnabled: true });
-        setSetupMode(false);
-        setVerifyCode('');
-        
-        toast({
-          title: 'Two-Factor Authentication Enabled',
-          description: 'Your account is now more secure.',
-        });
-      } else {
-        toast({
-          title: 'Invalid Code',
-          description: 'The verification code is invalid or has expired.',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error verifying code:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to verify code. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // No-op - verification now happens in the MFAVerificationDialog component
+    console.log('MFA verification handled by MFAVerificationDialog component');
   };
-  
   const handleDisableMFA = async () => {
     if (!user) return;
     
     setIsLoading(true);
     
     try {
-      const twoFactorService = new Email2FAService();
-      await twoFactorService.set2FAEnabled(user.id, false);
+      console.log('Disabling MFA...');
+      
+      // Disable MFA using Appwrite MFA API
+      const result = await appwriteMFA.updateMFA(false);
+      console.log('MFA disable result:', result);
+      
+      // Force re-check the status after disabling
+      const checkStatus = await appwriteMFA.isMFAEnabled();
+      console.log('MFA status after disabling:', checkStatus);
       
       // Update local state
       setIsEnabled(false);
@@ -214,67 +175,55 @@ export function MFASettings() {
       </Card>
     );
   }
-  
-  if (setupMode) {
+    if (setupMode) {
+    // First show recovery codes if available
+    if (showRecoveryCodes && recoveryCodes.length > 0) {
+      return (
+        <RecoveryCodesDisplay 
+          recoveryCodes={recoveryCodes}
+          onClose={() => setShowRecoveryCodes(false)}
+        />
+      );
+    }
+    
+    // Then use the MFA verification dialog if we have a challenge ID
+    if (generatedCode && user?.email) {
+      return (
+        <MFAVerificationDialog
+          email={user.email}
+          challengeId={generatedCode}
+          onSuccess={() => {
+            setIsEnabled(true);
+            updateUserState({ twoFactorEnabled: true });
+            setSetupMode(false);
+            setVerifyCode('');
+            
+            toast({
+              title: 'Two-Factor Authentication Enabled',
+              description: 'Your account is now more secure.',
+            });
+          }}
+          onCancel={handleCancelSetup}
+          recoveryCodes={recoveryCodes}
+        />
+      );
+    }
+    
+    // Fallback while waiting for challenge to be created
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Shield className="h-5 w-5 mr-2" />
-            Enable Two-Factor Authentication
+            Initializing Two-Factor Authentication
           </CardTitle>
           <CardDescription>
-            Verify your identity to enable 2FA
+            Please wait while we set up your 2FA...
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {verificationSent && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md border border-blue-200 dark:border-blue-900/30 flex items-start">
-              <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2 mt-0.5" />
-              <div>
-                <p className="text-sm text-blue-800 dark:text-blue-300">
-                  A verification code has been sent to your email address: <strong>{user?.email}</strong>
-                </p>
-                <p className="text-sm text-blue-800 dark:text-blue-300 mt-1">
-                  Enter the code below to complete setup.
-                </p>
-              </div>
-            </div>
-          )}
-          
-          <div className="space-y-2">
-            <Label htmlFor="verification-code">Enter Verification Code</Label>
-            <Input
-              id="verification-code"
-              placeholder="123456"
-              value={verifyCode}
-              onChange={(e) => setVerifyCode(e.target.value)}
-              className="text-center text-xl tracking-wide"
-              maxLength={6}
-            />
-              {/* For testing only - show the actual code */}
-            {process.env.NODE_ENV !== 'production' && (
-              <div className="bg-amber-50 dark:bg-amber-900/20 p-2 rounded-md border border-amber-200 dark:border-amber-900/30 mt-2">
-                <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
-                  Development Mode Testing:
-                </p>
-                <ul className="text-sm text-amber-800 dark:text-amber-300 mt-1 list-disc pl-5">
-                  <li>Test code: <code className="font-mono bg-amber-100 dark:bg-amber-800/40 px-1.5 py-0.5 rounded">{generatedCode || '123456'}</code></li>
-                  <li>You can also use <code className="font-mono bg-amber-100 dark:bg-amber-800/40 px-1.5 py-0.5 rounded">111111</code> as a universal test code</li>
-                </ul>
-              </div>
-            )}
-          </div>
+        <CardContent className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </CardContent>
-        <CardFooter className="flex space-x-2 justify-end">
-          <Button variant="ghost" onClick={handleCancelSetup} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button onClick={handleVerifyAndEnable} disabled={isLoading || verifyCode.length < 6}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Verify & Enable
-          </Button>
-        </CardFooter>
       </Card>
     );
   }

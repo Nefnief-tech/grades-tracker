@@ -594,6 +594,17 @@ export const login = async (email: string, password: string) => {
   try {
     return await account.createEmailPasswordSession(email, password);
   } catch (error: any) {
+    // Check for MFA requirements separately - this needs special handling
+    if (
+      error.type === 'user_mfa_challenge' || 
+      error.type === 'user_more_factors_required' ||
+      error.message?.includes('More factors are required')
+    ) {
+      console.log('MFA challenge required during login');
+      // Pass through the MFA challenge error for handling
+      throw error;
+    }
+    
     console.error("Error logging in:", error);
 
     if (error.code === 401) {
@@ -636,7 +647,11 @@ export const getCurrentUser = async () => {
   try {
     const currentAccount = await account.get();
 
+    // Check if MFA verification is complete or required
     try {
+      // If the user has MFA enabled but not completed the challenge,
+      // the currentAccount.get() call will throw with 'More factors are required'
+      
       // Get user document from database
       const users = await databases.listDocuments(
         DATABASE_ID,
@@ -652,11 +667,12 @@ export const getCurrentUser = async () => {
           name: userData.name,
           syncEnabled: userData.syncEnabled,
           isAdmin: userData.isAdmin || false, // Fetch isAdmin status from user document
+          twoFactorEnabled: userData.twoFactorEnabled || currentAccount.mfa || false // Track MFA status
         };
       } else {
         // If user document doesn't exist, create it
         try {
-          await databases.createDocument(
+          const userDoc = await databases.createDocument(
             DATABASE_ID,
             USERS_COLLECTION_ID,
             ID.unique(),
@@ -666,8 +682,11 @@ export const getCurrentUser = async () => {
               name: currentAccount.name || "User",
               syncEnabled: false,
               isAdmin: false, // Default non-admin
+              twoFactorEnabled: currentAccount.mfa || false
             }
           );
+          
+          console.log('Created user document:', userDoc.$id);
         } catch (dbError) {
           console.error("Error creating missing user document:", dbError);
         }
@@ -679,10 +698,20 @@ export const getCurrentUser = async () => {
           name: currentAccount.name || "User",
           syncEnabled: false,
           isAdmin: false, // Default non-admin
+          twoFactorEnabled: currentAccount.mfa || false
         };
       }
     } catch (dbError) {
       console.error("Error fetching user document:", dbError);
+      
+      // Check if this is an MFA error
+      if (
+        dbError.type === 'user_mfa_challenge' || 
+        dbError.type === 'user_more_factors_required' ||
+        dbError.message?.includes('More factors are required')
+      ) {
+        throw dbError; // Re-throw MFA errors for handling
+      }
 
       // Return basic user info if database operations fail
       return {
@@ -691,11 +720,21 @@ export const getCurrentUser = async () => {
         name: currentAccount.name || "User",
         syncEnabled: false,
         isAdmin: false, // Default non-admin
+        twoFactorEnabled: currentAccount.mfa || false
       };
     }
   } catch (error: any) {
     console.error("Error getting current user:", error);
 
+    // Check for MFA errors
+    if (
+      error.type === 'user_mfa_challenge' || 
+      error.type === 'user_more_factors_required' ||
+      error.message?.includes('More factors are required')
+    ) {
+      throw error; // Let the caller handle MFA errors
+    }
+    
     if (error.code === 401) {
       // User is not authenticated
       return null;

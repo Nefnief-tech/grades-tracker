@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Card,
@@ -14,17 +15,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { AlertCircle, Loader2, Mail, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { handleMfaLogin, verifyMfaChallenge } from '@/lib/mfa-login';
 
 export default function LoginPage() {
+  // Login form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
+  // MFA verification state
+  const [showMfaVerify, setShowMfaVerify] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [challengeId, setChallengeId] = useState("");
+  
+  // UI state
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [error, setError] = useState("");
+  
+  const router = useRouter();
   const { toast } = useToast();
-
+  const { updateUserState } = useAuth();
+  
+  // Handle initial login
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
     if (!email || !password) {
       toast({
@@ -38,12 +54,35 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      // Import the MFA handler dynamically
+      const { handleMfaLogin } = await import('@/lib/mfa-handler');
+      
+      // Use the MFA handler to attempt login
+      const result = await handleMfaLogin(email, password);
+      
+      // Check if login was successful
+      if (result.success && result.user) {
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        window.location.href = "/";
+        return;
+      }
+      
+      // Check if MFA is required
+      if (result.requiresMFA && result.mfaChallenge) {
+        // Redirect to the MFA verification page
+        window.location.href = `/direct-mfa-login?email=${encodeURIComponent(email)}&challengeId=${result.mfaChallenge.challengeId}`;
+        return;
+      }
+      
+      // Handle other errors
       toast({
-        title: "Login successful",
-        description: "Welcome back!",
+        title: "Login failed",
+        description: result.error || "Something went wrong. Please try again.",
+        variant: "destructive",
       });
-      window.location.href = "/";
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
