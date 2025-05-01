@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, AlertTriangle, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getMfaChallengeId } from "@/lib/mfa-utils";
+import { MfaInfoDrawer } from "@/components/mfa/mfa-info-drawer";
 
 export default function VerifyMfaPage() {  
   const searchParams = useSearchParams();
@@ -116,31 +117,27 @@ export default function VerifyMfaPage() {
     // If we still don't have a challenge ID, automatically create a new one
     if (!finalChallengeId) {
       console.warn("[Verify MFA] No challenge ID found, creating a new challenge");
-      
-      const createNewChallenge = async () => {
+        const createNewChallenge = async () => {
         try {
-          // Import the MFA client dynamically
-          const appwriteMFA = (await import('@/lib/appwrite-mfa')).default;
+          // Import the API client
+          const { createMfaChallengeWithStorage } = await import('@/lib/mfa-challenge-api');
           
-          // Create a new challenge
-          const challenge = await appwriteMFA.createEmailChallenge();
-          console.log("[Verify MFA] Created new challenge:", challenge);
+          // Create a new challenge via API
+          const result = await createMfaChallengeWithStorage(finalEmail);
           
-          // Set the new challenge ID
-          setChallengeId(challenge.$id);
-          
-          // Store it
-          if (typeof window !== 'undefined') {
-            localStorage.setItem("mfa_challenge_id", challenge.$id);
-            sessionStorage.setItem("mfa_challenge_id", challenge.$id);
-            document.cookie = `mfa_challenge_id=${challenge.$id}; path=/; max-age=3600; SameSite=Strict`;
-            (window as any).__MFA_CHALLENGE_ID__ = challenge.$id;
+          if (result.success && result.challengeId) {
+            console.log("[Verify MFA] Created new challenge via API:", result);
+            
+            // Set the new challenge ID
+            setChallengeId(result.challengeId);
+            
+            toast({
+              title: "Verification Code Sent",
+              description: "A new verification code has been sent to your email",
+            });
+          } else {
+            throw new Error(result.error || "Failed to create challenge");
           }
-          
-          toast({
-            title: "Verification Code Sent",
-            description: "A new verification code has been sent to your email",
-          });
         } catch (error) {
           console.error("[Verify MFA] Error creating challenge:", error);
           toast({
@@ -148,6 +145,31 @@ export default function VerifyMfaPage() {
             description: "Failed to create verification challenge",
             variant: "destructive",
           });
+          
+          // Fallback to direct creation
+          try {
+            const appwriteMFA = (await import('@/lib/appwrite-mfa')).default;
+            const challenge = await appwriteMFA.createEmailChallenge();
+            console.log("[Verify MFA] Created new challenge with fallback:", challenge);
+            
+            // Set the new challenge ID
+            setChallengeId(challenge.$id);
+            
+            // Store it
+            if (typeof window !== 'undefined') {
+              localStorage.setItem("mfa_challenge_id", challenge.$id);
+              sessionStorage.setItem("mfa_challenge_id", challenge.$id);
+              document.cookie = `mfa_challenge_id=${challenge.$id}; path=/; max-age=3600; SameSite=Strict`;
+              (window as any).__MFA_CHALLENGE_ID__ = challenge.$id;
+            }
+            
+            toast({
+              title: "Verification Code Sent",
+              description: "A new verification code has been sent to your email (fallback method)",
+            });
+          } catch (fallbackError) {
+            console.error("[Verify MFA] Fallback creation also failed:", fallbackError);
+          }
         }
       };
       
@@ -165,8 +187,7 @@ export default function VerifyMfaPage() {
       return () => clearTimeout(timer);
     }
   }, [countdown]);
-  
-  const handleVerify = async (e: React.FormEvent) => {
+    const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!challengeId) {
@@ -190,38 +211,34 @@ export default function VerifyMfaPage() {
     setIsVerifying(true);
     
     try {
-      const result = await verifyMfaChallenge(challengeId, code);
+      // First try the API endpoint method
+      const { verifyMfaChallenge: verifyViaApi } = await import('@/lib/mfa-challenge-api');
       
-      if (result.success) {
-        // Clean up storage
-        localStorage.removeItem("mfa_challenge_id");
-        localStorage.removeItem("mfa_email");
-        sessionStorage.removeItem("mfa_challenge_id");
-        sessionStorage.removeItem("mfa_email");
-        document.cookie = "mfa_required=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        document.cookie = "mfa_challenge_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        document.cookie = "mfa_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        
-        // Show success toast
-        toast({
-          title: "Verification Successful",
-          description: "You have been successfully verified",
-          variant: "default",
-        });
-        
-        // Redirect to dashboard or return URL
-        const returnTo = searchParams.get("returnTo") || "/dashboard";
-        
-        // Use hard redirect to ensure full page load
-        window.location.href = returnTo;
+      // Try API verification first
+      const apiResult = await verifyViaApi(challengeId, code);
+      console.log("[Verify MFA] API verification result:", apiResult);
+      
+      if (apiResult.success) {
+        handleSuccessfulVerification();
+        return;
+      }
+      
+      // If API verification fails, try direct method
+      console.log("[Verify MFA] API verification failed, trying direct method");
+      const { verifyMfaChallenge } = await import('@/lib/mfa-handler');
+      const directResult = await verifyMfaChallenge(challengeId, code);
+      
+      if (directResult.success) {
+        handleSuccessfulVerification();
       } else {
         toast({
           title: "Verification Failed",
-          description: result.error || "Please try again",
+          description: directResult.error || apiResult.error || "Please try again",
           variant: "destructive",
         });
       }
     } catch (error: any) {
+      console.error("[Verify MFA] Verification error:", error);
       toast({
         title: "Error",
         description: error.message || "An error occurred during verification",
@@ -232,9 +249,58 @@ export default function VerifyMfaPage() {
     }
   };
   
-  const resendCode = async () => {
+  // Helper function for successful verification
+  const handleSuccessfulVerification = () => {
+    // Clean up storage
+    if (typeof window !== 'undefined') {
+      // Remove from all storage locations
+      localStorage.removeItem("mfa_challenge_id");
+      localStorage.removeItem("mfa_email");
+      sessionStorage.removeItem("mfa_challenge_id");
+      sessionStorage.removeItem("mfa_email");
+      document.cookie = "mfa_required=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "mfa_challenge_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "mfa_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      delete (window as any).__MFA_CHALLENGE_ID__;
+      delete (window as any).__MFA_EMAIL__;
+    }
+    
+    // Show success toast
+    toast({
+      title: "Verification Successful",
+      description: "You have been successfully verified",
+      variant: "default",
+    });
+    
+    // Redirect to dashboard or return URL
+    const returnTo = searchParams.get("returnTo") || "/dashboard";
+    
+    // Use hard redirect to ensure full page load
+    window.location.href = returnTo;
+  };
+    const resendCode = async () => {
     try {
-      // Import the MFA client dynamically
+      // First try the API endpoint
+      const { createMfaChallengeWithStorage } = await import('@/lib/mfa-challenge-api');
+      const result = await createMfaChallengeWithStorage(email);
+      
+      if (result.success && result.challengeId) {
+        // Update the challenge ID
+        setChallengeId(result.challengeId);
+        
+        // Show success message
+        toast({
+          title: "Code Sent",
+          description: "A new verification code has been sent to your email",
+        });
+        
+        // Start countdown
+        setCountdown(60);
+        return;
+      }
+      
+      // If API fails, fall back to direct method
+      console.log("[Verify MFA] API resend failed, trying direct method");
       const appwriteMFA = (await import('@/lib/appwrite-mfa')).default;
       
       // Create a new challenge
@@ -243,19 +309,32 @@ export default function VerifyMfaPage() {
       // Update the challenge ID
       setChallengeId(challenge.$id);
       
-      // Update storage
-      localStorage.setItem("mfa_challenge_id", challenge.$id);
-      sessionStorage.setItem("mfa_challenge_id", challenge.$id);
+      // Update storage in all locations
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("mfa_challenge_id", challenge.$id);
+        sessionStorage.setItem("mfa_challenge_id", challenge.$id);
+        document.cookie = `mfa_challenge_id=${challenge.$id}; path=/; max-age=3600; SameSite=Strict`;
+        (window as any).__MFA_CHALLENGE_ID__ = challenge.$id;
+        
+        // Store email if available
+        if (email) {
+          localStorage.setItem("mfa_email", email);
+          sessionStorage.setItem("mfa_email", email);
+          document.cookie = `mfa_email=${email}; path=/; max-age=3600; SameSite=Strict`;
+          (window as any).__MFA_EMAIL__ = email;
+        }
+      }
       
       // Show success message
       toast({
         title: "Code Sent",
-        description: "A new verification code has been sent to your email",
+        description: "A new verification code has been sent to your email (fallback method)",
       });
       
       // Start countdown
       setCountdown(60);
     } catch (error: any) {
+      console.error("[Verify MFA] Error resending code:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to resend code",
@@ -389,8 +468,7 @@ export default function VerifyMfaPage() {
               )}
             </div>
           </CardContent>
-          
-          <CardFooter className="flex flex-col">
+            <CardFooter className="flex flex-col">
             <div className="text-sm text-muted-foreground text-center">
               {"Didn't receive a code? "}
               <Button
@@ -402,6 +480,9 @@ export default function VerifyMfaPage() {
                 Resend code {countdown > 0 && `(${countdown}s)`}
               </Button>
             </div>
+            
+            {/* Help drawer with information about verification */}
+            <MfaInfoDrawer challengeId={challengeId} />
           </CardFooter>
         </Card>
       </div>

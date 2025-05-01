@@ -1,112 +1,179 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verification Code</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>{{subject}}</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
+        @media only screen and (max-width: 620px) {
+            table.body h1 {
+                font-size: 28px !important;
+                margin-bottom: 10px !important;
+            }
+            
+            table.body p,
+            table.body ul,
+            table.body ol,
+            table.body td,
+            table.body span,
+            table.body a {
+                font-size: 16px !important;
+            }
+            
+            table.body .wrapper,
+            table.body .article {
+                padding: 10px !important;
+            }
+            
+            table.body .content {
+                padding: 0 !important;
+            }
+            
+            table.body .container {
+                padding: 0 !important;
+                width: 100% !important;
+            }
+            
+            table.body .main {
+                border-left-width: 0 !important;
+                border-radius: 0 !important;
+                border-right-width: 0 !important;
+            }
+            
+            table.body .btn table {
+                width: 100% !important;
+            }
+            
+            table.body .btn a {
+                width: 100% !important;
+            }
+            
+            table.body .img-responsive {
+                height: auto !important;
+                max-width: 100% !important;
+                width: auto !important;
+            }
         }
-        .container {
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-        .logo {
-            max-height: 60px;
-            margin-bottom: 16px;
-        }
-        .title {
-            color: #1a73e8;
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        .verification-code {
-            background-color: #f5f7fa;
-            border-radius: 4px;
-            padding: 16px;
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: 4px;
-            text-align: center;
-            margin: 24px 0;
-            font-family: monospace;
-        }
-        .button {
-            display: inline-block;
-            background-color: #1a73e8;
-            color: white;
-            text-decoration: none;
-            padding: 12px 24px;
-            border-radius: 4px;
-            font-weight: 600;
-            margin-top: 16px;
-        }
-        .redirect-link {
-            word-break: break-all;
-            color: #1a73e8;
-            margin-top: 16px;
-            font-size: 14px;
-        }
-        .note {
-            font-size: 14px;
-            color: #666;
-            margin-top: 24px;
-            padding-top: 16px;
-            border-top: 1px solid #eee;
-        }
-        .footer {
-            margin-top: 32px;
-            font-size: 14px;
-            color: #666;
-            text-align: center;
+        @media all {
+            .ExternalClass {
+                width: 100%;
+            }
+            
+            .ExternalClass,
+            .ExternalClass p,
+            .ExternalClass span,
+            .ExternalClass font,
+            .ExternalClass td,
+            .ExternalClass div {
+                line-height: 100%;
+            }
+            
+            .apple-link a {
+                color: inherit !important;
+                font-family: inherit !important;
+                font-size: inherit !important;
+                font-weight: inherit !important;
+                line-height: inherit !important;
+                text-decoration: none !important;
+            }
+            
+            #MessageViewBody a {
+                color: inherit;
+                text-decoration: none;
+                font-size: inherit;
+                font-family: inherit;
+                font-weight: inherit;
+                line-height: inherit;
+            }
+            
+            .btn-primary table td:hover {
+                background-color: #34495e !important;
+            }
+            
+            .btn-primary a:hover {
+                background-color: #34495e !important;
+                border-color: #34495e !important;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <img src="{{logoUrl}}" alt="{{project}} Logo" class="logo">
-            <h1 class="title">Verification Code</h1>
-        </div>
-
-        <p>Hello {{user}},</p>
-        
-        <p>{{emails.mfaChallenge.body}}</p>
-        
-        <div class="verification-code">{{code}}</div>
-        
-        <p>Please use this verification code to complete the authentication process. This code will expire in 10 minutes.</p>
-        
-        <p>If you didn't request this code, please ignore this email or contact support if you have concerns.</p>
-        
-        <p>
-            <a href="{{redirect}}" class="button">Verify my account</a>
-        </p>
-        
-        <p class="redirect-link">Or verify by clicking: <a href="{{redirect}}" target="_blank">{{redirect}}</a></p>
-        
-        <p class="note">{{emails.mfaChallenge.footer}}</p>
-    </div>
-
-    <div class="footer">
-        <p>
-            Thanks,<br>
-            The {{project}} Team
-        </p>
-        <p>&copy; {{currentYear}} {{project}}. All rights reserved.</p>
-    </div>
+<body style="background-color: #f6f6f6; font-family: sans-serif; -webkit-font-smoothing: antialiased; font-size: 14px; line-height: 1.4; margin: 0; padding: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;">
+    <span class="preheader" style="color: transparent; display: none; height: 0; max-height: 0; max-width: 0; opacity: 0; overflow: hidden; mso-hide: all; visibility: hidden; width: 0;">{{preHeader}}</span>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="body" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #f6f6f6; width: 100%;" width="100%" bgcolor="#f6f6f6">
+        <tr>
+            <td style="font-family: sans-serif; font-size: 14px; vertical-align: top;" valign="top">&nbsp;</td>
+            <td class="container" style="font-family: sans-serif; font-size: 14px; vertical-align: top; display: block; max-width: 580px; padding: 10px; width: 580px; margin: 0 auto;" width="580" valign="top">
+                <div class="content" style="box-sizing: border-box; display: block; margin: 0 auto; max-width: 580px; padding: 10px;">
+                    <!-- START CENTERED WHITE CONTAINER -->
+                    <table role="presentation" class="main" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background: #ffffff; border-radius: 3px; width: 100%;" width="100%">
+                        <!-- START MAIN CONTENT AREA -->
+                        <tr>
+                            <td class="wrapper" style="font-family: sans-serif; font-size: 14px; vertical-align: top; box-sizing: border-box; padding: 20px;" valign="top">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;" width="100%">
+                                    <tr>
+                                        <td style="font-family: sans-serif; font-size: 14px; vertical-align: top;" valign="top">
+                                            <div style="text-align: center; margin-bottom: 20px;">
+                                                {{#if logoUrl}}
+                                                <img src="{{logoUrl}}" alt="{{project}}" width="100" style="max-width: 100px; margin-bottom: 10px;">
+                                                {{/if}}
+                                                <h2 style="color: #3869D4; margin: 0; margin-bottom: 15px;">Verification Code</h2>
+                                            </div>
+                                            
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">Hello {{user}},</p>
+                                            
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">{{emails.mfaChallenge.body}}</p>
+                                            
+                                            <div style="background-color: #f8f9fa; border-radius: 4px; padding: 15px; font-size: 24px; font-weight: 700; letter-spacing: 4px; text-align: center; margin: 25px 0; font-family: monospace;">{{code}}</div>
+                                            
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">Please use this verification code to complete the authentication process. This code will expire in 10 minutes.</p>
+                                            
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">If you didn't request this code, please ignore this email or contact support if you have concerns.</p>
+                                            
+                                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; box-sizing: border-box; width: 100%;" width="100%">
+                                                <tbody>
+                                                    <tr>
+                                                        <td align="center" style="font-family: sans-serif; font-size: 14px; vertical-align: top; padding-bottom: 15px;" valign="top">
+                                                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: auto;">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td style="font-family: sans-serif; font-size: 14px; vertical-align: top; border-radius: 5px; text-align: center; background-color: #3869D4;" valign="top" align="center" bgcolor="#3869D4">
+                                                                            <a href="{{redirect}}" target="_blank" style="border: solid 1px #3869D4; border-radius: 5px; box-sizing: border-box; cursor: pointer; display: inline-block; font-size: 14px; font-weight: bold; margin: 0; padding: 12px 25px; text-decoration: none; text-transform: capitalize; background-color: #3869D4; border-color: #3869D4; color: #ffffff;">Verify my account</a>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">Or verify by clicking: <a href="{{redirect}}" target="_blank" style="color: #3869D4; text-decoration: underline;">{{redirect}}</a></p>
+                                            
+                                            <p style="font-family: sans-serif; font-size: 13px; font-weight: normal; margin: 0; margin-top: 25px; margin-bottom: 15px; color: #666; border-top: 1px solid #eee; padding-top: 15px;">{{emails.mfaChallenge.footer}}</p>
+                                            
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">Thanks,<br>The {{project}} Team</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                    <!-- END MAIN CONTENT AREA -->
+                    <!-- START FOOTER -->
+                    <div class="footer" style="clear: both; margin-top: 10px; text-align: center; width: 100%;">
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;" width="100%">
+                            <tr>
+                                <td class="content-block" style="font-family: sans-serif; vertical-align: top; padding-bottom: 10px; padding-top: 10px; color: #999999; font-size: 12px; text-align: center;" valign="top" align="center">
+                                    <span class="apple-link" style="color: #999999; font-size: 12px; text-align: center;">&copy; {{currentYear}} {{project}}. All rights reserved.</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <!-- END FOOTER -->
+                </div>
+            </td>
+            <td style="font-family: sans-serif; font-size: 14px; vertical-align: top;" valign="top">&nbsp;</td>
+        </tr>
+    </table>
 </body>
 </html>

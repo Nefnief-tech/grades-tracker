@@ -1,7 +1,27 @@
-import nodemailer from 'nodemailer';
+// Dependency note: This file requires the following packages:
+// npm install nodemailer handlebars
+// npm install --save-dev @types/nodemailer @types/handlebars
+
 import fs from 'fs/promises';
 import path from 'path';
-import Handlebars from 'handlebars';
+
+// Handle importing dependencies that might not be installed
+let nodemailer: any;
+let Handlebars: any;
+
+try {
+  // Dynamic imports to prevent build errors if dependencies aren't installed
+  nodemailer = require('nodemailer');
+} catch (e) {
+  console.warn('Nodemailer not installed. Email functionality will be disabled.');
+}
+
+try {
+  // Dynamic imports to prevent build errors if dependencies aren't installed
+  Handlebars = require('handlebars');
+} catch (e) {
+  console.warn('Handlebars not installed. Email templating will be disabled.');
+}
 
 interface MfaEmailOptions {
   to: string;

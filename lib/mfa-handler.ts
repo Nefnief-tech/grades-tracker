@@ -207,16 +207,39 @@ export async function handleMfaLogin(email: string, password: string): Promise<M
 export async function verifyMfaChallenge(challengeId: string, code: string): Promise<MfaVerifyResult> {
   try {
     console.log('[MFA Handler] Verifying challenge:', challengeId);
-    await appwriteMFA.verifyChallenge(challengeId, code);
+    console.log('[MFA Handler] Code entered:', code);
     
-    // Get user after verification
-    const user = await getCurrentUser();
+    // Additional validation and logging
+    if (!challengeId) {
+      console.error('[MFA Handler] Challenge ID is empty or undefined');
+      return { success: false, error: 'Challenge ID is missing' };
+    }
+    
+    if (!code || code.length < 6) {
+      console.error('[MFA Handler] Invalid code format');
+      return { success: false, error: 'Invalid verification code format' };
+    }
+    
+    // Clean up inputs - remove any spaces or non-digits from code
+    const cleanCode = code.replace(/\D/g, '');
+    console.log('[MFA Handler] Using clean code for verification');
+    
+    // Try verification with clean inputs
+    await appwriteMFA.verifyChallenge(challengeId, cleanCode);
+    
+    // If verification succeeded, get user
     console.log('[MFA Handler] Challenge verified successfully');
-    
-    return { 
-      success: true,
-      user
-    };
+    try {
+      const user = await getCurrentUser();
+      return { 
+        success: true,
+        user
+      };
+    } catch (userError) {
+      console.warn('[MFA Handler] Challenge verified but error getting user:', userError);
+      // Even if we can't get the user, verification was successful
+      return { success: true };
+    }
   } catch (error: any) {
     console.error('[MFA Handler] Verification error:', error);
     
@@ -224,6 +247,15 @@ export async function verifyMfaChallenge(challengeId: string, code: string): Pro
     
     if (error instanceof AppwriteException) {
       errorMessage = error.message;
+      console.log('[MFA Handler] Appwrite error code:', error.code);
+      console.log('[MFA Handler] Appwrite error type:', error.type);
+      
+      // Special handling for specific error types
+      if (error.code === 401) {
+        errorMessage = 'Incorrect verification code';
+      } else if (error.message.includes('Invalid token')) {
+        errorMessage = 'Invalid verification code or challenge ID';
+      }
     } else if (error instanceof Error) {
       errorMessage = error.message;
     }
@@ -271,6 +303,22 @@ export function redirectToMfaVerification(email: string, challengeId: string): v
   console.log('[MFA Handler] Challenge ID:', challengeId);
   console.log('[MFA Handler] Email:', email);
   
+  // Create a unique global variable to store the challenge ID
+  // This helps other components capture it even if storage fails
+  if (typeof window !== 'undefined') {
+    (window as any).__MFA_CHALLENGE_ID__ = challengeId;
+    (window as any).__MFA_EMAIL__ = email;
+  }
+
+  // Make it impossible to miss the challenge ID in logs
+  console.log('**********************************************************');
+  console.log('*************** MFA VERIFICATION REQUIRED ****************');
+  console.log('**********************************************************');
+  console.log('[MFA Handler] *** CHALLENGE ID: ' + challengeId);
+  console.log('[MFA Handler] *** EMAIL: ' + email);
+  console.log('[MFA Handler] *** VERIFICATION URL: /verify-mfa?challengeId=' + challengeId + '&email=' + encodeURIComponent(email));
+  console.log('**********************************************************');
+
   // Build the complete URL with query parameters - IMPORTANT: don't encode email twice
   const verifyUrl = `/verify-mfa?challengeId=${challengeId}`;
   const urlWithEmail = `/verify-mfa?challengeId=${challengeId}&email=${email}`;
@@ -296,24 +344,42 @@ export function redirectToMfaVerification(email: string, challengeId: string): v
       document.cookie = `mfa_challenge_id=${challengeId}; path=/; max-age=3600; SameSite=Strict`;
       document.cookie = `mfa_email=${email}; path=/; max-age=3600; SameSite=Strict`;
       
-      // Display the challenge ID in console for easy access
+      // 4. Create hidden elements in the DOM as another backup
+      const hiddenDiv = document.createElement('div');
+      hiddenDiv.id = 'mfa-data-container';
+      hiddenDiv.style.display = 'none';
+      hiddenDiv.setAttribute('data-challenge-id', challengeId);
+      hiddenDiv.setAttribute('data-email', email);
+      document.body.appendChild(hiddenDiv);
+      
+      // 5. Append data to URL fragment
+      history.replaceState(null, '', window.location.pathname + window.location.search + 
+                          (window.location.search ? '&' : '?') + 
+                          `__mfa=${encodeURIComponent(challengeId)}`);
+      
+      // Display in console for easy access
       console.log('[MFA Handler] *** VERIFICATION CODE ***');
       console.log('[MFA Handler] CHALLENGE ID: ' + challengeId);
       console.log('[MFA Handler] ************************');
       
-      // Show alert with challenge ID
-      alert(`MFA verification required.\n\nChallenge ID: ${challengeId}\n\nClick OK to continue to verification page.`);
+    // CRITICAL: Ensure our URL has the challenge ID properly encoded
+      const safeUrl = `/verify-mfa?challengeId=${encodeURIComponent(challengeId)}&email=${encodeURIComponent(email)}`;
+      console.log('[MFA Handler] SAFE REDIRECT URL:', safeUrl);
       
       // Use direct hard navigation with location.replace - most reliable 
-      window.location.replace(urlWithEmail);
+      window.location.replace(safeUrl);
       
       // Fallback in case the above fails
       setTimeout(() => {
         if (!window.location.pathname.includes('verify-mfa')) {
           console.log('[MFA Handler] Primary redirect failed, using fallback navigation');
-          window.location.href = urlWithEmail;
+          window.location.href = safeUrl;
+          
+          // Also try with absolute URL
+          const absoluteUrl = `${window.location.origin}/verify-mfa?challengeId=${encodeURIComponent(challengeId)}&email=${encodeURIComponent(email)}`;
+          setTimeout(() => window.location.href = absoluteUrl, 300);
         }
-      }, 1000);
+      }, 800);
       
       // Final fallback with window.open
       setTimeout(() => {
@@ -326,7 +392,7 @@ export function redirectToMfaVerification(email: string, challengeId: string): v
       console.error('[MFA Handler] Error during redirect:', e);
       
       // If all else fails, show explicit instructions
-      alert(`Redirect failed. Please manually navigate to:\n\n${window.location.origin}/verify-mfa\n\nand enter challenge ID: ${challengeId}`);
+      alert(`MFA verification required.\n\nChallenge ID: ${challengeId}\n\nPlease manually navigate to: ${window.location.origin}/verify-mfa?challengeId=${challengeId}`);
     }
   }
 }
