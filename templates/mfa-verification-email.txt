@@ -17,3 +17,16 @@ Thanks,
 The {{project}} Team
 
 © {{currentYear}} {{project}}. All rights reserved.
+
+Hello {{user}},
+
+{{emails.mfaChallenge.body}}
+
+Verification Link: {{redirect}}
+
+{{emails.mfaChallenge.footer}}
+
+Thanks,
+The {{project}} Team
+
+© {{currentYear}} {{project}}. All rights reserved.
