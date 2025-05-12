@@ -1,47 +1,81 @@
-"use client";
+'use client';
 
-import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
+import { LucideShieldAlert } from 'lucide-react';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading } = useAuth();
+  const { user, isAdmin } = useAuth();
   const router = useRouter();
-
+  const [isClient, setIsClient] = useState(false);
+  
   useEffect(() => {
-    // Redirect non-admin users after auth check completes
-    if (!isLoading && (!user || !user.isAdmin)) {
-      router.push("/");
+    setIsClient(true);
+    
+    // If not admin, redirect to admin setup
+    if (isClient && user && !isAdmin) {
+      router.push('/admin-setup');
     }
-  }, [user, isLoading, router]);
-
-  // Show loading state while checking authentication
-  if (isLoading) {
+    
+    // If not logged in, redirect to login
+    if (isClient && !user) {
+      router.push('/login');
+    }
+  }, [user, isAdmin, isClient, router]);
+  
+  // Don't render anything on the server to avoid hydration mismatch
+  if (!isClient) {
+    return null;
+  }
+  
+  // Show loading state when checking permissions
+  if (!user || !isAdmin) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Checking authorization...</span>
+      <div className="container py-16 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <LucideShieldAlert className="h-12 w-12 text-muted-foreground animate-pulse" />
+          <h1 className="text-xl font-semibold">Checking admin permissions...</h1>
+        </div>
       </div>
     );
   }
 
-  // If user is admin, show admin interface
-  if (user?.isAdmin) {
-    return <>{children}</>;
-  }
-
-  // For non-admins (should redirect, but just in case)
   return (
-    <div className="flex h-screen w-full items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
-        <p className="mt-2">You don't have permission to access this page.</p>
+    <div className="container py-6 space-y-6 max-w-7xl">
+      <div className="flex flex-col space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Manage users, settings, and system configuration
+        </p>
       </div>
+      
+      <div className="flex items-center">
+        <nav className="flex items-center space-x-4">
+          <Button asChild variant="link" className="font-medium">
+            <Link href="/admin">Dashboard</Link>
+          </Button>
+          <Button asChild variant="link" className="font-medium">
+            <Link href="/admin/users">User Management</Link>
+          </Button>
+        </nav>
+        <div className="ml-auto">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/">Back to App</Link>
+          </Button>
+        </div>
+      </div>
+      
+      <Separator />
+      
+      {children}
     </div>
   );
 }
