@@ -16,9 +16,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { user } = useAuth();
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-
-  // Check if current route is a public route that shouldn't have a sidebar
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);  // Check if current route is a public route that shouldn't have a sidebar
   const isPublicRoute =
     pathname === "/landing" ||
     pathname === "/login" ||
@@ -26,6 +24,10 @@ export function AppLayout({ children }: AppLayoutProps) {
     pathname === "/privacy-policy" ||
     pathname === "/terms-of-service" ||
     pathname === "/datenschutz" ||
+    pathname?.startsWith("/reset-password") ||
+    pathname?.startsWith("/verify-email") ||
+    pathname?.startsWith("/verify-mfa") ||   // Add MFA verification path
+    pathname?.startsWith("/verify-2fa") ||
     pathname?.startsWith("/auth/");
 
   // Check if current route should have a footer

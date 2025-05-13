@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Login Detected - GradeTracker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      color: #334155;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    .header {
+      background: linear-gradient(to right, #4F46E5, #818CF8);
+      padding: 30px 20px;
+      text-align: center;
+      color: white;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .header p {
+      margin: 5px 0 0;
+      opacity: 0.9;
+      font-size: 16px;
+    }    .content {
+      padding: 30px 20px;
+      color: #334155;
+    }
+    .alert-box {
+      background-color: #FEF2F2;
+      border-left: 4px solid #EF4444;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .alert-box p {
+      color: #B91C1C;
+      margin: 0;
+    }
+    .details-box {
+      background-color: #F8FAFC;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .details-box h3 {
+      margin-top: 0;
+      color: #1E293B;
+      font-weight: 600;
+    }
+    .details-box ul {
+      padding-left: 20px;
+      margin: 15px 0;
+    }    .details-box li {
+      margin-bottom: 8px;
+      color: #334155;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: #94A3B8;
+      border-top: 1px solid #E2E8F0;
+    }    .button {
+      display: inline-block;
+      background-color: #4F46E5;
+      color: white !important;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-weight: 500;
+      margin-top: 15px;
+    }
+    .button:hover {
+      background-color: #4338CA;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>GradeTracker</h1>
+      <p>Security Alert</p>
+    </div>
+    <div class="content">
+      <p>Hello {{user}},</p>
+      
+      <p>We've detected a new login to your GradeTracker account.</p>
+        <div class="details-box">
+        <h3>Login Details</h3>
+        <ul>
+          <li><strong>Device:</strong> {{device}}</li>
+          <li><strong>IP Address:</strong> {{ipAddress}}</li>
+          <li><strong>Location:</strong> {{country}}</li>
+        </ul>
+      </div>
+      
+      <div class="alert-box">
+        <p>If this wasn't you, please secure your account immediately by changing your password.</p>
+      </div>
+      
+      <p>You can review your account activity and security settings from your dashboard.</p>
+      
+      <a href="{{redirect}}" class="button">Review Account Activity</a>
+      
+      <p style="margin-top: 30px;">
+        If you have any questions or need assistance, please don't hesitate to contact our support team.
+      </p>
+    </div>
+    <div class="footer">
+      <p>
+        This email was sent to you as a registered user of {{project}}.
+        <br>
+        &copy; 2023 GradeTracker. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

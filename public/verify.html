@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MFA Verification</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background-color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 24px;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 24px;
+      text-align: center;
+    }
+    p {
+      margin-bottom: 16px;
+    }
+    .field {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    input {
+      width: calc(100% - 20px);
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #0051a8;
+    }
+    .info {
+      background-color: #e7f4fe;
+      border: 1px solid #b0deff;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+    .error {
+      background-color: #ffeded;
+      border: 1px solid #ffcaca;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 16px;
+      color: #d32f2f;
+    }
+    .success {
+      background-color: #edf7ee;
+      border: 1px solid #bae0bd;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 16px;
+      color: #2e7d32;
+    }
+    #code-input {
+      letter-spacing: 4px;
+      font-size: 24px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Two-Factor Authentication</h1>
+    
+    <div id="info-box" class="info">
+      Loading verification details... If this doesn't change, please enter your details manually.
+    </div>
+    
+    <div id="error-box" class="error" style="display:none;"></div>
+    <div id="success-box" class="success" style="display:none;"></div>
+    
+    <form id="verify-form">
+      <div class="field">
+        <label for="challengeId">Challenge ID:</label>
+        <input 
+          type="text" 
+          id="challengeId" 
+          placeholder="Enter the challenge ID from your console or URL"
+          required
+        >
+      </div>
+      
+      <div class="field">
+        <label for="code-input">Verification Code:</label>
+        <input 
+          type="text" 
+          id="code-input" 
+          placeholder="123456"
+          pattern="\d{6}"
+          maxlength="6"
+          inputmode="numeric"
+          required
+          autocomplete="one-time-code"
+        >
+      </div>
+      
+      <button type="submit" id="submit-button">Verify & Continue</button>
+    </form>
+  </div>
+
+  <script>
+    // Simple direct script - no imports, nothing fancy
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('verify-form');
+      const challengeIdInput = document.getElementById('challengeId');
+      const codeInput = document.getElementById('code-input');
+      const infoBox = document.getElementById('info-box');
+      const errorBox = document.getElementById('error-box');
+      const successBox = document.getElementById('success-box');
+      const submitButton = document.getElementById('submit-button');
+      
+      // Show error message
+      function showError(message) {
+        errorBox.textContent = message;
+        errorBox.style.display = 'block';
+        successBox.style.display = 'none';
+      }
+      
+      // Show success message
+      function showSuccess(message) {
+        successBox.textContent = message;
+        successBox.style.display = 'block';
+        errorBox.style.display = 'none';
+      }
+      
+      // Show info message
+      function showInfo(message) {
+        infoBox.textContent = message;
+      }
+      
+      // Get parameter from URL
+      function getUrlParam(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+      }
+      
+      // Try to get challenge ID from URL
+      const urlChallengeId = getUrlParam('challengeId');
+      if (urlChallengeId) {
+        challengeIdInput.value = urlChallengeId;
+        showInfo('Challenge ID found in URL. Enter the verification code from your email.');
+      } else {
+        // Try to get it from localStorage or sessionStorage
+        const localChallengeId = localStorage.getItem('mfa_challenge_id') || sessionStorage.getItem('mfa_challenge_id');
+        if (localChallengeId) {
+          challengeIdInput.value = localChallengeId;
+          showInfo('Challenge ID found in storage. Enter the verification code from your email.');
+        } else {
+          showInfo('Please enter the Challenge ID and verification code from your email.');
+        }
+      }
+      
+      // Handle form submission
+      form.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const challengeId = challengeIdInput.value.trim();
+        const code = codeInput.value.trim();
+        
+        if (!challengeId) {
+          showError('Please enter a Challenge ID.');
+          return;
+        }
+        
+        if (!code || code.length !== 6) {
+          showError('Please enter a valid 6-digit verification code.');
+          return;
+        }
+        
+        submitButton.disabled = true;
+        submitButton.textContent = 'Verifying...';
+        
+        try {
+          // Direct POST using fetch to verify the code
+          const response = await fetch('/api/verify-simple', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              challengeId: challengeId,
+              code: code
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok && data.success) {
+            showSuccess('Verification successful! Redirecting...');
+            
+            // Clear storage
+            localStorage.removeItem('mfa_challenge_id');
+            sessionStorage.removeItem('mfa_challenge_id');
+            
+            // Redirect to dashboard after a short delay
+            setTimeout(() => {
+              window.location.href = '/dashboard';
+            }, 1000);
+          } else {
+            showError(data.error || 'Verification failed. Please try again.');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Verify & Continue';
+          }
+        } catch (error) {
+          showError('An error occurred. Please try again.');
+          console.error('Error during verification:', error);
+          submitButton.disabled = false;
+          submitButton.textContent = 'Verify & Continue';
+        }
+      });
+      
+      // Focus on code input if we have a challenge ID
+      if (challengeIdInput.value) {
+        codeInput.focus();
+      } else {
+        challengeIdInput.focus();
+      }
+      
+      // Auto-format the code input to only allow digits
+      codeInput.addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '').substring(0, 6);
+        
+        // Auto-submit when we have 6 digits
+        if (this.value.length === 6 && challengeIdInput.value.trim()) {
+          // Small delay to let the user see what they typed
+          setTimeout(() => {
+            form.dispatchEvent(new Event('submit'));
+          }, 300);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

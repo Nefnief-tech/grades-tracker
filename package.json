@@ -1,17 +1,15 @@
 {
   "name": "my-v0-project",
   "version": "0.1.0",
-  "private": true,
-  "scripts": {
+  "private": true,  "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "deploy": "pnpm install --no-frozen-lockfile && next build",
-    "railway:build": "bash ./scripts/build.sh"
-  },
-  "engines": {
-    "node": ">=18.0.0",
+    "railway:build": "node -v && pnpm install --no-frozen-lockfile && next build"
+  },"engines": {
+    "node": ">=20.10.0",
     "npm": ">=8.0.0"
   },
   "packageManager": "pnpm@8.15.3",
@@ -54,9 +52,11 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
+    "cookies-next": "^5.1.0",
     "date-fns": "4.1.0",
     "duration-fns": "^3.0.1",
     "embla-carousel-react": "8.5.1",
+    "framer-motion": "^12.9.2",
     "html2canvas": "^1.4.1",
     "input-otp": "1.4.1",
     "js-cookie": "^3.0.5",
@@ -74,8 +74,8 @@
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "vaul": "^0.9.6",
     "uuid": "^9.0.0",
+    "vaul": "^0.9.6",
     "zod": "^3.24.1"
   },
   "devDependencies": {

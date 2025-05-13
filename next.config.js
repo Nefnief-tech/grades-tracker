@@ -74,6 +74,7 @@ const nextConfig = {
         hostname: "**",
       },
     ],
+
   },
 };
 

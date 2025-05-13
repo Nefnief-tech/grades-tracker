@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to GradeTracker!</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      color: #334155;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    .header {
+      background: linear-gradient(to right, #4F46E5, #818CF8);
+      padding: 30px 20px;
+      text-align: center;
+      color: white;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .header p {
+      margin: 5px 0 0;
+      opacity: 0.9;
+      font-size: 16px;
+    }
+    .content {
+      padding: 30px 20px;
+    }
+    .feature-section {
+      margin: 30px 0;
+    }
+    .feature-box {
+      background-color: #F8FAFC;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-left: 3px solid #4F46E5;
+    }
+    .feature-box h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #1E293B;
+    }
+    .start-button {
+      display: block;
+      background-color: #4F46E5;
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 4px;
+      font-weight: 500;
+      text-align: center;
+      margin: 30px 0;
+      font-size: 16px;
+    }
+    .start-button:hover {
+      background-color: #4338CA;
+    }
+    .tip-box {
+      background-color: #ECFDF5;
+      border-left: 4px solid #10B981;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .tip-box p {
+      color: #065F46;
+      margin: 0;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: #94A3B8;
+      border-top: 1px solid #E2E8F0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>GradeTracker</h1>
+      <p>Welcome to Your Academic Journey!</p>
+    </div>
+    <div class="content">
+      <p>Hello {{user}},</p>
+      
+      <p>Welcome to <strong>{{project}}</strong>! We're thrilled to have you join our community of students committed to academic success. Your account is now active and ready to use.</p>
+      
+      <div class="tip-box">
+        <p>Getting started is easy! Add your subjects, input your grades, and start tracking your progress right away.</p>
+      </div>
+      
+      <div class="feature-section">
+        <h2>What You Can Do with GradeTracker:</h2>
+        
+        <div class="feature-box">
+          <h3>🎯 Track Your Grades</h3>
+          <p>Record and monitor your grades across all subjects and see your progress over time.</p>
+        </div>
+        
+        <div class="feature-box">
+          <h3>📊 View Detailed Analytics</h3>
+          <p>Get insights into your academic performance with detailed charts and statistics.</p>
+        </div>
+        
+        <div class="feature-box">
+          <h3>📅 Manage Your Schedule</h3>
+          <p>Keep track of upcoming tests, assignments, and important academic dates.</p>
+        </div>
+        
+        <div class="feature-box">
+          <h3>🔄 Sync Across Devices</h3>
+          <p>Access your data from anywhere, on any device, with our cloud syncing feature.</p>
+        </div>
+      </div>
+      
+      <a href="{{redirect}}" class="start-button">Start Using GradeTracker</a>
+      
+      <p>If you have any questions or need assistance getting started, feel free to reach out to our support team – we're here to help!</p>
+      
+      <p style="margin-top: 30px;">
+        Happy tracking!<br>
+        The {{project}} Team
+      </p>
+    </div>
+    <div class="footer">
+      <p>
+        This email was sent to welcome you to {{project}}.
+        <br>
+        &copy; 2023 GradeTracker. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

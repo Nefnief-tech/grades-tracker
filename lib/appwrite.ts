@@ -11,6 +11,18 @@ export const ENABLE_ENCRYPTION = true; // Set to true to enable encryption
 // Add a local mode flag that can be controlled at runtime
 export let FORCE_LOCAL_MODE = false;
 
+// Make FORCE_LOCAL_MODE accessible globally for maintenance mode override
+if (typeof window !== "undefined") {
+  // Create a getter/setter to allow external modification
+  Object.defineProperty(window, "FORCE_LOCAL_MODE", {
+    get: () => FORCE_LOCAL_MODE,
+    set: (value) => {
+      console.log(`[Appwrite] Setting FORCE_LOCAL_MODE to ${value}`);
+      FORCE_LOCAL_MODE = value;
+    },
+  });
+}
+
 // Flag to track if we've already shown the network error
 let hasShownNetworkError = false;
 
@@ -46,20 +58,81 @@ function logAppwriteInfo(message: string, ...args: any[]) {
   }
 }
 
-// Appwrite configuration from environment variables
-const appwriteEndpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "";
-const appwriteProjectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "";
+// Add this function at the top of the file, after the imports
+function getEnvironmentVariable(
+  key: string,
+  defaultValue: string = ""
+): string {
+  // Try to get from process.env
+  const value = process.env[key] || "";
 
-// Database configuration from environment variables
-export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "";
+  if (value) {
+    return value;
+  }
+
+  // For client-side, try to access window.__env if available (some deployment setups use this)
+  if (
+    typeof window !== "undefined" &&
+    (window as any).__env &&
+    (window as any).__env[key]
+  ) {
+    return (window as any).__env[key];
+  }
+
+  // Log the missing environment variable in development mode
+  if (process.env.NODE_ENV === "development") {
+    console.warn(
+      `[Appwrite] Missing environment variable: ${key}, using default value`
+    );
+  }
+
+  return defaultValue;
+}
+
+// Appwrite configuration from environment variables with better fallbacks
+const appwriteEndpoint =
+  process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://appwrite.nief.tech/v1";
+const appwriteProjectId =
+  process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "67d6ea990025fa097964";
+
+// Database configuration from environment variables with explicit fallbacks for all collections
+export const DATABASE_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "67d6b079002144822b5e";
 export const USERS_COLLECTION_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID || "";
+  process.env.NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID ||
+  "67d6b0ac000fc4ecaaaf";
 export const SUBJECTS_COLLECTION_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID || "";
+  process.env.NEXT_PUBLIC_APPWRITE_SUBJECTS_COLLECTION_ID ||
+  "67d6b0be003d69d6d863";
 export const GRADES_COLLECTION_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID || "";
+  process.env.NEXT_PUBLIC_APPWRITE_GRADES_COLLECTION_ID ||
+  "67d6b0c600002e7b01f5";
+export const TIMETABLE_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID ||
+  "67e0595c001fb247cd57";
+export const TESTS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID ||
+  "67e2f62c000e8723bd8d";
+export const GOALS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_GOALS_COLLECTION_ID || "goals";
+export const ACHIEVEMENTS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_ACHIEVEMENTS_COLLECTION_ID || "achievements";
+export const STUDY_SESSIONS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_STUDY_SESSIONS_COLLECTION_ID ||
+  "study_sessions";
+export const POMODORO_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_POMODORO_COLLECTION_ID ||
+  "pomodoro_sessions";
+export const KANBAN_BOARDS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_KANBAN_BOARDS_COLLECTION_ID ||
+  "kanban_boards";
+export const KANBAN_COLUMNS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_KANBAN_COLUMNS_COLLECTION_ID ||
+  "kanban_columns";
+export const KANBAN_CARDS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_KANBAN_CARDS_COLLECTION_ID || "kanban_cards";
 
-// Add the missing config object
+// Add the config object with all collection IDs
 const config = {
   endpoint: appwriteEndpoint,
   projectId: appwriteProjectId,
@@ -67,6 +140,15 @@ const config = {
   usersCollectionId: USERS_COLLECTION_ID,
   subjectsCollectionId: SUBJECTS_COLLECTION_ID,
   gradesCollectionId: GRADES_COLLECTION_ID,
+  timetableCollectionId: TIMETABLE_COLLECTION_ID,
+  testsCollectionId: TESTS_COLLECTION_ID,
+  goalsCollectionId: GOALS_COLLECTION_ID,
+  achievementsCollectionId: ACHIEVEMENTS_COLLECTION_ID,
+  studySessionsCollectionId: STUDY_SESSIONS_COLLECTION_ID,
+  pomodoroCollectionId: POMODORO_COLLECTION_ID,
+  kanbanBoardsCollectionId: KANBAN_BOARDS_COLLECTION_ID,
+  kanbanColumnsCollectionId: KANBAN_COLUMNS_COLLECTION_ID,
+  kanbanCardsCollectionId: KANBAN_CARDS_COLLECTION_ID,
 };
 
 // Initialize Appwrite client only if cloud features are enabled
@@ -76,6 +158,49 @@ let databases: Databases | null = null;
 
 // Function to check if we're in a browser environment
 const isBrowser = typeof window !== "undefined";
+
+// Function to get the initialized client or create it if it doesn't exist yet
+export const getClient = () => {
+  if (!appwriteClient) {
+    try {
+      console.log("[Appwrite] Initializing client on demand");
+      appwriteClient = new Client();
+      appwriteClient.setEndpoint(config.endpoint).setProject(config.projectId);
+    } catch (error) {
+      console.error("[Appwrite] Error initializing client on demand:", error);
+      throw error;
+    }
+  }
+  return appwriteClient;
+};
+
+// Function to get the databases instance
+export const getDatabases = () => {
+  if (!databases) {
+    try {
+      databases = new Databases(getClient());
+    } catch (error) {
+      console.error("[Appwrite] Error getting databases instance:", error);
+      enableLocalModeOnly();
+      throw error;
+    }
+  }
+  return databases;
+};
+
+// Function to get the account instance
+export const getAccount = () => {
+  if (!account) {
+    try {
+      account = new Account(getClient());
+    } catch (error) {
+      console.error("[Appwrite] Error getting account instance:", error);
+      enableLocalModeOnly();
+      throw error;
+    }
+  }
+  return account;
+};
 
 // Function to check if Web Crypto API is available and compatible
 const isCryptoAvailable = () => {
@@ -218,7 +343,7 @@ const showNetworkErrorOnce = () => {
     toast.className =
       "fixed top-4 right-4 bg-destructive text-destructive-foreground p-4 rounded-md shadow-lg z-50 flex items-center gap-2 max-w-md";
     toast.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wifi-off"><line x1="2" x2="22" y1="2" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 12.03a10 10 0 0 1 5.17-2.8"/><path d="M10.71 19.71a1 1 0 1 1-1.42-1.42 1 1 0 0 1 1.42 1.42z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wifi-off"><line x1="2" x2="22" y1="2" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14 1.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 12.03a10 10 0 0 1 5.17-2.8"/><path d="M10.71 19.71a1 1 0 1 1-1.42-1.42 1 1 0 0 1 1.42 1.42z"/></svg>
       <span>Network error connecting to cloud. Using local storage instead.</span>
       <button class="ml-auto text-destructive-foreground/70 hover:text-destructive-foreground">×</button>
     `;
@@ -422,6 +547,20 @@ export const createAccount = async (
             syncEnabled: false,
           }
         );
+        
+        // Send verification email with custom template
+        const verificationRedirectUrl = typeof window !== 'undefined' 
+          ? `${window.location.origin}/verify-email` 
+          : 'https://gradetracker.app/verify-email';
+          
+        try {
+          // Create verification URL
+          await account.createVerification(verificationRedirectUrl);
+          console.log("Verification email sent to:", email);
+        } catch (verifyError) {
+          console.error("Error sending verification email:", verifyError);
+          // We continue even if verification email fails
+        }
       } catch (dbError) {
         console.error("Error creating user document:", dbError);
       }
@@ -455,6 +594,17 @@ export const login = async (email: string, password: string) => {
   try {
     return await account.createEmailPasswordSession(email, password);
   } catch (error: any) {
+    // Check for MFA requirements separately - this needs special handling
+    if (
+      error.type === 'user_mfa_challenge' || 
+      error.type === 'user_more_factors_required' ||
+      error.message?.includes('More factors are required')
+    ) {
+      console.log('MFA challenge required during login');
+      // Pass through the MFA challenge error for handling
+      throw error;
+    }
+    
     console.error("Error logging in:", error);
 
     if (error.code === 401) {
@@ -497,7 +647,11 @@ export const getCurrentUser = async () => {
   try {
     const currentAccount = await account.get();
 
+    // Check if MFA verification is complete or required
     try {
+      // If the user has MFA enabled but not completed the challenge,
+      // the currentAccount.get() call will throw with 'More factors are required'
+      
       // Get user document from database
       const users = await databases.listDocuments(
         DATABASE_ID,
@@ -512,11 +666,13 @@ export const getCurrentUser = async () => {
           email: currentAccount.email,
           name: userData.name,
           syncEnabled: userData.syncEnabled,
+          isAdmin: userData.isAdmin || false, // Fetch isAdmin status from user document
+          twoFactorEnabled: userData.twoFactorEnabled || currentAccount.mfa || false // Track MFA status
         };
       } else {
         // If user document doesn't exist, create it
         try {
-          await databases.createDocument(
+          const userDoc = await databases.createDocument(
             DATABASE_ID,
             USERS_COLLECTION_ID,
             ID.unique(),
@@ -525,8 +681,12 @@ export const getCurrentUser = async () => {
               email: currentAccount.email,
               name: currentAccount.name || "User",
               syncEnabled: false,
+              isAdmin: false, // Default non-admin
+              twoFactorEnabled: currentAccount.mfa || false
             }
           );
+          
+          console.log('Created user document:', userDoc.$id);
         } catch (dbError) {
           console.error("Error creating missing user document:", dbError);
         }
@@ -537,10 +697,21 @@ export const getCurrentUser = async () => {
           email: currentAccount.email,
           name: currentAccount.name || "User",
           syncEnabled: false,
+          isAdmin: false, // Default non-admin
+          twoFactorEnabled: currentAccount.mfa || false
         };
       }
     } catch (dbError) {
       console.error("Error fetching user document:", dbError);
+      
+      // Check if this is an MFA error
+      if (
+        dbError.type === 'user_mfa_challenge' || 
+        dbError.type === 'user_more_factors_required' ||
+        dbError.message?.includes('More factors are required')
+      ) {
+        throw dbError; // Re-throw MFA errors for handling
+      }
 
       // Return basic user info if database operations fail
       return {
@@ -548,11 +719,22 @@ export const getCurrentUser = async () => {
         email: currentAccount.email,
         name: currentAccount.name || "User",
         syncEnabled: false,
+        isAdmin: false, // Default non-admin
+        twoFactorEnabled: currentAccount.mfa || false
       };
     }
   } catch (error: any) {
     console.error("Error getting current user:", error);
 
+    // Check for MFA errors
+    if (
+      error.type === 'user_mfa_challenge' || 
+      error.type === 'user_more_factors_required' ||
+      error.message?.includes('More factors are required')
+    ) {
+      throw error; // Let the caller handle MFA errors
+    }
+    
     if (error.code === 401) {
       // User is not authenticated
       return null;
@@ -644,6 +826,7 @@ export const syncSubjectsToCloud = async (
   userId: string,
   subjects: Subject[]
 ): Promise<boolean> => {
+  await ensureNotInMaintenance();
   console.log(
     `[Cloud] Starting sync for user ${userId} with ${subjects.length} subjects`
   );
@@ -833,6 +1016,7 @@ export const syncSubjectsToCloud = async (
 export const getSubjectsFromCloud = async (
   userId: string
 ): Promise<Subject[]> => {
+  await ensureNotInMaintenance();
   try {
     console.log(`[Cloud] Fetching subjects for user ${userId}`);
     const databases = getDatabases();
@@ -1028,6 +1212,7 @@ export const deleteGradeFromCloud = async (
   subjectId: string,
   grade: Grade
 ): Promise<boolean> => {
+  await ensureNotInMaintenance();
   try {
     const databases = getDatabases();
 
@@ -1085,6 +1270,7 @@ export const syncGradesToCloud = async (
   subjectid: string,
   grades: any[]
 ) => {
+  await ensureNotInMaintenance();
   if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
     return false;
   }
@@ -1169,6 +1355,7 @@ export const deleteSubjectFromCloud = async (
   userId: string,
   subjectId: string
 ): Promise<boolean> => {
+  await ensureNotInMaintenance();
   try {
     const databases = getDatabases();
 
@@ -1214,6 +1401,7 @@ export const deleteSubjectFromCloud = async (
 
 // Delete all cloud data for a user but keep their account
 export const deleteAllCloudData = async (userId: string) => {
+  await ensureNotInMaintenance();
   if (!ENABLE_CLOUD_FEATURES || FORCE_LOCAL_MODE || !databases) {
     showNetworkErrorOnce();
     throw new Error("Cloud features are unavailable. Please try again later.");
@@ -1367,31 +1555,6 @@ export default {
   deleteSubjectFromCloud,
 };
 
-// Initialize Appwrite client
-const getClient = () => {
-  const client = new Client();
-
-  try {
-    console.log("[Appwrite] Initializing client");
-    client.setEndpoint(config.endpoint).setProject(config.projectId);
-
-    return client;
-  } catch (error) {
-    console.error("[Appwrite] Error initializing client:", error);
-    throw error;
-  }
-};
-
-// CRITICAL: Add the missing getDatabases function
-const getDatabases = () => {
-  try {
-    return new Databases(getClient());
-  } catch (error) {
-    console.error("[Appwrite] Error getting databases instance:", error);
-    throw error;
-  }
-};
-
 export const initializeAppwrite = () => {
   if (!appwriteClient) {
     appwriteClient = new Client()
@@ -1416,3 +1579,49 @@ export const getAppwriteClient = () => {
   }
   return { client: appwriteClient, databases };
 };
+
+// Helper to check maintenance mode status
+let maintenanceStatusCache: {
+  isMaintenanceMode: boolean;
+  maintenanceMessage?: string;
+  timestamp: number;
+} | null = null;
+const MAINTENANCE_CACHE_DURATION = 60 * 1000; // 1 minute
+
+export async function checkMaintenanceMode(
+  forceRefresh = false
+): Promise<{ isMaintenanceMode: boolean; maintenanceMessage?: string }> {
+  const now = Date.now();
+  if (
+    !forceRefresh &&
+    maintenanceStatusCache &&
+    now - maintenanceStatusCache.timestamp < MAINTENANCE_CACHE_DURATION
+  ) {
+    return maintenanceStatusCache;
+  }
+  try {
+    const res = await fetch("/api/admin/maintenance");
+    if (!res.ok) throw new Error("Failed to fetch maintenance status");
+    const data = await res.json();
+    maintenanceStatusCache = { ...data, timestamp: now };
+    return data;
+  } catch (e) {
+    // If fetch fails, assume not in maintenance
+    return { isMaintenanceMode: false };
+  }
+}
+
+// Wrap sync functions to check maintenance mode
+async function ensureNotInMaintenance() {
+  const { isMaintenanceMode, maintenanceMessage } =
+    await checkMaintenanceMode();
+
+  // Only throw error if in maintenance mode AND FORCE_LOCAL_MODE is true
+  // This allows authenticated users to bypass the maintenance restriction
+  if (isMaintenanceMode && FORCE_LOCAL_MODE) {
+    throw new Error(
+      maintenanceMessage ||
+        "Sync is disabled during maintenance mode. Authenticate to enable sync."
+    );
+  }
+}

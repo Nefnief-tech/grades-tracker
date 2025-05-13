@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Card,
@@ -22,7 +21,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  const router = useRouter();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,7 +43,7 @@ export default function LoginPage() {
         title: "Login successful",
         description: "Welcome back!",
       });
-      router.push("/");
+      window.location.href = "/";
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
@@ -85,6 +83,12 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
+                  <Link 
+                    href="/reset-password" 
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
                 </div>
                 <Input
                   id="password"
@@ -110,7 +114,7 @@ export default function LoginPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => router.push("/")}
+                  onClick={() => window.location.href = "/"}
                   type="button"
                 >
                   Continue without logging in

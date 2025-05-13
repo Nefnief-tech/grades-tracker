@@ -35,10 +35,10 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { useRouter } from "next/navigation";
-import { Subject, Grade, TimetableEntry } from "@/types/grades";
+import { Subject, Grade, TimetableEntry, Test } from "@/types/grades";
 import { useSettings } from "@/contexts/SettingsContext";
 import { format, parseISO } from "date-fns";
-import { GradeForm } from "@/components/GradeForm";
+import { CalendarGradeForm } from "@/components/CalendarGradeForm";
 import { TimetableForm } from "@/components/TimetableForm";
 import {
   Dialog,
@@ -85,7 +85,7 @@ import {
 import { Calendar } from "@/components/ui/calendar"; // Add this import
 
 export default function AcademicCalendarPage() {
-  const { subjects, isLoading, error, mutate } = useSubjects();
+  const { subjects, isLoading, error, refreshSubjects } = useSubjects();
   const { tests, editTest, removeTest, addTest } = useTests(); // Add removeTest and addTest here
   const [selectedGrade, setSelectedGrade] = useState<{
     grade: Grade;
@@ -215,13 +215,11 @@ export default function AcademicCalendarPage() {
       // Ensure the grade has a date
       if (!grade.date) {
         grade.date = new Date().toISOString().split("T")[0];
-      }
-
-      // Add the grade to the subject
+      }      // Add the grade to the subject
       await addGradeToSubject(subject.id, grade);
 
       // Refresh data
-      mutate();
+      refreshSubjects();
 
       toast({
         title: "Grade added",
@@ -517,9 +515,9 @@ export default function AcademicCalendarPage() {
                 <div className="space-y-4">
                   <div
                     className="bg-muted/50 p-4 rounded-lg border"
-                    style={{
-                      borderLeft: selectedGrade.subject.color
-                        ? `4px solid ${selectedGrade.subject.color}`
+                  style={{
+                      borderLeft: (selectedGrade.subject as any).color
+                        ? `4px solid ${(selectedGrade.subject as any).color}`
                         : undefined,
                     }}
                   >
@@ -621,10 +619,9 @@ export default function AcademicCalendarPage() {
               <div className="py-4">
                 <div className="space-y-4">
                   <div
-                    className="bg-muted/50 p-4 rounded-lg border"
-                    style={{
-                      borderLeft: selectedTest.subject.color
-                        ? `4px solid ${selectedTest.subject.color}`
+                    className="bg-muted/50 p-4 rounded-lg border"                    style={{
+                      borderLeft: (selectedTest.subject as any).color
+                        ? `4px solid ${(selectedTest.subject as any).color}`
                         : undefined,
                     }}
                   >
@@ -764,10 +761,9 @@ export default function AcademicCalendarPage() {
               <div className="py-4">
                 <div className="space-y-4">
                   <div
-                    className="bg-muted/50 p-4 rounded-lg border"
-                    style={{
-                      borderLeft: selectedTimetableEntry.subject.color
-                        ? `4px solid ${selectedTimetableEntry.subject.color}`
+                    className="bg-muted/50 p-4 rounded-lg border"                    style={{
+                      borderLeft: (selectedTimetableEntry.subject as any).color
+                        ? `4px solid ${(selectedTimetableEntry.subject as any).color}`
                         : undefined,
                     }}
                   >
@@ -861,8 +857,7 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">
-            <div className="space-y-4 mb-4">
+          <div className="py-2">            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -875,10 +870,10 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
+                        {(subject as any).color && (
                           <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
+                            style={{ backgroundColor: (subject as any).color }}
                           ></div>
                         )}
                         {subject.name}
@@ -887,19 +882,16 @@ export default function AcademicCalendarPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <GradeForm
-              onSubmit={handleAddGrade}
-              onCancel={() => setAddGradeOpen(false)}
-              initialGrade={{
+            </div>            <CalendarGradeForm
+              onSubmit={handleAddGrade}              initialGrade={{
                 id: generateId(),
                 value: 1.0,
                 date: new Date().toISOString().split("T")[0],
                 weight: 1.0,
-                type: "",
+                type: "Test",
               }}
               requireDate={true}
+              onCancel={() => setAddGradeOpen(false)}
             />
           </div>
         </DialogContent>
@@ -915,8 +907,7 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">
-            <div className="space-y-4 mb-4">
+          <div className="py-2">            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select-test">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -929,10 +920,10 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
+                        {(subject as any).color && (
                           <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
+                            style={{ backgroundColor: (subject as any).color }}
                           ></div>
                         )}
                         {subject.name}
@@ -982,8 +973,7 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">
-            <div className="space-y-4 mb-4">
+          <div className="py-2">            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select-timetable">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -996,10 +986,10 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
+                        {(subject as any).color && (
                           <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
+                            style={{ backgroundColor: (subject as any).color }}
                           ></div>
                         )}
                         {subject.name}
@@ -1182,10 +1172,8 @@ function WeeklyTimetable({
             <div className="space-y-2">
               {day.entries.map((entry) => {
                 const subject = subjects.find((s) => s.id === entry.subjectId);
-                if (!subject) return null;
-
-                // Use entry color if available, otherwise fall back to subject color
-                const entryColor = entry.color || subject.color;
+                if (!subject) return null;                // Use entry color if available, otherwise fall back to subject color
+                const entryColor = (entry as any).color || (subject as any).color;
 
                 return (
                   <div

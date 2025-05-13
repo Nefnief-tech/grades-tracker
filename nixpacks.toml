@@ -1,9 +1,17 @@
 [phases.setup]
 nixPkgs = ['nodejs_20', 'openssl', 'gcc', 'python3']
-cmds = ['npm config set prefix "/usr/local" && npm install -g pnpm']
+cmds = [
+  'echo "Node version before setup: $(node --version)"',
+  'export PATH="/nix/store/$(ls -t /nix/store | grep -m 1 nodejs | head -1)/bin:$PATH"',
+  'npm config set prefix "/usr/local"',
+  'npm install -g pnpm n',
+  'n 20.10.0',
+  'export PATH="/usr/local/bin:$PATH"',
+  'echo "Node version after setup: $(node --version)"'
+]
 
 [phases.install]
-cmds = ['npm install -g pnpm && pnpm install ']
+cmds = ['node -v && npm install -g pnpm && pnpm install']
 
 [phases.build]
 cmds = ['pnpm build']
