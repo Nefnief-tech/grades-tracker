@@ -14,11 +14,38 @@ const exemptPaths = [
   '/favicon.ico',
 ];
 
-// Middleware function to capture MFA redirects
+// Middleware function to handle both MFA redirects and admin API requests
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Skip exempt paths
+  // Handle admin API routes - add authorization headers
+  if (pathname.startsWith('/api/admin')) {
+    // Get the session cookie and admin status
+    const appwriteSession = request.cookies.get('appwrite_session')?.value;
+    const adminStatus = request.cookies.get('admin-status')?.value;
+    
+    // Create a new request with the Authorization header
+    if (appwriteSession) {
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('Authorization', `Bearer ${appwriteSession}`);
+      
+      // Add admin status as a custom header
+      if (adminStatus === 'true') {
+        requestHeaders.set('X-Admin-Status', 'true');
+      }
+      
+      // Return with the added headers
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
+    }
+    
+    return NextResponse.next();
+  }
+  
+  // Skip exempt paths for MFA checks
   if (exemptPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
@@ -55,5 +82,6 @@ export const config = {
      * 5. all files in the /public folder
      */
     '/((?!api|_next|fonts|examples|[\\w-]+\\.\\w+).*)',
+    '/api/admin/:path*',
   ],
 };
