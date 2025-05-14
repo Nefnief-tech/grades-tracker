@@ -228,6 +228,38 @@ export default function Home() {
               </p>
             </Card>
           )}
+
+          {/* Add flashcards card */}
+          <Link
+            href="/flashcards"
+            className="group relative flex flex-col items-center gap-4 rounded-md border border-border bg-card p-6 text-center shadow-sm transition-colors hover:border-primary"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-6 w-6"
+              >
+                <path d="M18 7V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" />
+                <path d="M18 13v6" />
+                <path d="M15 15h6" />
+                <path d="M13 5H6" />
+                <path d="M13 9H6" />
+                <path d="M13 13H6" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">Flashcards</h3>
+              <p className="text-muted-foreground">Create AI-powered flashcards for studying</p>
+            </div>
+          </Link>
         </div>
       </div>
       {/* Add the fetch counter in development */}
