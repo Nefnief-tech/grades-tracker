@@ -45,9 +45,7 @@ function logAppwriteInfo(message: string, ...args: any[]) {
     if (env === "browser") {
       console.log(`[Appwrite] Environment variables:`, {
         endpoint: process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT ? "set" : "missing",
-        projectId: process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID
-          ? "set"
-          : "missing",
+        projectId: "67d6ea990025fa097964",
         databaseId: process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID
           ? "set"
           : "missing",
@@ -91,13 +89,12 @@ function getEnvironmentVariable(
 
 // Appwrite configuration from environment variables with better fallbacks
 const appwriteEndpoint =
-  process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1";
-const appwriteProjectId =
-  process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "68235ffb0033b3172656";
+ "https://appwrite.nief.tech/v1";
+const appwriteProjectId ="68235ffb0033b3172656";
 
 // Database configuration from environment variables with explicit fallbacks for all collections
 export const DATABASE_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "67d6b079002144822b5e";
+  "67d6b079002144822b5e";
 export const USERS_COLLECTION_ID =
   process.env.NEXT_PUBLIC_APPWRITE_USERS_COLLECTION_ID ||
   "67d6b0ac000fc4ecaaaf";
@@ -135,8 +132,8 @@ export const KANBAN_CARDS_COLLECTION_ID =
 // Add the config object with all collection IDs
 const config = {
   endpoint: appwriteEndpoint,
-  projectId: appwriteProjectId,
-  databaseId: DATABASE_ID,
+  projectId: "67d6ea990025fa097964",
+  databaseId: "67d6b079002144822b5e",
   usersCollectionId: USERS_COLLECTION_ID,
   subjectsCollectionId: SUBJECTS_COLLECTION_ID,
   gradesCollectionId: GRADES_COLLECTION_ID,
@@ -165,7 +162,7 @@ export const getClient = () => {
     try {
       console.log("[Appwrite] Initializing client on demand");
       appwriteClient = new Client();
-      appwriteClient.setEndpoint(config.endpoint).setProject(config.projectId);
+      appwriteClient.setEndpoint("https://appwrite.nief.tech/v1/").setProject("67d6ea990025fa097964");
     } catch (error) {
       console.error("[Appwrite] Error initializing client on demand:", error);
       throw error;
@@ -434,7 +431,7 @@ if (ENABLE_CLOUD_FEATURES && isBrowser && !FORCE_LOCAL_MODE) {
     if (validateAppwriteEndpoint(appwriteEndpoint) && appwriteProjectId) {
       logAppwriteInfo("Initializing Appwrite client with:", {
         endpoint: appwriteEndpoint,
-        projectId: appwriteProjectId ? "[HIDDEN FOR SECURITY]" : undefined,
+        projectId: "67d6ea990025fa097964" ? "[HIDDEN FOR SECURITY]" : undefined,
         databaseId: DATABASE_ID ? "[HIDDEN FOR SECURITY]" : undefined,
       });
 
@@ -450,7 +447,7 @@ if (ENABLE_CLOUD_FEATURES && isBrowser && !FORCE_LOCAL_MODE) {
       }
 
       try {
-        appwriteClient.setProject(appwriteProjectId);
+        appwriteClient.setProject("67d6ea990025fa097964");
         logAppwriteInfo("Project ID set successfully");
       } catch (projectError) {
         logAppwriteInfo("Failed to set project ID:", projectError);
@@ -537,7 +534,7 @@ export const createAccount = async (
       try {
         // Create user document in database
         await databases.createDocument(
-          DATABASE_ID,
+          "67d6b079002144822b5e",
           USERS_COLLECTION_ID,
           ID.unique(),
           {
@@ -1559,7 +1556,7 @@ export const initializeAppwrite = () => {
   if (!appwriteClient) {
     appwriteClient = new Client()
       .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "")
-      .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "");
+      .setProject("67d6ea990025fa097964");
   }
   return appwriteClient;
 };

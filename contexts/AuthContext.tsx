@@ -7,7 +7,18 @@ import {
   getCurrentUser,
   updateUserSyncPreference,
 } from "@/lib/appwrite";
-import { setCookie, deleteCookie } from "cookies-next"; // Import cookie functions
+// Use local cookie implementation since cookies-next is missing
+const setCookie = (name: string, value: string, options = {}) => {
+  if (typeof document !== 'undefined') {
+    document.cookie = `${name}=${value}; path=/; max-age=2592000`; // 30 days
+  }
+};
+
+const deleteCookie = (name: string) => {
+  if (typeof document !== 'undefined') {
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  }
+};
 
 export type User = {
   id: string;

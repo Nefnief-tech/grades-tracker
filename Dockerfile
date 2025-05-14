@@ -16,7 +16,8 @@ COPY package.json ./
 
 # Install pnpm and dependencies - EXPLICITLY use no-frozen-lockfile
 RUN npm install -g pnpm && \
-    pnpm install --no-frozen-lockfile
+    pnpm install --no-frozen-lockfile && \
+    pnpm add cookies-next@2.1.1
 
 # Copy application code
 COPY . .
