@@ -91,9 +91,9 @@ function getEnvironmentVariable(
 
 // Appwrite configuration from environment variables with better fallbacks
 const appwriteEndpoint =
-  process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://appwrite.nief.tech/v1";
+  process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1";
 const appwriteProjectId =
-  process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "67d6ea990025fa097964";
+  process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "68235ffb0033b3172656";
 
 // Database configuration from environment variables with explicit fallbacks for all collections
 export const DATABASE_ID =
