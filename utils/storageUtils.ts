@@ -214,22 +214,12 @@ export async function getSubjectsFromStorage(
     logStorage("using cached subjects", { count: cachedSubjects.length });
     return cachedSubjects;
   }
+
   // If cloud is enabled and we're doing a force refresh, try to get data from cloud first
   if (ENABLE_CLOUD_FEATURES && userId && syncEnabled && forceRefresh) {
     try {
       logStorage("force fetching from cloud", { userId });
-      
-      // Try to use the new function that fetches subjects with grades
-      let cloudSubjects;
-      try {
-        // Import function from the utilities module
-        const { getSubjectsWithGrades } = require("./subjectDataUtils");
-        cloudSubjects = await getSubjectsWithGrades(userId);
-        console.log("Using enhanced subjects with grades fetch");
-      } catch (utilsError) {
-        console.error("Error using enhanced fetch, falling back:", utilsError);
-        cloudSubjects = await getSubjectsFromCloud(userId);
-      }
+      const cloudSubjects = await getSubjectsFromCloud(userId);
 
       if (
         cloudSubjects &&
@@ -375,17 +365,7 @@ async function fetchAndMergeCloudData(
 
     logStorage("background cloud fetch started");
 
-    // Try to use the enhanced subjects with grades function
-    let cloudSubjects;
-    try {
-      // Import the function that fetches subjects with their grades
-      const { getSubjectsWithGrades } = require("./subjectDataUtils");
-      cloudSubjects = await getSubjectsWithGrades(userId);
-      console.log("Using enhanced subjects+grades fetch for background update");
-    } catch (utilsError) {
-      console.error("Error using enhanced fetch, falling back:", utilsError);
-      cloudSubjects = await getSubjectsFromCloud(userId);
-    }
+    const cloudSubjects = await getSubjectsFromCloud(userId);
 
     if (
       !cloudSubjects ||
