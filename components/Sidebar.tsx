@@ -112,9 +112,14 @@ export function Sidebar() {
       href: "/kanban",
       icon: Layout,
       current: pathname === "/kanban",
+    },    {
+      name: "Flashcards", 
+      href: "/flashcards",
+      icon: BookOpenText,
+      current: pathname === "/flashcards" || pathname.startsWith("/flashcards/"),
     },
     {
-      name: "Study Timer", // Add Study Timer entry
+      name: "Study Timer",
       href: "/study-timer",
       icon: Timer,
       current: pathname === "/study-timer",
