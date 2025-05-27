@@ -35,7 +35,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { useRouter } from "next/navigation";
-import { Subject, Grade, TimetableEntry, Test } from "@/types/grades";
+import { Subject, Grade, TimetableEntry } from "@/types/grades";
 import { useSettings } from "@/contexts/SettingsContext";
 import { format, parseISO } from "date-fns";
 import { GradeForm } from "@/components/GradeForm";
@@ -76,17 +76,17 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { initializeAppwrite } from "@/lib/appwrite";
-import { formatTimeDisplay as formatTimeFromUtils } from "@/utils/formatUtils";
+import { formatTimeDisplay } from "@/utils/formatUtils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar"; // Add this import
 
 export default function AcademicCalendarPage() {
-  const { subjects, isLoading, error } = useSubjects();
-  const { tests, editTest, removeTest, addTest } = useTests();
+  const { subjects, isLoading, error, mutate } = useSubjects();
+  const { tests, editTest, removeTest, addTest } = useTests(); // Add removeTest and addTest here
   const [selectedGrade, setSelectedGrade] = useState<{
     grade: Grade;
     subject: Subject;
@@ -121,7 +121,7 @@ export default function AcademicCalendarPage() {
 
   // Load timetable entries
   useEffect(() => {
-    initializeAppwrite();
+    initializeAppwrite(); // Ensure Appwrite is initialized
     const loadTimetable = async () => {
       setLoadingTimetable(true);
       try {
@@ -143,10 +143,12 @@ export default function AcademicCalendarPage() {
 
     loadTimetable();
 
+    // Listen for sync preference changes
     const handleSyncPreferenceChanged = () => {
       loadTimetable();
     };
 
+    // Listen for timetable updates
     const handleTimetableUpdated = () => {
       loadTimetable();
     };
@@ -180,7 +182,7 @@ export default function AcademicCalendarPage() {
           ? "dd/MM/yyyy"
           : settings?.dateFormat === "MM/DD/YYYY"
           ? "MM/dd/yyyy"
-          : "yyyy-MM-dd";
+          : "yyyy-MM-dd"; // Default to ISO format
 
       return format(date, dateFormat);
     } catch (e) {
@@ -210,11 +212,16 @@ export default function AcademicCalendarPage() {
     }
 
     try {
+      // Ensure the grade has a date
       if (!grade.date) {
         grade.date = new Date().toISOString().split("T")[0];
       }
 
+      // Add the grade to the subject
       await addGradeToSubject(subject.id, grade);
+
+      // Refresh data
+      mutate();
 
       toast({
         title: "Grade added",
@@ -236,6 +243,7 @@ export default function AcademicCalendarPage() {
   const handleAddTimetableEntry = async (entry: TimetableEntry) => {
     try {
       console.log("Adding timetable entry with user:", user);
+      // Add to list and save with cloud sync
       const updatedEntries = [...timetableEntries, entry];
       await saveTimetableEntries(updatedEntries, user?.id, user?.syncEnabled);
       setTimetableEntries(updatedEntries);
@@ -491,9 +499,358 @@ export default function AcademicCalendarPage() {
         </TabsContent>
       </Tabs>
 
-      {/* All the sheets, dialogs, and other components remain the same... */}
-      {/* Rest of component continues here with all the sheets, dialogs, etc. */}
-      
+      {/* Detail view for selected grade */}
+      <Sheet
+        open={Boolean(selectedGrade)}
+        onOpenChange={() => setSelectedGrade(null)}
+      >
+        <SheetContent className="sm:max-w-md p-6">
+          {selectedGrade && (
+            <>
+              <SheetHeader>
+                <SheetTitle>Grade Details</SheetTitle>
+                <SheetDescription>
+                  From {selectedGrade.subject.name}
+                </SheetDescription>
+              </SheetHeader>
+              <div className="py-4">
+                <div className="space-y-4">
+                  <div
+                    className="bg-muted/50 p-4 rounded-lg border"
+                    style={{
+                      borderLeft: selectedGrade.subject.color
+                        ? `4px solid ${selectedGrade.subject.color}`
+                        : undefined,
+                    }}
+                  >
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Subject
+                    </h3>
+                    <p className="text-lg font-medium">
+                      {selectedGrade.subject.name}
+                    </p>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="bg-muted/50 p-4 rounded-lg border">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Grade
+                      </h3>
+                      <p
+                        className={`text-3xl font-bold ${getGradeColor(
+                          selectedGrade.grade.value
+                        )}`}
+                      >
+                        {selectedGrade.grade.value.toFixed(1)}
+                      </p>
+                    </div>
+
+                    <div className="bg-muted/50 p-4 rounded-lg border">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Type
+                      </h3>
+                      <p className="text-lg">
+                        {selectedGrade.grade.type || "Not specified"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="bg-muted/50 p-4 rounded-lg border">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Date
+                      </h3>
+                      <p className="text-lg font-medium">
+                        {selectedGrade.grade.date
+                          ? formatDate(selectedGrade.grade.date)
+                          : "Not specified"}
+                      </p>
+                    </div>
+
+                    <div className="bg-muted/50 p-4 rounded-lg border">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Weight
+                      </h3>
+                      <p className="text-lg">
+                        {selectedGrade.grade.weight || 1}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-6">
+                  <Button
+                    className="flex-1 gap-2"
+                    variant="outline"
+                    onClick={() => {
+                      router.push(`/subjects/${selectedGrade.subject.id}`);
+                      setSelectedGrade(null);
+                    }}
+                  >
+                    View Subject
+                  </Button>
+                  <Button
+                    className="flex-1 gap-2"
+                    variant="destructive"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Detail view for selected test */}
+      <Sheet
+        open={Boolean(selectedTest)}
+        onOpenChange={() => setSelectedTest(null)}
+      >
+        <SheetContent className="sm:max-w-md p-6">
+          {selectedTest && (
+            <>
+              <SheetHeader>
+                <SheetTitle>Test Details</SheetTitle>
+                <SheetDescription>
+                  From {selectedTest.subject.name}
+                </SheetDescription>
+              </SheetHeader>
+              <div className="py-4">
+                <div className="space-y-4">
+                  <div
+                    className="bg-muted/50 p-4 rounded-lg border"
+                    style={{
+                      borderLeft: selectedTest.subject.color
+                        ? `4px solid ${selectedTest.subject.color}`
+                        : undefined,
+                    }}
+                  >
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Subject
+                    </h3>
+                    <p className="text-lg font-medium">
+                      {selectedTest.subject.name}
+                    </p>
+                  </div>
+
+                  <div className="grid sm:grid-cols-1 gap-4">
+                    <div className="bg-muted/50 p-4 rounded-lg border">
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                        Title
+                      </h3>
+                      <p className="text-lg font-medium">
+                        {selectedTest.test.title}
+                      </p>
+                      {selectedTest.test.description && (
+                        <p className="text-sm mt-2 text-muted-foreground">
+                          {selectedTest.test.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="bg-muted/50 p-4 rounded-lg border relative group">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Date
+                      </h3>
+                      <p className="text-lg font-medium">
+                        {selectedTest.test.date
+                          ? formatDate(selectedTest.test.date)
+                          : "Not specified"}
+                      </p>
+
+                      {/* Edit date button */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <PenLine className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={
+                              selectedTest.test.date
+                                ? parseISO(selectedTest.test.date)
+                                : undefined
+                            }
+                            onSelect={(date) =>
+                              date && handleUpdateTestDate(date)
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="bg-muted/50 p-4 rounded-lg border">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Priority
+                      </h3>
+                      <p className="text-lg capitalize">
+                        {selectedTest.test.priority || "Medium"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-muted/50 p-4 rounded-lg border">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Status
+                    </h3>
+                    <p className="text-lg flex items-center gap-2">
+                      {selectedTest.test.completed ? (
+                        <>
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                          <span className="text-green-500">Completed</span>
+                        </>
+                      ) : (
+                        <>
+                          <Circle className="h-5 w-5 text-amber-500" />
+                          <span className="text-amber-500">Pending</span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-6">
+                  <Button
+                    className="flex-1 gap-2"
+                    variant="outline"
+                    onClick={() => {
+                      router.push(`/tests`);
+                      setSelectedTest(null);
+                    }}
+                  >
+                    View All Tests
+                  </Button>
+                  <Button
+                    className="flex-1 gap-2"
+                    variant="destructive"
+                    onClick={() => setDeleteTestConfirmOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Detail view for selected timetable entry */}
+      <Sheet
+        open={Boolean(selectedTimetableEntry)}
+        onOpenChange={() => setSelectedTimetableEntry(null)}
+      >
+        <SheetContent className="sm:max-w-md p-6">
+          {selectedTimetableEntry && (
+            <>
+              <SheetHeader>
+                <SheetTitle>Class Details</SheetTitle>
+                <SheetDescription>
+                  {selectedTimetableEntry.subject.name}
+                </SheetDescription>
+              </SheetHeader>
+              <div className="py-4">
+                <div className="space-y-4">
+                  <div
+                    className="bg-muted/50 p-4 rounded-lg border"
+                    style={{
+                      borderLeft: selectedTimetableEntry.subject.color
+                        ? `4px solid ${selectedTimetableEntry.subject.color}`
+                        : undefined,
+                    }}
+                  >
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Subject
+                    </h3>
+                    <p className="text-lg font-medium">
+                      {selectedTimetableEntry.subject.name}
+                    </p>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="bg-muted/50 p-4 rounded-lg border">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Day
+                      </h3>
+                      <p className="text-lg capitalize">
+                        {selectedTimetableEntry.entry.day}
+                      </p>
+                    </div>
+
+                    <div className="bg-muted/50 p-4 rounded-lg border">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Time
+                      </h3>
+                      <p className="text-lg">
+                        {selectedTimetableEntry.entry.startTime} -{" "}
+                        {selectedTimetableEntry.entry.endTime}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedTimetableEntry.entry.room && (
+                    <div className="bg-muted/50 p-4 rounded-lg border">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Room
+                      </h3>
+                      <p className="text-lg">
+                        {selectedTimetableEntry.entry.room}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedTimetableEntry.entry.notes && (
+                    <div className="bg-muted/50 p-4 rounded-lg border">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Notes
+                      </h3>
+                      <p className="text-lg">
+                        {selectedTimetableEntry.entry.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2 mt-6">
+                  <Button
+                    className="flex-1 gap-2"
+                    variant="outline"
+                    onClick={() => {
+                      router.push(
+                        `/subjects/${selectedTimetableEntry.subject.id}`
+                      );
+                      setSelectedTimetableEntry(null);
+                    }}
+                  >
+                    View Subject
+                  </Button>
+                  <Button
+                    className="flex-1 gap-2"
+                    variant="destructive"
+                    onClick={() => setDeleteTimetableConfirmOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
       {/* Add Grade Dialog */}
       <Dialog open={addGradeOpen} onOpenChange={setAddGradeOpen}>
         <DialogContent className="sm:max-w-md p-6">
@@ -504,7 +861,8 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">            <div className="space-y-4 mb-4">
+          <div className="py-2">
+            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -517,6 +875,12 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
+                        {subject.color && (
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: subject.color }}
+                          ></div>
+                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -528,13 +892,14 @@ export default function AcademicCalendarPage() {
             <GradeForm
               onSubmit={handleAddGrade}
               onCancel={() => setAddGradeOpen(false)}
-              subjects={subjects}
               initialGrade={{
+                id: generateId(),
                 value: 1.0,
-                type: "exam",
                 date: new Date().toISOString().split("T")[0],
-                weight: 1,
+                weight: 1.0,
+                type: "",
               }}
+              requireDate={true}
             />
           </div>
         </DialogContent>
@@ -550,7 +915,8 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">            <div className="space-y-4 mb-4">
+          <div className="py-2">
+            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select-test">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -563,6 +929,12 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
+                        {subject.color && (
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: subject.color }}
+                          ></div>
+                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -610,7 +982,8 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">            <div className="space-y-4 mb-4">
+          <div className="py-2">
+            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select-timetable">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -623,6 +996,12 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
+                        {subject.color && (
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: subject.color }}
+                          ></div>
+                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -646,191 +1025,24 @@ export default function AcademicCalendarPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Grade Details Sheet */}
-      <Sheet
-        open={!!selectedGrade}
-        onOpenChange={() => setSelectedGrade(null)}
-      >
-        <SheetContent position="right" size="sm">
-          <SheetHeader>
-            <SheetTitle>Grade Details</SheetTitle>
-            <SheetDescription>
-              Detailed information about the selected grade
-            </SheetDescription>
-          </SheetHeader>
-
-          {selectedGrade && (
-            <div className="py-4">
-              <div className="space-y-4">
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Subject
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {selectedGrade.subject.name}
-                  </p>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Grade
-                  </h3>
-                  <p
-                    className={`text-lg font-medium ${getGradeColor(
-                      selectedGrade.grade.value
-                    )}`}
-                  >
-                    {selectedGrade.grade.value.toFixed(1)}
-                  </p>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Date
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {formatDate(selectedGrade.grade.date)}
-                  </p>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Type
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {selectedGrade.grade.type}
-                  </p>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Weight
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {selectedGrade.grade.weight}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
-
-      {/* Test Details Sheet */}
-      <Sheet open={!!selectedTest} onOpenChange={() => setSelectedTest(null)}>
-        <SheetContent position="right" size="sm">
-          <SheetHeader>
-            <SheetTitle>Test Details</SheetTitle>
-            <SheetDescription>
-              Detailed information about the selected test
-            </SheetDescription>
-          </SheetHeader>
-
-          {selectedTest && (
-            <div className="py-4">
-              <div className="space-y-4">
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Subject
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {selectedTest.subject.name}
-                  </p>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Title
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {selectedTest.test.title}
-                  </p>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Date
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {formatDate(selectedTest.test.date)}
-                  </p>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Priority
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {selectedTest.test.priority}
-                  </p>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Completed
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {selectedTest.test.completed ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
-
-      {/* Timetable Entry Details Sheet */}
-      <Sheet
-        open={!!selectedTimetableEntry}
-        onOpenChange={() => setSelectedTimetableEntry(null)}
-      >
-        <SheetContent position="right" size="sm">
-          <SheetHeader>
-            <SheetTitle>Class Details</SheetTitle>
-            <SheetDescription>
-              Detailed information about the selected class
-            </SheetDescription>
-          </SheetHeader>
-
-          {selectedTimetableEntry && (
-            <div className="py-4">
-              <div className="space-y-4">
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Subject
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {selectedTimetableEntry.subject.name}
-                  </p>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Day
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {days[selectedTimetableEntry.entry.day].name}
-                  </p>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Time
-                  </h3>
-                  <p className="text-lg font-medium">
-                    {formatTimeDisplay(selectedTimetableEntry.entry.startTime)}{" "}
-                    - {formatTimeDisplay(selectedTimetableEntry.entry.endTime)}
-                  </p>
-                </div>
-                {selectedTimetableEntry.entry.room && (
-                  <div className="bg-muted/50 p-4 rounded-lg border">
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Room
-                    </h3>
-                    <p className="text-lg font-medium">
-                      {selectedTimetableEntry.entry.room}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+      {/* Delete Grade Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Grade</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this grade? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Test Confirmation Dialog */}
       <AlertDialog
@@ -847,7 +1059,10 @@ export default function AcademicCalendarPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteTest}>
+            <AlertDialogAction
+              onClick={handleDeleteTest} // Use the handleDeleteTest function instead of inline removeTest
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -863,13 +1078,16 @@ export default function AcademicCalendarPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Class</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this class? This action cannot be
-              undone.
+              Are you sure you want to delete this class from your timetable?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteTimetableEntry}>
+            <AlertDialogAction
+              onClick={handleDeleteTimetableEntry}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -881,7 +1099,19 @@ export default function AcademicCalendarPage() {
 
 // Helper function to format time with minutes
 const formatTimeDisplay = (time: string | number): string => {
-  return formatTimeFromUtils(time);
+  // Handle string format with minutes (e.g., "09:30")
+  if (typeof time === "string" && time.includes(":")) {
+    const [hours, minutes] = time.split(":").map(Number);
+    const h = hours % 12 || 12;
+    const ampm = hours < 12 ? "AM" : "PM";
+    return `${h}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+  }
+
+  // Handle numeric format (e.g., 9)
+  const hour = typeof time === "string" ? parseInt(time) : time;
+  const h = hour % 12 || 12;
+  const ampm = hour < 12 ? "AM" : "PM";
+  return `${h}:00 ${ampm}`;
 };
 
 // Weekly timetable display component
@@ -895,14 +1125,26 @@ function WeeklyTimetable({
   onEntryClick?: (entry: TimetableEntry, subject: Subject) => void;
 }) {
   const days = [
-    { name: "Monday", value: 0 },
-    { name: "Tuesday", value: 1 },
-    { name: "Wednesday", value: 2 },
-    { name: "Thursday", value: 3 },
-    { name: "Friday", value: 4 },
-    { name: "Saturday", value: 5 },
-    { name: "Sunday", value: 6 },
+    { name: "Monday", value: 0 }, // Changed from "monday" to 0
+    { name: "Tuesday", value: 1 }, // Changed from "tuesday" to 1
+    { name: "Wednesday", value: 2 }, // Changed from "wednesday" to 2
+    { name: "Thursday", value: 3 }, // Changed from "thursday" to 3
+    { name: "Friday", value: 4 }, // Changed from "friday" to 4
+    { name: "Saturday", value: 5 }, // Changed from "saturday" to 5
+    { name: "Sunday", value: 6 }, // Changed from "sunday" to 6
   ];
+
+  const entriesByDay = days.map((day) => {
+    return {
+      ...day,
+      entries: timetableEntries
+        .filter((entry) => entry.day === day.value) // Now correctly comparing number to number
+        .sort((a, b) => {
+          // Fix time sorting (startTime is a number now, not a string)
+          return a.startTime - b.startTime;
+        }),
+    };
+  });
 
   if (timetableEntries.length === 0) {
     return (
@@ -923,31 +1165,6 @@ function WeeklyTimetable({
     );
   }
 
-  // Group and sort entries by day
-  const entriesByDay = days.map((day) => {
-    return {
-      ...day,
-      entries: timetableEntries
-        .filter((entry) => {
-          // Handle both string and number comparison for day
-          return String(entry.day) === String(day.value) || 
-                 (typeof entry.day === 'number' && entry.day === day.value);
-        })
-        .sort((a, b) => {
-          // Handle both string and number time formats
-          const parseTime = (time: string | number) => {
-            if (typeof time === 'string' && time.includes(':')) {
-              const [hour, min] = time.split(':').map(Number);
-              return hour * 60 + min;
-            }
-            return typeof time === 'number' ? time * 60 : parseInt(String(time)) * 60;
-          };
-          
-          return parseTime(a.startTime) - parseTime(b.startTime);
-        }),
-    };
-  });
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {entriesByDay.map((day) => (
@@ -965,8 +1182,10 @@ function WeeklyTimetable({
             <div className="space-y-2">
               {day.entries.map((entry) => {
                 const subject = subjects.find((s) => s.id === entry.subjectId);
-                if (!subject) return null;                // Use entry color if available, otherwise fall back to a default
-                const entryColor = entry.color;
+                if (!subject) return null;
+
+                // Use entry color if available, otherwise fall back to subject color
+                const entryColor = entry.color || subject.color;
 
                 return (
                   <div

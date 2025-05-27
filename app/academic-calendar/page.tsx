@@ -35,7 +35,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { useRouter } from "next/navigation";
-import { Subject, Grade, TimetableEntry, Test } from "@/types/grades";
+import { Subject, Grade, TimetableEntry } from "@/types/grades";
 import { useSettings } from "@/contexts/SettingsContext";
 import { format, parseISO } from "date-fns";
 import { GradeForm } from "@/components/GradeForm";
@@ -76,17 +76,17 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { initializeAppwrite } from "@/lib/appwrite";
-import { formatTimeDisplay as formatTimeFromUtils } from "@/utils/formatUtils";
+import { formatTimeDisplay } from "@/utils/formatUtils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar"; // Add this import
 
 export default function AcademicCalendarPage() {
-  const { subjects, isLoading, error } = useSubjects();
-  const { tests, editTest, removeTest, addTest } = useTests();
+  const { subjects, isLoading, error, mutate } = useSubjects();
+  const { tests, editTest, removeTest, addTest } = useTests(); // Add removeTest and addTest here
   const [selectedGrade, setSelectedGrade] = useState<{
     grade: Grade;
     subject: Subject;
@@ -121,7 +121,7 @@ export default function AcademicCalendarPage() {
 
   // Load timetable entries
   useEffect(() => {
-    initializeAppwrite();
+    initializeAppwrite(); // Ensure Appwrite is initialized
     const loadTimetable = async () => {
       setLoadingTimetable(true);
       try {
@@ -143,10 +143,12 @@ export default function AcademicCalendarPage() {
 
     loadTimetable();
 
+    // Listen for sync preference changes
     const handleSyncPreferenceChanged = () => {
       loadTimetable();
     };
 
+    // Listen for timetable updates
     const handleTimetableUpdated = () => {
       loadTimetable();
     };
@@ -180,7 +182,7 @@ export default function AcademicCalendarPage() {
           ? "dd/MM/yyyy"
           : settings?.dateFormat === "MM/DD/YYYY"
           ? "MM/dd/yyyy"
-          : "yyyy-MM-dd";
+          : "yyyy-MM-dd"; // Default to ISO format
 
       return format(date, dateFormat);
     } catch (e) {
@@ -210,11 +212,16 @@ export default function AcademicCalendarPage() {
     }
 
     try {
+      // Ensure the grade has a date
       if (!grade.date) {
         grade.date = new Date().toISOString().split("T")[0];
       }
 
+      // Add the grade to the subject
       await addGradeToSubject(subject.id, grade);
+
+      // Refresh data
+      mutate();
 
       toast({
         title: "Grade added",
@@ -236,6 +243,7 @@ export default function AcademicCalendarPage() {
   const handleAddTimetableEntry = async (entry: TimetableEntry) => {
     try {
       console.log("Adding timetable entry with user:", user);
+      // Add to list and save with cloud sync
       const updatedEntries = [...timetableEntries, entry];
       await saveTimetableEntries(updatedEntries, user?.id, user?.syncEnabled);
       setTimetableEntries(updatedEntries);
@@ -507,7 +515,14 @@ export default function AcademicCalendarPage() {
               </SheetHeader>
               <div className="py-4">
                 <div className="space-y-4">
-                  <div className="bg-muted/50 p-4 rounded-lg border">
+                  <div
+                    className="bg-muted/50 p-4 rounded-lg border"
+                    style={{
+                      borderLeft: selectedGrade.subject.color
+                        ? `4px solid ${selectedGrade.subject.color}`
+                        : undefined,
+                    }}
+                  >
                     <h3 className="text-sm font-medium text-muted-foreground">
                       Subject
                     </h3>
@@ -605,7 +620,14 @@ export default function AcademicCalendarPage() {
               </SheetHeader>
               <div className="py-4">
                 <div className="space-y-4">
-                  <div className="bg-muted/50 p-4 rounded-lg border">
+                  <div
+                    className="bg-muted/50 p-4 rounded-lg border"
+                    style={{
+                      borderLeft: selectedTest.subject.color
+                        ? `4px solid ${selectedTest.subject.color}`
+                        : undefined,
+                    }}
+                  >
                     <h3 className="text-sm font-medium text-muted-foreground">
                       Subject
                     </h3>
@@ -741,7 +763,14 @@ export default function AcademicCalendarPage() {
               </SheetHeader>
               <div className="py-4">
                 <div className="space-y-4">
-                  <div className="bg-muted/50 p-4 rounded-lg border">
+                  <div
+                    className="bg-muted/50 p-4 rounded-lg border"
+                    style={{
+                      borderLeft: selectedTimetableEntry.subject.color
+                        ? `4px solid ${selectedTimetableEntry.subject.color}`
+                        : undefined,
+                    }}
+                  >
                     <h3 className="text-sm font-medium text-muted-foreground">
                       Subject
                     </h3>
@@ -846,6 +875,12 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
+                        {subject.color && (
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: subject.color }}
+                          ></div>
+                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -857,13 +892,14 @@ export default function AcademicCalendarPage() {
             <GradeForm
               onSubmit={handleAddGrade}
               onCancel={() => setAddGradeOpen(false)}
-              subjects={subjects}
               initialGrade={{
+                id: generateId(),
                 value: 1.0,
-                type: "exam",
                 date: new Date().toISOString().split("T")[0],
-                weight: 1,
+                weight: 1.0,
+                type: "",
               }}
+              requireDate={true}
             />
           </div>
         </DialogContent>
@@ -893,6 +929,12 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
+                        {subject.color && (
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: subject.color }}
+                          ></div>
+                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -954,6 +996,12 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
+                        {subject.color && (
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: subject.color }}
+                          ></div>
+                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -1012,7 +1060,7 @@ export default function AcademicCalendarPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteTest}
+              onClick={handleDeleteTest} // Use the handleDeleteTest function instead of inline removeTest
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
@@ -1051,7 +1099,19 @@ export default function AcademicCalendarPage() {
 
 // Helper function to format time with minutes
 const formatTimeDisplay = (time: string | number): string => {
-  return formatTimeFromUtils(time);
+  // Handle string format with minutes (e.g., "09:30")
+  if (typeof time === "string" && time.includes(":")) {
+    const [hours, minutes] = time.split(":").map(Number);
+    const h = hours % 12 || 12;
+    const ampm = hours < 12 ? "AM" : "PM";
+    return `${h}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+  }
+
+  // Handle numeric format (e.g., 9)
+  const hour = typeof time === "string" ? parseInt(time) : time;
+  const h = hour % 12 || 12;
+  const ampm = hour < 12 ? "AM" : "PM";
+  return `${h}:00 ${ampm}`;
 };
 
 // Weekly timetable display component
@@ -1065,26 +1125,26 @@ function WeeklyTimetable({
   onEntryClick?: (entry: TimetableEntry, subject: Subject) => void;
 }) {
   const days = [
-    { name: "Monday", value: 0 },
-    { name: "Tuesday", value: 1 },
-    { name: "Wednesday", value: 2 },
-    { name: "Thursday", value: 3 },
-    { name: "Friday", value: 4 },
-    { name: "Saturday", value: 5 },
-    { name: "Sunday", value: 6 },
+    { name: "Monday", value: 0 }, // Changed from "monday" to 0
+    { name: "Tuesday", value: 1 }, // Changed from "tuesday" to 1
+    { name: "Wednesday", value: 2 }, // Changed from "wednesday" to 2
+    { name: "Thursday", value: 3 }, // Changed from "thursday" to 3
+    { name: "Friday", value: 4 }, // Changed from "friday" to 4
+    { name: "Saturday", value: 5 }, // Changed from "saturday" to 5
+    { name: "Sunday", value: 6 }, // Changed from "sunday" to 6
   ];
-  // const entriesByDay = days.map((day) => {
-  //   return {
-  //     ...day,
-  //     entries: timetableEntries
-  //       .filter((entry) => entry.day === day.value)
-  //       .sort((a, b) => {
-  //         const [aHour, aMin] = typeof a.startTime === "string" ? a.startTime.split(":").map(Number) : [a.startTime, 0];
-  //         const [bHour, bMin] = typeof b.startTime === "string" ? b.startTime.split(":").map(Number) : [b.startTime, 0];
-  //         return aHour !== bHour ? aHour - bHour : aMin - bMin;
-  //       }),
-  //   };
-  // });
+
+  const entriesByDay = days.map((day) => {
+    return {
+      ...day,
+      entries: timetableEntries
+        .filter((entry) => entry.day === day.value) // Now correctly comparing number to number
+        .sort((a, b) => {
+          // Fix time sorting (startTime is a number now, not a string)
+          return a.startTime - b.startTime;
+        }),
+    };
+  });
 
   if (timetableEntries.length === 0) {
     return (
@@ -1104,30 +1164,6 @@ function WeeklyTimetable({
       </Card>
     );
   }
-  // Group and sort entries by day
-  const entriesByDay = days.map((day) => {
-    return {
-      ...day,
-      entries: timetableEntries
-        .filter((entry) => {
-          // Handle both string and number comparison for day
-          return String(entry.day) === String(day.value) || 
-                 (typeof entry.day === 'number' && entry.day === day.value);
-        })
-        .sort((a, b) => {
-          // Handle both string and number time formats
-          const parseTime = (time: string | number) => {
-            if (typeof time === 'string' && time.includes(':')) {
-              const [hour, min] = time.split(':').map(Number);
-              return hour * 60 + min;
-            }
-            return typeof time === 'number' ? time * 60 : parseInt(String(time)) * 60;
-          };
-          
-          return parseTime(a.startTime) - parseTime(b.startTime);
-        }),
-    };
-  });
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -1149,7 +1185,7 @@ function WeeklyTimetable({
                 if (!subject) return null;
 
                 // Use entry color if available, otherwise fall back to subject color
-                const entryColor = entry.color;
+                const entryColor = entry.color || subject.color;
 
                 return (
                   <div
