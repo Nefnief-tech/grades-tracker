@@ -35,7 +35,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { useRouter } from "next/navigation";
-import { Subject, Grade, TimetableEntry } from "@/types/grades";
+import { Subject, Grade, TimetableEntry, Test } from "@/types/grades";
 import { useSettings } from "@/contexts/SettingsContext";
 import { format, parseISO } from "date-fns";
 import { GradeForm } from "@/components/GradeForm";
@@ -889,18 +889,7 @@ export default function AcademicCalendarPage() {
               </Select>
             </div>
 
-            <GradeForm
-              onSubmit={handleAddGrade}
-              onCancel={() => setAddGradeOpen(false)}
-              initialGrade={{
-                id: generateId(),
-                value: 1.0,
-                date: new Date().toISOString().split("T")[0],
-                weight: 1.0,
-                type: "",
-              }}
-              requireDate={true}
-            />
+
           </div>
         </DialogContent>
       </Dialog>
@@ -1134,17 +1123,17 @@ function WeeklyTimetable({
     { name: "Sunday", value: 6 }, // Changed from "sunday" to 6
   ];
 
-  const entriesByDay = days.map((day) => {
-    return {
-      ...day,
-      entries: timetableEntries
-        .filter((entry) => entry.day === day.value) // Now correctly comparing number to number
-        .sort((a, b) => {
+ // const entriesByDay = days.map((day) => {
+    //return {
+      //...day,
+      //entries: timetableEntries
+        //.filter((entry) => entry.day === day.value) // Now correctly comparing number to number
+        //.sort((a, b) => {
           // Fix time sorting (startTime is a number now, not a string)
-          return a.startTime - b.startTime;
-        }),
-    };
-  });
+          //return a.startTime - b.startTime;
+        //}),
+    //};
+  //});
 
   if (timetableEntries.length === 0) {
     return (
@@ -1164,6 +1153,21 @@ function WeeklyTimetable({
       </Card>
     );
   }
+
+  // Group and sort entries by day
+  const entriesByDay = days.map((day) => {
+    return {
+      ...day,
+      entries: timetableEntries
+        .filter((entry) => String(entry.day) === String(day.value))
+        .sort((a, b) => {
+          // Sort by startTime (assume "HH:mm" format)
+          const [aHour, aMin] = typeof a.startTime === "string" ? a.startTime.split(":").map(Number) : [a.startTime, 0];
+          const [bHour, bMin] = typeof b.startTime === "string" ? b.startTime.split(":").map(Number) : [b.startTime, 0];
+          return aHour !== bHour ? aHour - bHour : aMin - bMin;
+        }),
+    };
+  });
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
