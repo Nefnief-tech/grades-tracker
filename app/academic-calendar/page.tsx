@@ -85,7 +85,7 @@ import {
 import { Calendar } from "@/components/ui/calendar"; // Add this import
 
 export default function AcademicCalendarPage() {
-  const { subjects, isLoading, error, mutate } = useSubjects();
+  const { subjects, isLoading, error } = useSubjects();
   const { tests, editTest, removeTest, addTest } = useTests(); // Add removeTest and addTest here
   const [selectedGrade, setSelectedGrade] = useState<{
     grade: Grade;
@@ -221,7 +221,7 @@ export default function AcademicCalendarPage() {
       await addGradeToSubject(subject.id, grade);
 
       // Refresh data
-      mutate();
+      //mutate();
 
       toast({
         title: "Grade added",
