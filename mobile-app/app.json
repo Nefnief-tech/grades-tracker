@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "Vocabulary Extractor",
+    "slug": "vocabulary-extractor",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vocabularyextractor.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow Vocabulary Extractor to access your photos to select vocabulary images.",
+        "NSPhotoLibraryAddUsageDescription": "Allow Vocabulary Extractor to save processed images to your photo library."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.vocabularyextractor.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Vocabulary Extractor to access your camera to capture vocabulary pages."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Vocabulary Extractor to access your photos to select vocabulary images.",
+          "savePhotosPermission": "Allow Vocabulary Extractor to save processed images to your photo library."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9f307141-eab7-499f-bca2-c34cd387fc3c"
+      }
+    }
+  }
+}

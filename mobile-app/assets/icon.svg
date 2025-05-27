@@ -1,0 +1,27 @@
+<!-- This is a simple SVG icon that can be used as the app icon -->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="512" cy="512" r="512" fill="#2563eb"/>
+  
+  <!-- Book icon -->
+  <rect x="256" y="256" width="512" height="384" rx="32" fill="white" stroke="none"/>
+  <rect x="256" y="256" width="512" height="64" rx="32" fill="#1e40af"/>
+  
+  <!-- Pages -->
+  <line x1="512" y1="320" x2="512" y2="640" stroke="#e5e7eb" stroke-width="4"/>
+  <line x1="320" y1="380" x2="480" y2="380" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>
+  <line x1="320" y1="420" x2="480" y2="420" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>
+  <line x1="320" y1="460" x2="430" y2="460" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>
+  <line x1="320" y1="500" x2="480" y2="500" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>
+  <line x1="320" y1="540" x2="450" y2="540" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>
+  
+  <line x1="544" y1="380" x2="704" y2="380" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>
+  <line x1="544" y1="420" x2="704" y2="420" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>
+  <line x1="544" y1="460" x2="654" y2="460" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>
+  <line x1="544" y1="500" x2="704" y2="500" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>
+  <line x1="544" y1="540" x2="674" y2="540" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- AI spark effect -->
+  <circle cx="680" cy="320" r="12" fill="#fbbf24"/>
+  <path d="M680 300 L685 310 L695 310 L687 318 L692 328 L680 322 L668 328 L673 318 L665 310 L675 310 Z" fill="#fbbf24"/>
+</svg>
