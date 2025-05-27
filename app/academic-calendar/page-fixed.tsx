@@ -504,8 +504,7 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">
-            <div className="space-y-4 mb-4">
+          <div className="py-2">            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -518,12 +517,6 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
-                          ></div>
-                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -557,8 +550,7 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">
-            <div className="space-y-4 mb-4">
+          <div className="py-2">            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select-test">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -571,12 +563,6 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
-                          ></div>
-                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -624,8 +610,7 @@ export default function AcademicCalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">
-            <div className="space-y-4 mb-4">
+          <div className="py-2">            <div className="space-y-4 mb-4">
               <Label htmlFor="subject-select-timetable">Subject</Label>
               <Select
                 value={selectedSubjectId}
@@ -638,12 +623,6 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
-                          ></div>
-                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -666,6 +645,236 @@ export default function AcademicCalendarPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Grade Details Sheet */}
+      <Sheet
+        open={!!selectedGrade}
+        onOpenChange={() => setSelectedGrade(null)}
+      >
+        <SheetContent position="right" size="sm">
+          <SheetHeader>
+            <SheetTitle>Grade Details</SheetTitle>
+            <SheetDescription>
+              Detailed information about the selected grade
+            </SheetDescription>
+          </SheetHeader>
+
+          {selectedGrade && (
+            <div className="py-4">
+              <div className="space-y-4">
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Subject
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {selectedGrade.subject.name}
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Grade
+                  </h3>
+                  <p
+                    className={`text-lg font-medium ${getGradeColor(
+                      selectedGrade.grade.value
+                    )}`}
+                  >
+                    {selectedGrade.grade.value.toFixed(1)}
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Date
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {formatDate(selectedGrade.grade.date)}
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Type
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {selectedGrade.grade.type}
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Weight
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {selectedGrade.grade.weight}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Test Details Sheet */}
+      <Sheet open={!!selectedTest} onOpenChange={() => setSelectedTest(null)}>
+        <SheetContent position="right" size="sm">
+          <SheetHeader>
+            <SheetTitle>Test Details</SheetTitle>
+            <SheetDescription>
+              Detailed information about the selected test
+            </SheetDescription>
+          </SheetHeader>
+
+          {selectedTest && (
+            <div className="py-4">
+              <div className="space-y-4">
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Subject
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {selectedTest.subject.name}
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Title
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {selectedTest.test.title}
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Date
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {formatDate(selectedTest.test.date)}
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Priority
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {selectedTest.test.priority}
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Completed
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {selectedTest.test.completed ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Timetable Entry Details Sheet */}
+      <Sheet
+        open={!!selectedTimetableEntry}
+        onOpenChange={() => setSelectedTimetableEntry(null)}
+      >
+        <SheetContent position="right" size="sm">
+          <SheetHeader>
+            <SheetTitle>Class Details</SheetTitle>
+            <SheetDescription>
+              Detailed information about the selected class
+            </SheetDescription>
+          </SheetHeader>
+
+          {selectedTimetableEntry && (
+            <div className="py-4">
+              <div className="space-y-4">
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Subject
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {selectedTimetableEntry.subject.name}
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Day
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {days[selectedTimetableEntry.entry.day].name}
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Time
+                  </h3>
+                  <p className="text-lg font-medium">
+                    {formatTimeDisplay(selectedTimetableEntry.entry.startTime)}{" "}
+                    - {formatTimeDisplay(selectedTimetableEntry.entry.endTime)}
+                  </p>
+                </div>
+                {selectedTimetableEntry.entry.room && (
+                  <div className="bg-muted/50 p-4 rounded-lg border">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Room
+                    </h3>
+                    <p className="text-lg font-medium">
+                      {selectedTimetableEntry.entry.room}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Test Confirmation Dialog */}
+      <AlertDialog
+        open={deleteTestConfirmOpen}
+        onOpenChange={setDeleteTestConfirmOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Test</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this test? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTest}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Timetable Entry Confirmation Dialog */}
+      <AlertDialog
+        open={deleteTimetableConfirmOpen}
+        onOpenChange={setDeleteTimetableConfirmOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Class</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this class? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTimetableEntry}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -756,10 +965,8 @@ function WeeklyTimetable({
             <div className="space-y-2">
               {day.entries.map((entry) => {
                 const subject = subjects.find((s) => s.id === entry.subjectId);
-                if (!subject) return null;
-
-                // Use entry color if available, otherwise fall back to subject color
-                const entryColor = entry.color || subject.color;
+                if (!subject) return null;                // Use entry color if available, otherwise fall back to a default
+                const entryColor = entry.color;
 
                 return (
                   <div

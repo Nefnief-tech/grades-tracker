@@ -507,14 +507,7 @@ export default function AcademicCalendarPage() {
               </SheetHeader>
               <div className="py-4">
                 <div className="space-y-4">
-                  <div
-                    className="bg-muted/50 p-4 rounded-lg border"
-                    style={{
-                      borderLeft: selectedGrade.subject.color
-                        ? `4px solid ${selectedGrade.subject.color}`
-                        : undefined,
-                    }}
-                  >
+                  <div className="bg-muted/50 p-4 rounded-lg border">
                     <h3 className="text-sm font-medium text-muted-foreground">
                       Subject
                     </h3>
@@ -612,14 +605,7 @@ export default function AcademicCalendarPage() {
               </SheetHeader>
               <div className="py-4">
                 <div className="space-y-4">
-                  <div
-                    className="bg-muted/50 p-4 rounded-lg border"
-                    style={{
-                      borderLeft: selectedTest.subject.color
-                        ? `4px solid ${selectedTest.subject.color}`
-                        : undefined,
-                    }}
-                  >
+                  <div className="bg-muted/50 p-4 rounded-lg border">
                     <h3 className="text-sm font-medium text-muted-foreground">
                       Subject
                     </h3>
@@ -755,14 +741,7 @@ export default function AcademicCalendarPage() {
               </SheetHeader>
               <div className="py-4">
                 <div className="space-y-4">
-                  <div
-                    className="bg-muted/50 p-4 rounded-lg border"
-                    style={{
-                      borderLeft: selectedTimetableEntry.subject.color
-                        ? `4px solid ${selectedTimetableEntry.subject.color}`
-                        : undefined,
-                    }}
-                  >
+                  <div className="bg-muted/50 p-4 rounded-lg border">
                     <h3 className="text-sm font-medium text-muted-foreground">
                       Subject
                     </h3>
@@ -867,12 +846,6 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
-                          ></div>
-                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -920,12 +893,6 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
-                          ></div>
-                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -987,12 +954,6 @@ export default function AcademicCalendarPage() {
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id}>
                       <div className="flex items-center gap-2">
-                        {subject.color && (
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: subject.color }}
-                          ></div>
-                        )}
                         {subject.name}
                       </div>
                     </SelectItem>
@@ -1188,7 +1149,7 @@ function WeeklyTimetable({
                 if (!subject) return null;
 
                 // Use entry color if available, otherwise fall back to subject color
-                const entryColor = entry.color || subject.color;
+                const entryColor = entry.color;
 
                 return (
                   <div
