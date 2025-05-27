@@ -372,7 +372,7 @@ export default function AcademicCalendarPage() {
   };
 
 
-  const color = selectedTimetableEntry?.subject.color;
+  const color = 1; // Placeholder for color logic, if needed
   // Loading state
   if (isLoading || loadingTimetable) {
     return (
