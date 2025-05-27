@@ -371,6 +371,8 @@ export default function AcademicCalendarPage() {
     }
   };
 
+
+  const color = selectedTimetableEntry?.subject.color;
   // Loading state
   if (isLoading || loadingTimetable) {
     return (
