@@ -1,255 +1,250 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-interface VocabularyItem {
-  english: string;
-  german: string;
-  confidence?: number;
-}
+// Check if we're in a Node.js environment and polyfill File if needed
+const isServerEnvironment = typeof window === 'undefined';
 
-// Helper function to convert File to base64
-async function fileToBase64(file: File): Promise<string> {
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-  return buffer.toString('base64');
-}
+// Create a polyfill for the File API in Node.js environments
+class NodeFile {
+  name: string;
+  type: string;
+  size: number;
+  data: Buffer | ArrayBuffer;
 
-// Helper function to extract vocabulary using Gemini Vision
-async function extractVocabularyWithGemini(imageBase64: string, apiKey: string): Promise<VocabularyItem[]> {
-  try {
-    // Dynamically import to avoid build issues if package isn't installed
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+  constructor(
+    bits: BlobPart[],
+    name: string,
+    options?: FilePropertyBag
+  ) {
+    this.name = name;
+    this.type = options?.type || '';
     
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-    const prompt = `
-    Analyze this image of a vocabulary page from a textbook. Extract all vocabulary pairs where typically:
-    - English words/phrases are on the left side
-    - German translations are on the right side
-    
-    Return the vocabulary as a JSON array with this exact format:
-    [
-      {"english": "word/phrase", "german": "translation", "confidence": 0.95},
-      {"english": "another word", "german": "andere Übersetzung", "confidence": 0.90}
-    ]
-    
-    Rules:
-    1. Only extract clear, readable vocabulary pairs
-    2. Include confidence score (0.0 to 1.0) based on how clear the text is
-    3. Clean up any OCR artifacts or partial words
-    4. Ignore headers, page numbers, or non-vocabulary content
-    5. If the layout is different (German on left, English on right), adapt accordingly
-    6. Return valid JSON only, no additional text or explanation
-    7. If no vocabulary is found, return an empty array []
-    `;
-
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: imageBase64,
-          mimeType: 'image/jpeg'
-        }
+    // Convert bits to Buffer for Node.js
+    if (Array.isArray(bits) && bits.length > 0) {
+      if (bits[0] instanceof Buffer) {
+        this.data = bits[0];
+      } else if (bits[0] instanceof ArrayBuffer) {
+        this.data = bits[0];
+      } else if (typeof bits[0] === 'string') {
+        this.data = Buffer.from(bits[0]);
+      } else {
+        // Fallback
+        this.data = Buffer.alloc(0);
       }
-    ]);
-
-    const response = await result.response;
-    const text = response.text();
-    
-    // Try to extract JSON from the response
-    const jsonMatch = text.match(/\[[\s\S]*?\]/);
-    if (!jsonMatch) {
-      console.warn('No valid JSON found in Gemini response:', text);
-      return [];
+    } else {
+      this.data = Buffer.alloc(0);
     }
+    this.size = Buffer.isBuffer(this.data) ? this.data.length : this.data.byteLength;
+  }
 
-    try {
-      const vocabulary = JSON.parse(jsonMatch[0]);
-      return Array.isArray(vocabulary) ? vocabulary.filter((item: any) => 
-        item.english && item.german && 
-        typeof item.english === 'string' && 
-        typeof item.german === 'string'
-      ) : [];
-    } catch (parseError) {
-      console.error('Failed to parse Gemini JSON response:', parseError);
-      return [];
+  // Methods to match File API
+  arrayBuffer() {
+    return Promise.resolve(this.data);
+  }
+
+  text() {
+    if (Buffer.isBuffer(this.data)) {
+      return Promise.resolve(this.data.toString('utf-8'));
     }
-  } catch (error) {
-    console.error('Gemini extraction error:', error);
-    throw error;
+    return Promise.resolve(new TextDecoder().decode(this.data));
+  }
+
+  slice(start?: number, end?: number, contentType?: string) {
+    if (Buffer.isBuffer(this.data)) {
+      const newData = this.data.slice(start, end);
+      return new NodeFile([newData], this.name, { type: contentType || this.type });
+    }
+    const newData = this.data.slice(start, end);
+    return new NodeFile([newData], this.name, { type: contentType || this.type });
   }
 }
 
-// Enhanced local extraction with realistic vocabulary samples (fallback)
-async function extractVocabularyLocal(imageBase64: string, imageName: string): Promise<VocabularyItem[]> {
-  console.log(`Using fallback local extraction for ${imageName}`);
-  
-  // Simulate vocabulary extraction with different sets based on image
-  const vocabularySets = [
-    [
-      { english: "house", german: "das Haus", confidence: 0.85 },
-      { english: "car", german: "das Auto", confidence: 0.90 },
-      { english: "book", german: "das Buch", confidence: 0.88 },
-      { english: "water", german: "das Wasser", confidence: 0.92 },
-      { english: "food", german: "das Essen", confidence: 0.80 }
-    ],
-    [
-      { english: "school", german: "die Schule", confidence: 0.87 },
-      { english: "teacher", german: "der Lehrer", confidence: 0.91 },
-      { english: "student", german: "der Student", confidence: 0.89 },
-      { english: "lesson", german: "die Stunde", confidence: 0.83 },
-      { english: "homework", german: "die Hausaufgabe", confidence: 0.86 }
-    ],
-    [
-      { english: "family", german: "die Familie", confidence: 0.93 },
-      { english: "mother", german: "die Mutter", confidence: 0.95 },
-      { english: "father", german: "der Vater", confidence: 0.94 },
-      { english: "brother", german: "der Bruder", confidence: 0.88 },
-      { english: "sister", german: "die Schwester", confidence: 0.90 }
-    ]
-  ];
-  
-  // Select vocabulary set based on image name hash
-  const hash = imageName.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  
-  const setIndex = Math.abs(hash) % vocabularySets.length;
-  return vocabularySets[setIndex];
-}
+// Use either the browser's File or our polyfill
+const FileClass = isServerEnvironment ? NodeFile : File;
+
+// Create a type for our custom NodeFile
+type CustomFile = {
+  name: string;
+  type: string;
+  size: number;
+  data?: Buffer | ArrayBuffer;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+  text: () => Promise<string>;
+  slice: (start?: number, end?: number, contentType?: string) => any;
+};
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const images: File[] = [];
-    const apiKey = formData.get('apiKey') as string;
+    const imageFiles = formData.getAll("images") as unknown[];
     
-    // Extract all uploaded images
-    for (const [key, value] of formData.entries()) {
-      if (key.startsWith('image') && value instanceof File) {
-        images.push(value);
-      }
+    // No images provided
+    if (!imageFiles || imageFiles.length === 0) {
+      return NextResponse.json({ error: "No images provided" }, { status: 400 });
+    }
+
+    // For demo mode, use a fixed response
+    const apiKey = formData.get("apiKey");
+    if (!apiKey || apiKey === "demo" || apiKey === "demomode") {
+      return NextResponse.json({
+        success: true,
+        vocabulary: getSampleVocabulary(),
+      });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey as string);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+
+    // Prepare the prompt
+    const prompt = `
+    You are a language learning assistant, specialized in extracting vocabulary from textbooks.
+    
+    Analyze the uploaded image(s) of vocabulary pages from a language textbook.
+    The pages are likely to have a two-column layout with vocabulary words in one language and their translations in another.
+    Extract all vocabulary words and their translations.
+    
+    Please return the results in the following JSON format:
+    {
+      "vocabulary": [
+        {"term": "word1", "definition": "translation1"},
+        {"term": "word2", "definition": "translation2"},
+        ...
+      ]
     }
     
-    if (images.length === 0) {
-      return NextResponse.json(
-        { error: 'No images provided' },
-        { status: 400 }
-      );
-    }
-    
-    console.log(`Processing ${images.length} images for vocabulary extraction`);
-    console.log(`API Key provided: ${!!apiKey}`);
-    
-    let allVocabulary: VocabularyItem[] = [];
-    let extractionLog = '';
-    let usesFallback = false;
-    let geminiWorking = false;
-    
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i];
-      console.log(`Processing image ${i + 1}: ${image.name}`);
-      
-      try {
-        // Convert image to base64
-        const imageBase64 = await fileToBase64(image);
-        
-        let vocabulary: VocabularyItem[];
-        
-        // Try Gemini API first if API key is available
-        if (apiKey) {
-          try {
-            vocabulary = await extractVocabularyWithGemini(imageBase64, apiKey);
-            
-            if (vocabulary.length > 0) {
-              extractionLog += `✅ Image ${i + 1} (${image.name}): Extracted ${vocabulary.length} vocabulary pairs using Gemini AI\n`;
-              console.log(`Gemini extracted ${vocabulary.length} vocabulary items from image ${i + 1}`);
-              geminiWorking = true;
-            } else {
-              extractionLog += `⚠️ Image ${i + 1} (${image.name}): No vocabulary found by Gemini AI\n`;
-              vocabulary = await extractVocabularyLocal(imageBase64, image.name);
-              extractionLog += `📝 Using fallback vocabulary (${vocabulary.length} pairs)\n`;
-              usesFallback = true;
-            }
-          } catch (geminiError) {
-            console.warn(`Gemini failed for image ${i + 1}, falling back to local extraction:`, geminiError);
-            vocabulary = await extractVocabularyLocal(imageBase64, image.name);
-            extractionLog += `❌ Image ${i + 1} (${image.name}): Gemini failed - ${geminiError instanceof Error ? geminiError.message : 'Unknown error'}\n`;
-            extractionLog += `📝 Using fallback vocabulary (${vocabulary.length} pairs)\n`;
-            usesFallback = true;
-          }
+    Don't include any additional text or explanations in your response, ONLY the JSON.
+    If you cannot extract vocabulary from the images, return an empty array.
+    `;
+
+    // Prepare image parts for the model
+    const imageParts: Array<{inlineData: {data: string, mimeType: string}}> = [];
+    for (const imageFile of imageFiles) {
+      // This is where we need to fix the File handling
+      let fileData: File | Blob | CustomFile;
+      if (imageFile instanceof FileClass) {
+        fileData = imageFile as any;
+      } else {
+        // For other types (Blob, etc.), create a File instance
+        let fileBlob;
+        if ('arrayBuffer' in (imageFile as any)) {
+          const buffer = await (imageFile as Blob).arrayBuffer();
+          fileBlob = buffer;
         } else {
-          console.log('No Gemini API key provided, using local extraction');
-          vocabulary = await extractVocabularyLocal(imageBase64, image.name);
-          extractionLog += `📝 Image ${i + 1} (${image.name}): Using demo vocabulary (${vocabulary.length} pairs)\n`;
-          usesFallback = true;
+          // Last resort for unknown types
+          console.warn('Unknown image file type:', typeof imageFile);
+          fileBlob = new Uint8Array(0);
         }
         
-        // Add vocabulary items with source information
-        const processedVocabulary = vocabulary.map((item, index) => ({
-          ...item,
-          sourceImage: image.name,
-          extractionIndex: index
-        }));
-        
-        allVocabulary.push(...processedVocabulary);
-        
-      } catch (error) {
-        console.error(`Error processing image ${i + 1}:`, error);
-        extractionLog += `❌ Image ${i + 1} (${image.name}): Error during processing - ${error instanceof Error ? error.message : 'Unknown error'}\n`;
+        const fileName = (imageFile as any).name || 'image.jpg';
+        const fileType = (imageFile as any).type || 'image/jpeg';
+        fileData = new FileClass([fileBlob], fileName, { type: fileType }) as any;
       }
-    }
-    
-    // Remove duplicates based on English word
-    const uniqueVocabulary = allVocabulary.filter((item, index, self) => 
-      index === self.findIndex(v => v.english.toLowerCase() === item.english.toLowerCase())
-    );
-    
-    // Add status information to extraction log
-    if (usesFallback && !geminiWorking) {
-      if (!apiKey) {
-        extractionLog += '\n🔑 No API key provided - using demo vocabulary data.\n';
-        extractionLog += 'To enable real image analysis, configure your Gemini API key in flashcard settings.';
-      } else {
-        extractionLog += '\n⚠️ Gemini AI encountered issues - some results may be demo data.\n';
-        extractionLog += 'Check your images are clear and contain visible vocabulary pairs.';
-      }
-    } else if (geminiWorking) {
-      extractionLog += '\n🎉 Successfully extracted vocabulary using Gemini AI!';
-    }
-    
-    console.log(`Total vocabulary extracted: ${uniqueVocabulary.length} unique items`);
-    
-    return NextResponse.json({
-      vocabulary: uniqueVocabulary,
-      totalImages: images.length,
-      totalVocabulary: uniqueVocabulary.length,
-      extractionLog: extractionLog.trim(),
-      usedFallback: usesFallback,
-      geminiWorking: geminiWorking
-    });
-    
-  } catch (error) {
-    console.error('Vocabulary extraction error:', error);
-    
-    // Check if it's a missing package error
-    if (error instanceof Error && error.message.includes('@google/generative-ai')) {
-      return NextResponse.json(
-        { 
-          error: 'Google Generative AI package not installed. Please run: npm install @google/generative-ai',
-          details: 'The @google/generative-ai package is required for image analysis.'
+      
+      const base64Data = await blobToBase64(fileData);
+      imageParts.push({
+        inlineData: {
+          data: base64Data,
+          mimeType: fileData.type || 'image/jpeg',
         },
-        { status: 500 }
-      );
+      });    }
+
+    // Generate content with the model
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: prompt },
+            ...imageParts as any,
+          ],
+        },
+      ],
+    });
+
+    const response = result.response;
+    const text = response.text();
+
+    // Extract JSON from the response
+    try {
+      // Find JSON within the text
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? jsonMatch[0] : text;
+      const data = JSON.parse(jsonStr);
+      return NextResponse.json({
+        success: true,
+        vocabulary: data.vocabulary || [],
+      });
+    } catch (error) {
+      console.error("Error parsing JSON response:", error);
+      return NextResponse.json({
+        success: false,
+        error: "Failed to parse vocabulary results",
+        rawResponse: text,
+      }, { status: 500 });
+    }
+  } catch (error) {
+    console.error("Vocabulary extraction error:", error);
+    return NextResponse.json({
+      success: false,
+      error: "Failed to extract vocabulary",
+      message: error instanceof Error ? error.message : String(error),
+    }, { status: 500 });
+  }
+}
+
+// Helper function to convert blob to base64
+async function blobToBase64(blob: Blob | File | CustomFile): Promise<string> {
+  if (isServerEnvironment) {
+    // Node.js environment
+    if ((blob as CustomFile).data) {
+      const data = (blob as CustomFile).data;
+      if (Buffer.isBuffer(data)) {
+        return data.toString('base64');
+      } else if (data instanceof ArrayBuffer) {
+        return Buffer.from(data).toString('base64');
+      }
     }
     
-    return NextResponse.json(
-      { 
-        error: 'Failed to extract vocabulary: ' + (error instanceof Error ? error.message : 'Unknown error'),
-        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
-      },
-      { status: 500 }
-    );
+    // If it's a blob or file with arrayBuffer method
+    if ('arrayBuffer' in blob) {
+      const arrayBuffer = await blob.arrayBuffer();
+      return Buffer.from(arrayBuffer).toString('base64');
+    }
+    
+    // Last resort
+    return '';
+  } else {
+    // Browser environment
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const base64 = dataUrl.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(blob as Blob);
+    });
   }
+}
+
+// Sample vocabulary for demo mode
+function getSampleVocabulary() {
+  return [
+    { term: "der Hund", definition: "dog" },
+    { term: "die Katze", definition: "cat" },
+    { term: "das Buch", definition: "book" },
+    { term: "die Schule", definition: "school" },
+    { term: "der Tisch", definition: "table" },
+    { term: "der Stuhl", definition: "chair" },
+    { term: "das Fenster", definition: "window" },
+    { term: "die Tür", definition: "door" },
+    { term: "der Computer", definition: "computer" },
+    { term: "das Handy", definition: "mobile phone" },
+    { term: "die Tasche", definition: "bag" },
+    { term: "der Stift", definition: "pen" },
+    { term: "das Bild", definition: "picture" },
+    { term: "die Lampe", definition: "lamp" },
+    { term: "das Auto", definition: "car" },
+  ];
 }
