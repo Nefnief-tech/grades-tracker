@@ -28,7 +28,7 @@ ENV NEXT_STRICT_MODE=false
 ENV NEXT_TYPECHECK=false
 ENV NEXT_PUBLIC_OPTIMIZE_CSS=true
 ENV NEXT_PUBLIC_OPTIMIZE_FONTS=true
-RUN pnpm build
+
 
 # Production stage
 FROM --platform=$TARGETPLATFORM node:20.10.0-alpine
