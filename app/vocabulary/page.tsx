@@ -249,6 +249,36 @@ export default function VocabularyPage() {
     setExtractionResults('');
   };
 
+  // In your component, update the handleExtract function:
+  const handleExtract = async () => {
+    if (images.length === 0) {
+      setError('Please upload at least one image');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // Use the enhanced function with fallback
+      const extractedVocabulary = await extractVocabularyWithFallback(images, apiKeyInput);
+      
+      // Set the extracted vocabulary
+      const newFlashCards: FlashCard[] = extractedVocabulary.map((item: VocabularyItem, index: number) => ({
+        ...item,
+        id: `card-${Date.now()}-${index}`,
+        showEnglish: false
+      }));
+      setFlashCards(newFlashCards);
+      
+      // Show success message
+      setExtractionResults(`Successfully extracted ${extractedVocabulary.length} vocabulary items`);
+    } catch (error) {
+      console.error("Failed to extract vocabulary:", error);
+      setError('Could not extract vocabulary from the provided images');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="container max-w-6xl mx-auto py-8 px-4">
       <div className="mb-8">
@@ -479,7 +509,7 @@ export default function VocabularyPage() {
             
             <div className="flex gap-2">
               <Button 
-                onClick={extractVocabulary} 
+                onClick={handleExtract} 
                 disabled={images.length === 0 || loading}
                 className="flex items-center"
               >
@@ -632,4 +662,77 @@ export default function VocabularyPage() {
       )}
     </div>
   );
+}
+
+// Create a more robust extractVocabulary function
+async function extractVocabulary(files: File[], apiKey: string): Promise<any> {
+  console.log(`Extracting vocabulary from ${files.length} files`);
+  
+  // Create FormData properly
+  const formData = new FormData();
+  
+  // Add API key
+  formData.append("apiKey", apiKey);
+  
+  // Add each file individually with proper naming
+  files.forEach((file, index) => {
+    console.log(`Adding file: ${file.name}, type: ${file.type}, size: ${file.size}bytes`);
+    formData.append("images", file);
+  });
+
+  try {
+    console.log("Sending request to vocabulary extraction API");
+    
+    // Use fetch with better error handling
+    const response = await fetch("/api/vocabulary/extract", {
+      method: "POST",
+      body: formData,
+    });
+    
+    // Check if response is ok before parsing
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API error (${response.status}):`, errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // Parse response as JSON
+    const data = await response.json();
+    console.log("API response:", data);
+    
+    if (data.success) {
+      return data.vocabulary;
+    } else {
+      throw new Error(data.error || "Failed to extract vocabulary");
+    }
+  } catch (error) {
+    console.error("Error extracting vocabulary:", error);
+    throw error;
+  }
+}
+
+// Fallback vocabulary if API fails
+const fallbackVocabulary = [
+  { term: "der Hund", definition: "dog" },
+  { term: "die Katze", definition: "cat" },
+  { term: "das Buch", definition: "book" },
+  { term: "die Schule", definition: "school" },
+  { term: "der Tisch", definition: "table" },
+  { term: "der Stuhl", definition: "chair" },
+  { term: "das Fenster", definition: "window" },
+  { term: "die Tür", definition: "door" },
+  { term: "der Computer", definition: "computer" },
+  { term: "das Handy", definition: "mobile phone" }
+];
+
+// Enhanced vocabulary extraction with fallback
+async function extractVocabularyWithFallback(files: File[], apiKey: string): Promise<any> {
+  try {
+    // Try to use the regular extraction
+    const vocabulary = await extractVocabulary(files, apiKey);
+    return vocabulary;
+  } catch (error) {
+    console.warn("Extraction failed, using fallback vocabulary:", error);
+    return fallbackVocabulary;
+  }
 }

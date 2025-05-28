@@ -130,25 +130,45 @@ function getSampleVocabulary() {
   ];
 }
 
-export async function POST(request: NextRequest) {
-  try {
+export async function POST(request: NextRequest) {  try {
     console.log("Vocabulary extraction API called");
-    const formData = await request.formData();
+    
+    // Add more debug info about the request
+    console.log("Request method:", request.method);
+    console.log("Request headers:", Object.fromEntries(request.headers.entries()));
+    
+    // Get form data with better error handling
+    let formData;
+    try {
+      formData = await request.formData();
+      console.log("Form data entries:", Array.from(formData.entries()).map(([key]) => key));
+    } catch (error) {
+      console.error("Error parsing form data:", error);
+      return NextResponse.json({ 
+        error: "Invalid form data", 
+        details: error instanceof Error ? error.message : String(error) 
+      }, { status: 400 });
+    }
+    
+    // Get image files
     const imageFiles = formData.getAll("images") as unknown[];
+    console.log(`Retrieved ${imageFiles.length} images from form data`);
     
     // No images provided
     if (!imageFiles || imageFiles.length === 0) {
       console.log("No images provided");
       return NextResponse.json({ error: "No images provided" }, { status: 400 });
-    }
-
-    // For demo mode, use a fixed response
+    }    // Get API key
     const apiKey = formData.get("apiKey");
+    console.log("API key provided:", apiKey ? "YES" : "NO");
+    
+    // For demo mode, use a fixed response
     if (!apiKey || apiKey === "demo" || apiKey === "demomode") {
-      console.log("Using demo mode");
+      console.log("Using demo mode - returning sample vocabulary");
       return NextResponse.json({
         success: true,
         vocabulary: getSampleVocabulary(),
+        mode: "demo"
       });
     }
 
@@ -179,19 +199,43 @@ export async function POST(request: NextRequest) {
 
     // Prepare image parts for the model
     const imageParts: Array<{inlineData: {data: string, mimeType: string}}> = [];
-    
-    try {
+      try {
       for (const imageFile of imageFiles) {
+        console.log("Processing image file:", 
+          typeof imageFile, 
+          (imageFile as any).name || "no-name", 
+          (imageFile as any).type || "no-type"
+        );
+        
         // This is where we need to fix the File handling
         let fileData: File | Blob | CustomFile;
+        
+        // Special handling for demo mode
+        if (apiKey === "demo" || apiKey === "demomode") {
+          console.log("Demo mode - skipping actual image processing");
+          continue;
+        }
+        
+        // Check if it's already a File or Blob
         if (imageFile instanceof FileClass) {
+          console.log("Image is already a File instance");
+          fileData = imageFile as any;
+        } else if ('arrayBuffer' in (imageFile as any) && typeof (imageFile as any).arrayBuffer === 'function') {
+          console.log("Image has arrayBuffer method");
           fileData = imageFile as any;
         } else {
-          // For other types (Blob, etc.), create a File instance
+          // Handle other formats
+          console.log("Converting unknown image format to File");
           let fileBlob;
+          
+          // Try different ways to get the file data
           if ('arrayBuffer' in (imageFile as any)) {
+            console.log("Using arrayBuffer method");
             const buffer = await (imageFile as Blob).arrayBuffer();
             fileBlob = buffer;
+          } else if (Buffer.isBuffer(imageFile)) {
+            console.log("Image is a Buffer");
+            fileBlob = imageFile;
           } else {
             // Last resort for unknown types
             console.warn('Unknown image file type:', typeof imageFile);
