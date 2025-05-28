@@ -1,9 +1,9 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "Dockerfile.railway"
+dockerfilePath = "Dockerfile.railpack"
 
 [deploy]
-startCommand = "serve -s . -l 3000"
+startCommand = "pnpm start"
 healthcheckPath = "/"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"

@@ -1,5 +1,5 @@
-# Railpack Dockerfile for static export
-FROM node:18-alpine as builder
+# Railpack Dockerfile for static export with pnpm start
+FROM node:18-alpine
 
 WORKDIR /app
 
@@ -16,15 +16,8 @@ COPY . .
 # Build static export
 RUN pnpm run build
 
-# Production stage - serve static files
-FROM nginx:alpine
+# Expose port
+EXPOSE 3000
 
-# Copy static files from build stage
-COPY --from=builder /app/out /usr/share/nginx/html
-
-# Copy nginx configuration
-COPY --from=builder /app/nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+# Use pnpm start to serve static files
+CMD ["pnpm", "start"]
