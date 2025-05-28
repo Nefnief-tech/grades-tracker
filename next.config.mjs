@@ -13,6 +13,7 @@ const nextConfig = {
   trailingSlash: true,
   distDir: 'out',
   basePath: '',
+  assetPrefix: '',
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
