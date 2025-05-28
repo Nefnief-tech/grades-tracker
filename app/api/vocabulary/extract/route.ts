@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {  try {
 
     console.log(`Processing ${imageFiles.length} images with Gemini API`);
     const genAI = new GoogleGenerativeAI(apiKey as string);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-05-20" });
 
     // Prepare the prompt
     const prompt = `
