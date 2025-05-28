@@ -1,15 +1,22 @@
 [phases.setup]
-nixPkgs = ['nodejs_20', 'openssl', 'gcc', 'python3']
-cmds = ['npm config set prefix "/usr/local" && npm install -g pnpm']
+nixPkgs = ["nginx"]
 
 [phases.install]
-cmds = ['npm install -g pnpm && pnpm install ']
+# No npm install needed for static files
+cmds = ["echo 'No installation required for static files'"]
 
 [phases.build]
-cmds = ['pnpm build']
+# Skip build phase - using prebuilt files
+cmds = ["echo 'Using prebuilt static files from out directory'"]
 
 [variables]
 NODE_OPTIONS = '--max-old-space-size=4096'
+NIXPACKS_METADATA = "static-site"
+PORT = "80"
 
 [start]
-cmd = 'pnpm start'
+cmd = "nginx -g 'daemon off;'"
+
+[staticAssets]
+# Serve the out directory as static assets
+"out" = "/"
