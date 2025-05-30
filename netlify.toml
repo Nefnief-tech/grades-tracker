@@ -1,0 +1,13 @@
+[build]
+  # Skip build command - use prebuilt files
+  command = "echo 'Using prebuilt files from out directory'"
+  publish = "out"
+  ignore = "true"
+
+[build.environment]
+  SKIP_BUILD = "true"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

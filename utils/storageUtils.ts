@@ -1065,63 +1065,30 @@ export const getTimetableEntriesFromCloud = async (
   userId: string
 ): Promise<TimetableEntry[]> => {
   try {
-    console.log(
-      "[Cloud] Getting timetable entries from cloud for user:",
-      userId
-    );
-
     const client = await getAppwriteClient();
     const { databases, Query } = client;
 
-    // Use the hardcoded TIMETABLE_COLLECTION_ID from lib/appwrite.ts if environment variable fails
-    const collectionId =
-      process.env.NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID ||
-      "67e0595c001fb247cd57";
-    const databaseId =
-      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "67d6b079002144822b5e";
-
-    console.log(
-      `[Cloud] Using database ID: ${databaseId}, collection ID: ${collectionId}`
+    // Fetch timetable entries from the cloud
+    const response = await databases.listDocuments(
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+      process.env.NEXT_PUBLIC_APPWRITE_TIMETABLE_COLLECTION_ID!,
+      [Query.equal("userId", userId)]
     );
 
-    // Fetch timetable entries from the cloud
-    const response = await databases.listDocuments(databaseId, collectionId, [
-      Query.equal("userId", userId),
-    ]);
-
-    console.log(`[Cloud] Found ${response.documents.length} timetable entries`);
-
-    // Log the first document for debugging if available
-    if (response.documents.length > 0) {
-      console.log(
-        "[Cloud] First timetable entry format:",
-        JSON.stringify(response.documents[0])
-      );
-    }
-
-    // Transform to match expected format - ensure type conversions
+    // Transform to match expected format - preserve time formats to maintain minutes
     return response.documents.map((doc) => ({
       id: doc.entryId || doc.$id,
       subjectId: doc.subjectId,
-      day: typeof doc.day === "string" ? parseInt(doc.day) : Number(doc.day), // Convert to number
-      startTime:
-        typeof doc.startTime === "string"
-          ? parseInt(doc.startTime)
-          : Number(doc.startTime), // Convert to number
-      endTime:
-        typeof doc.endTime === "string"
-          ? parseInt(doc.endTime)
-          : Number(doc.endTime), // Convert to number
-      room: doc.room || undefined,
-      notes: doc.notes || undefined,
-      recurring:
-        typeof doc.recurring === "boolean"
-          ? doc.recurring
-          : Boolean(doc.recurring),
-      color: doc.color || undefined,
+      day: parseInt(doc.day), // Convert day to number
+      startTime: doc.startTime, // Keep time as string to preserve minutes
+      endTime: doc.endTime, // Keep time as string to preserve minutes
+      room: doc.room,
+      notes: doc.notes,
+      recurring: Boolean(doc.recurring),
+      color: doc.color,
     }));
   } catch (error) {
-    console.error("[Cloud] Error getting timetable entries from cloud:", error);
+    console.error("Error getting timetable entries from cloud:", error);
     throw error;
   }
 };

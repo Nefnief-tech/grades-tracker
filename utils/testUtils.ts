@@ -7,13 +7,6 @@ import {
   generateUserEncryptionKey,
 } from "@/utils/encryptionUtils";
 
-// Use the hardcoded collection ID as fallback if environment variable fails
-const TESTS_COLLECTION_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID ||
-  "67e2f62c000e8723bd8d";
-const DATABASE_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "67d6b079002144822b5e";
-
 /**
  * Save a test to the Appwrite database with encryption
  */
@@ -22,11 +15,13 @@ export const saveTest = async (
   userId: string
 ): Promise<Test> => {
   try {
-    console.log("[Test] Saving test:", test.title);
     const client = await getAppwriteClient();
     const { databases } = client;
 
     const testId = ID.unique();
+
+    // Generate encryption key from user ID
+    const encryptionKey = await generateUserEncryptionKey(userId);
 
     // Format data to match collection schema - DON'T include encryptedData field
     const documentData = {
@@ -45,14 +40,10 @@ export const saveTest = async (
       updatedAt: new Date().toISOString(),
     };
 
-    console.log(
-      `[Test] Using database ID: ${DATABASE_ID}, collection ID: ${TESTS_COLLECTION_ID}`
-    );
-
     // Create the document in Appwrite
     await databases.createDocument(
-      DATABASE_ID,
-      TESTS_COLLECTION_ID,
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+      process.env.NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID!,
       testId,
       documentData
     );
@@ -63,7 +54,7 @@ export const saveTest = async (
       ...test,
     };
   } catch (error) {
-    console.error("[Test] Error saving test:", error);
+    console.error("Error saving test:", error);
     throw error;
   }
 };
@@ -77,14 +68,13 @@ export const updateTest = async (
   userId: string
 ): Promise<Test> => {
   try {
-    console.log("[Test] Updating test:", id);
     const client = await getAppwriteClient();
     const { databases } = client;
 
     // First, get the current document
     const currentDoc = await databases.getDocument(
-      DATABASE_ID,
-      TESTS_COLLECTION_ID,
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+      process.env.NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID!,
       id
     );
 
@@ -108,8 +98,8 @@ export const updateTest = async (
 
     // Update the document in Appwrite
     await databases.updateDocument(
-      DATABASE_ID,
-      TESTS_COLLECTION_ID,
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+      process.env.NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID!,
       id,
       documentData
     );
@@ -139,7 +129,7 @@ export const updateTest = async (
           : currentDoc.reminderDate,
     };
   } catch (error) {
-    console.error("[Test] Error updating test:", error);
+    console.error("Error updating test:", error);
     throw error;
   }
 };
@@ -149,13 +139,16 @@ export const updateTest = async (
  */
 export const deleteTest = async (id: string): Promise<void> => {
   try {
-    console.log("[Test] Deleting test:", id);
     const client = await getAppwriteClient();
     const { databases } = client;
 
-    await databases.deleteDocument(DATABASE_ID, TESTS_COLLECTION_ID, id);
+    await databases.deleteDocument(
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+      process.env.NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID!,
+      id
+    );
   } catch (error) {
-    console.error("[Test] Error deleting test:", error);
+    console.error("Error deleting test:", error);
     throw error;
   }
 };
@@ -165,45 +158,32 @@ export const deleteTest = async (id: string): Promise<void> => {
  */
 export const getTestsByUserId = async (userId: string): Promise<Test[]> => {
   try {
-    console.log("[Test] Getting tests for user:", userId);
     const client = await getAppwriteClient();
     const { databases } = client;
 
     // Using the imported Query directly
     const response = await databases.listDocuments(
-      DATABASE_ID,
-      TESTS_COLLECTION_ID,
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+      process.env.NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID!,
       [Query.equal("userId", userId)]
     );
 
-    console.log(
-      `[Test] Found ${response.documents.length} tests for user ${userId}`
-    );
-
-    // Log the first document for debugging if available
-    if (response.documents.length > 0) {
-      console.log(
-        "[Test] First test document format:",
-        JSON.stringify(response.documents[0])
-      );
-    }
-
     // Map documents to Test objects
     const tests = response.documents.map((doc) => ({
-      id: doc.testId || doc.$id,
+      id: doc.testId,
       title: doc.title,
       description: doc.description,
       date: doc.date,
       subjectId: doc.subjectId,
-      completed: doc.completed || false,
-      priority: doc.priority || "medium",
-      reminderEnabled: doc.reminderEnabled || false,
-      reminderDate: doc.reminderDate || "",
+      completed: doc.completed,
+      priority: doc.priority,
+      reminderEnabled: doc.reminderEnabled,
+      reminderDate: doc.reminderDate,
     }));
 
     return tests;
   } catch (error) {
-    console.error("[Test] Error getting tests:", error);
+    console.error("Error getting tests:", error);
     throw error;
   }
 };
@@ -216,37 +196,32 @@ export const getTestsBySubject = async (
   subjectId: string
 ): Promise<Test[]> => {
   try {
-    console.log(`[Test] Getting tests for subject: ${subjectId}`);
     const client = await getAppwriteClient();
     const { databases } = client;
 
     // Query directly by userId and subjectId
     const response = await databases.listDocuments(
-      DATABASE_ID,
-      TESTS_COLLECTION_ID,
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+      process.env.NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID!,
       [Query.equal("userId", userId), Query.equal("subjectId", subjectId)]
-    );
-
-    console.log(
-      `[Test] Found ${response.documents.length} tests for subject ${subjectId}`
     );
 
     // Map documents to Test objects
     const tests = response.documents.map((doc) => ({
-      id: doc.testId || doc.$id,
+      id: doc.testId,
       title: doc.title,
       description: doc.description,
       date: doc.date,
       subjectId: doc.subjectId,
-      completed: doc.completed || false,
-      priority: doc.priority || "medium",
-      reminderEnabled: doc.reminderEnabled || false,
-      reminderDate: doc.reminderDate || "",
+      completed: doc.completed,
+      priority: doc.priority,
+      reminderEnabled: doc.reminderEnabled,
+      reminderDate: doc.reminderDate,
     }));
 
     return tests;
   } catch (error) {
-    console.error("[Test] Error getting tests for subject:", error);
+    console.error("Error getting tests for subject:", error);
     throw error;
   }
 };
@@ -259,18 +234,20 @@ export const markTestCompleted = async (
   completed: boolean
 ): Promise<void> => {
   try {
-    console.log(
-      `[Test] Marking test ${id} as ${completed ? "completed" : "incomplete"}`
-    );
     const client = await getAppwriteClient();
     const { databases } = client;
 
-    await databases.updateDocument(DATABASE_ID, TESTS_COLLECTION_ID, id, {
-      completed,
-      updatedAt: new Date().toISOString(),
-    });
+    await databases.updateDocument(
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!,
+      process.env.NEXT_PUBLIC_APPWRITE_TESTS_COLLECTION_ID!,
+      id,
+      {
+        completed,
+        updatedAt: new Date().toISOString(),
+      }
+    );
   } catch (error) {
-    console.error("[Test] Error marking test as completed:", error);
+    console.error("Error marking test as completed:", error);
     throw error;
   }
 };

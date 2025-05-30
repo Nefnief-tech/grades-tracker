@@ -10,5 +10,7 @@
         "command": "pnpm run build"
       }
     ]
-  }
+  },
+  "builder": "dockerfile",
+  "dockerfilePath": "Dockerfile.railpack"
 }
