@@ -373,7 +373,7 @@ export default function TimetablePage() {
                 )}
               </CardTitle>
               <CardDescription className={`mt-1 ${
-                lesson.isCancelled ? 'line-through text-red-500/70' : 
+                lesson.isCancelled ? 'line-through text-red-500' : 
                 lesson.isSubstitution ? 'text-amber-600/70 dark:text-amber-400/70' : 
                 'text-muted-foreground'
               }`}>

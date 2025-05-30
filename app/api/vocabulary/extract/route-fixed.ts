@@ -5,24 +5,6 @@ import { recordApiRequest } from "@/app/utils/apiMetrics";
 // Function to process Gemini API response
 function processGeminiResponse(responseText: string): any[] {
   try {
-    // Check if the response is plain text (not JSON)
-    if (responseText.trim().startsWith('Please provide') || 
-        responseText.trim().startsWith('I need') ||
-        responseText.trim().startsWith('I cannot') ||
-        !responseText.includes('{') && !responseText.includes('[')) {
-      
-      console.log("Gemini returned non-JSON response:", responseText.substring(0, 100));
-      
-      // Create a fallback vocabulary item from the response
-      return [
-        { 
-          term: "API Response", 
-          definition: responseText.substring(0, 100) + "...",
-          note: "The API returned plain text instead of vocabulary data"
-        }
-      ];
-    }
-    
     // Extract JSON array from the response if it's wrapped in text
     let jsonStr = responseText.trim();
     
@@ -32,31 +14,10 @@ function processGeminiResponse(responseText: string): any[] {
     
     if (jsonStartIndex >= 0 && jsonEndIndex > jsonStartIndex) {
       jsonStr = jsonStr.substring(jsonStartIndex, jsonEndIndex);
-    } else {
-      // Try to find JSON objects if no array is found
-      const objStartIndex = jsonStr.indexOf('{');
-      const objEndIndex = jsonStr.lastIndexOf('}') + 1;
-      
-      if (objStartIndex >= 0 && objEndIndex > objStartIndex) {
-        // Wrap the object in an array for consistent processing
-        jsonStr = '[' + jsonStr.substring(objStartIndex, objEndIndex) + ']';
-      } else {
-        // If no JSON structure is found, return a placeholder
-        return [{ term: "Error", definition: "Could not extract vocabulary from API response" }];
-      }
     }
-      // Parse the JSON array
-    const vocabularyItems = JSON.parse(jsonStr);
     
-    // Check for empty array
-    if (Array.isArray(vocabularyItems) && vocabularyItems.length === 0) {
-      console.log("Gemini API returned an empty array, providing fallback vocabulary");
-      return [{ 
-        term: "No Results", 
-        definition: "The API couldn't extract any vocabulary from the provided content.",
-        note: "Empty result set from AI"
-      }];
-    }
+    // Parse the JSON array
+    const vocabularyItems = JSON.parse(jsonStr);
     
     // Validate and normalize the data structure
     return vocabularyItems.map((item: any) => {
@@ -109,8 +70,7 @@ function hashCode(str: string): number {
 }
 
 // Get demo vocabulary data with some variation based on the hash
-function getVocabularyDemoData(hash: number, source: string = 'text'): any[] {
-  // Base vocabulary items for text extraction
+function getVocabularyDemoData(hash: number): any[] {
   const baseVocabulary = [
     { term: "der Hund", definition: "dog" },
     { term: "die Katze", definition: "cat" },
@@ -142,144 +102,12 @@ function getVocabularyDemoData(hash: number, source: string = 'text'): any[] {
     { term: "das Meer", definition: "sea" },
     { term: "die Blume", definition: "flower" }
   ];
-    // Special image vocabulary items for image extraction
-  const imageVocabulary = [
-    { term: "das Foto", definition: "photo", source: "image-extraction", note: "Common term for photographs" },
-    { term: "das Bild", definition: "picture", source: "image-extraction", note: "General term for images" },
-    { term: "die Kamera", definition: "camera", source: "image-extraction", note: "Device used to take photos" },
-    { term: "der Moment", definition: "moment", source: "image-extraction", note: "Point in time captured in a photo" },
-    { term: "die Blende", definition: "aperture", source: "image-extraction", note: "Opening that controls light entering the camera" },
-    { term: "die Belichtung", definition: "exposure", source: "image-extraction", note: "Amount of light reaching the camera sensor" },
-    { term: "der Kontrast", definition: "contrast", source: "image-extraction", note: "Difference between light and dark areas" },
-    { term: "die Auflösung", definition: "resolution", source: "image-extraction", note: "Level of detail in an image" },
-    { term: "die Schärfe", definition: "sharpness", source: "image-extraction", note: "Clarity and detail in an image" },
-    { term: "die Farbe", definition: "color", source: "image-extraction", note: "Visual property of an image" },
-    { term: "der Bildausschnitt", definition: "crop", source: "image-extraction", note: "Selected portion of an image" },
-    { term: "die Linse", definition: "lens", source: "image-extraction", note: "Optical element of a camera" },
-    { term: "der Vordergrund", definition: "foreground", source: "image-extraction", note: "Front part of an image" },
-    { term: "der Hintergrund", definition: "background", source: "image-extraction", note: "Rear part of an image" },
-  ];
   
-  if (source === 'file') {
-    // For images, use the image vocabulary
-    const baseItems = imageVocabulary.slice(0, 6); // Always include first 6 items
-    
-    // Use hash to determine how many additional items to include
-    const additionalCount = hash % 4; // 0-3 additional items
-    const selectedItems = imageVocabulary.slice(6, 6 + additionalCount);
-    
-    return [...baseItems, ...selectedItems];
-  } else {
-    // For text, use the regular vocabulary
-    // Use the hash to determine how many additional items to include
-    const additionalCount = hash % 15; // 0-14 additional items
-    const selectedItems = additionalItems.slice(0, additionalCount);
-    
-    return [...baseVocabulary, ...selectedItems];
-  }
-}
-
-// Interface for vocabulary items to ensure type consistency
-interface VocabularyItem {
-  term: string;
-  definition: string;
-  source?: string;
-  note?: string;
-}
-
-// Generate specialized vocabulary based on image file information
-function getImageSpecificVocabulary(fileInfo: any): VocabularyItem[] {
-  // Base photography vocabulary
-  const baseTerms: VocabularyItem[] = [
-    { term: "die Fotografie", definition: "photography", source: "image-extraction" },
-    { term: "das Bild", definition: "image", source: "image-extraction" },
-    { term: "die Aufnahme", definition: "shot/capture", source: "image-extraction" },
-  ];
+  // Use the hash to determine how many additional items to include
+  const additionalCount = hash % 15; // 0-14 additional items
+  const selectedItems = additionalItems.slice(0, additionalCount);
   
-  // If no file info, return basic terms
-  if (!fileInfo) return baseTerms;
-  
-  const result = [...baseTerms];
-  
-  // Add file format specific terms
-  const format = fileInfo.type?.split('/')[1]?.toLowerCase();
-  if (format) {
-    result.push({ 
-      term: `das ${format.toUpperCase()}`, 
-      definition: `${format} image format`, 
-      source: "image-extraction",
-      note: "File format detected from upload"
-    });
-    
-    // Add format specific terms
-    if (format === 'jpeg' || format === 'jpg') {
-      result.push({ 
-        term: "die Kompression", 
-        definition: "compression", 
-        source: "image-extraction",
-        note: "JPEG uses lossy compression"
-      });
-    } else if (format === 'png') {
-      result.push({ 
-        term: "die Transparenz", 
-        definition: "transparency", 
-        source: "image-extraction",
-        note: "PNG supports transparent backgrounds"
-      });
-    } else if (format === 'gif') {
-      result.push({ 
-        term: "die Animation", 
-        definition: "animation", 
-        source: "image-extraction",
-        note: "GIF supports simple animations"
-      });
-    }
-  }
-  
-  // Add file size related terms
-  const size = fileInfo.size;
-  if (size) {
-    const sizeInMB = size / (1024 * 1024);
-    const sizeCategory = sizeInMB < 0.5 ? "small" : sizeInMB < 2 ? "medium" : "large";
-    
-    result.push({ 
-      term: `die Dateigröße`, 
-      definition: `file size (${sizeInMB.toFixed(2)} MB)`, 
-      source: "image-extraction",
-      note: `This is a ${sizeCategory} image file`
-    });
-  }
-  
-  // Add filename related terms if it contains interesting words
-  const filename = fileInfo.name?.toLowerCase() || "";
-  const interestingWords = [
-    {word: "landschaft", term: "die Landschaft", def: "landscape"},
-    {word: "porträt", term: "das Porträt", def: "portrait"},
-    {word: "stadt", term: "die Stadt", def: "city"},
-    {word: "natur", term: "die Natur", def: "nature"},
-    {word: "person", term: "die Person", def: "person"},
-    {word: "tier", term: "das Tier", def: "animal"},
-    {word: "baum", term: "der Baum", def: "tree"},
-    {word: "blume", term: "die Blume", def: "flower"},
-    {word: "himmel", term: "der Himmel", def: "sky"},
-    {word: "wasser", term: "das Wasser", def: "water"},
-    {word: "sonne", term: "die Sonne", def: "sun"},
-    {word: "strand", term: "der Strand", def: "beach"},
-    {word: "berg", term: "der Berg", def: "mountain"},
-  ];
-  
-  for (const {word, term, def} of interestingWords) {
-    if (filename.includes(word)) {
-      result.push({ 
-        term, 
-        definition: def, 
-        source: "image-extraction",
-        note: "Term detected from filename"
-      });
-    }
-  }
-  
-  return result;
+  return [...baseVocabulary, ...selectedItems];
 }
 
 export async function POST(request: NextRequest) {
@@ -295,13 +123,9 @@ export async function POST(request: NextRequest) {
     if (demoMode) {
       console.log(`[${requestId}] Demo mode requested. Using sample vocabulary data.`);
       const contentType = request.headers.get('content-type') || '';
-        // Get demo vocabulary based on content type
-      const extractionSource = contentType.includes('application/json') ? 'text' : 
-                               contentType.includes('multipart/form-data') ? 'file' : 'text';
       
-      // Use a random hash for more variety in demo data
-      const randomHash = Math.floor(Math.random() * 1000);
-      const demoVocabulary = getVocabularyDemoData(randomHash, extractionSource);
+      // Get demo vocabulary
+      const demoVocabulary = getSampleVocabulary();
       
       // Calculate processing time
       const processingTime = Date.now() - startTime;
@@ -360,7 +184,8 @@ export async function POST(request: NextRequest) {
     let extractionStats: Record<string, any> = {};
     
     const contentType = request.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
+    
+    if (contentType.includes('application/json')) {
       // Handle text extraction
       extractionSource = 'text';
       const jsonStartTime = Date.now();
@@ -412,17 +237,6 @@ export async function POST(request: NextRequest) {
           size: file.size
         }));
         
-        // Get first image file
-        const imageFile = files[0] as File;
-        
-        if (!imageFile.type.startsWith('image/')) {
-          return NextResponse.json({
-            success: false,
-            error: 'Invalid file type',
-            details: 'Please provide an image file (JPEG, PNG, etc.)'
-          }, { status: 400 });
-        }
-        
         extractionStats = {
           fileCount: files.length,
           totalSize: fileInfo.reduce((acc: number, file: any) => acc + file.size, 0),
@@ -430,36 +244,10 @@ export async function POST(request: NextRequest) {
           processingTime: Date.now() - fileStartTime
         };
         
-        console.log(`[${requestId}] Processing image extraction with Gemini Vision API - ${files.length} files`);
+        console.log(`[${requestId}] Processing file extraction with Gemini API - ${files.length} files`);
         console.log(`[${requestId}] File details:`, JSON.stringify(fileInfo));
         
-        // For image files, we'll process them differently using the vision API
-        try {
-          const { processImageWithGemini } = await import('@/app/utils/geminiImageProcessor');
-          const imageResults = await processImageWithGemini(geminiApiKey, imageFile, requestId);
-          
-          if (imageResults && imageResults.length > 0) {
-            return NextResponse.json({
-              success: true,
-              vocabulary: imageResults,
-              apiStatus: 'connected',
-              mode: "live",
-              meta: {
-                requestId,
-                source: "image",
-                extractionStats,
-                timestamp: new Date().toISOString(),
-                itemCount: imageResults.length,
-                processingTime: `${Date.now() - fileStartTime}ms`,
-              }
-            });
-          }
-        } catch (visionError) {
-          console.error(`[${requestId}] Vision API error:`, visionError);
-          // Continue with normal processing as fallback
-        }
-        
-        // If vision API failed or returned no results, use regular text extraction
+        // For file extraction, just use a placeholder text
         text = "Extract vocabulary from the image provided";
       } catch (error) {
         console.error(`[${requestId}] Error processing form data:`, error);
@@ -496,87 +284,38 @@ export async function POST(request: NextRequest) {
       if (useRealApi) {
         try {
           console.log(`[${requestId}] Using real Gemini API for extraction`);
-          console.log(`[${requestId}] Attempting to use Gemini API - Node.js version: ${process.versions.node}`);
+          console.log(`[${requestId}] Attempting to use Gemini model: gemini-1.5-flash`);
+
+          // Initialize with latest model name
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
           
-          console.log(`[${requestId}] Initializing Gemini model`);
-          const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash"  // Latest model as of mid-2023
-          });          // Create prompt based on input type
+          // Create prompt based on input type
           let prompt = "";
-          
           if (extractionSource === 'text') {
             prompt = `Extract vocabulary words from the following text. 
-            Format your response as a JSON array of objects with 'term' and 'definition' properties.
+            Format as a JSON array of objects with 'term' and 'definition' properties.
             If the text is in a foreign language, identify the language and provide English definitions.
             For nouns in gendered languages like German, include the article (der/die/das).
-            
-            Make sure to respond ONLY with a valid JSON array in this format:
-            [{"definition": "definition1", "term": "word1"}, {"definition": "definition2", "term": "word2"}]
-            
-            Text: ${text}`;          } else if (extractionSource === 'file') {
-            console.log(`[${requestId}] Note: Image extraction is not fully supported by the Gemini API without additional setup`);
-            
-            // Extract file info for the prompt
-            const fileInfo = extractionStats?.files?.[0] || { name: "unknown", type: "unknown", size: 0 };
-            const fileName = fileInfo.name || "unnamed.jpg";
-            const fileType = fileInfo.type || "image/jpeg";
-            const fileSize = fileInfo.size ? `${(fileInfo.size / 1024).toFixed(1)}KB` : "unknown size";
-            
-            // Try to extract clues from the filename
-            const filenameClues = fileName
-              .replace(/\.[^/.]+$/, "") // Remove extension
-              .replace(/[_-]/g, " ") // Replace underscores/hyphens with spaces
-              .replace(/\d+/g, " ") // Remove numbers
-              .trim();
-              
-            // Create a specialized prompt that uses filename clues
-            prompt = `Based on this image filename "${fileName}" (${fileType}, ${fileSize}), 
-            please extract possible vocabulary words that might appear in this image.
-            
-            Possible clues from filename: "${filenameClues}"
-            
-            If the filename suggests a specific language (like German, Spanish, etc.), 
-            provide vocabulary in that language with English translations.
-            
-            Format your response STRICTLY as a JSON array with this format:
-            [{"term":"word1", "definition":"meaning1"}, {"term":"word2", "definition":"meaning2"}]
-            
-            For German nouns, include the article (der/die/das).
-            Return at least 5-10 vocabulary items that could logically appear in this image.`;
-            
-            // For proper image handling, we would need:
-            // 1. Convert the file to base64
-            // 2. Set up a proper multimodal prompt with image and text
-            // 3. Use a model that supports images like gemini-1.5-pro-vision
+            Text: ${text}`;
+          } else if (extractionSource === 'file') {
+            // For file extraction, we would need to process image content
+            // This is simplified for demonstration purposes
+            prompt = `Extract vocabulary words from the image content. 
+            Format as a JSON array of objects with 'term' and 'definition' properties.
+            If words are in a foreign language, identify the language and provide English definitions.
+            For nouns in gendered languages like German, include the article (der/die/das).`;
           }
           
-          // Call Gemini API with simple text prompt
+          // Call Gemini API
           const result = await model.generateContent(prompt);
           const response = await result.response;
           const responseText = response.text();
           
           console.log(`[${requestId}] Gemini API response received: ${responseText.substring(0, 100)}...`);
-            // Process the response to extract vocabulary
-          extractedVocabulary = processGeminiResponse(responseText);
           
-          // If we're doing file extraction and got no results, use our specialized function
-          if (extractionSource === 'file' && 
-              (extractedVocabulary.length === 0 || 
-               (extractedVocabulary.length === 1 && extractedVocabulary[0].term === "No Results"))) {
-            
-            console.log(`[${requestId}] Gemini API returned no results for image, using specialized image vocabulary`);
-            
-            // Get file info from extractionStats
-            const fileInfo = extractionStats?.files?.[0];
-            
-            // Generate specialized vocabulary based on the file
-            extractedVocabulary = getImageSpecificVocabulary(fileInfo);
-            
-            // Mark this as partial API usage since we're using our own data
-            apiMode = "live-augmented";
-          } else {
-            apiMode = "live"; // Regular API usage
-          }
+          // Process the response to extract vocabulary
+          extractedVocabulary = processGeminiResponse(responseText);
+          apiMode = "live"; // Using real API
           
         } catch (apiError: any) {
           // Extract useful information from the error
@@ -592,6 +331,40 @@ export async function POST(request: NextRequest) {
           console.error(`[${requestId}] Error details:`, JSON.stringify(errorDetails, null, 2));
           console.log(`[${requestId}] Falling back to demo data due to API error`);
           
+          // Try to fall back to an alternate model name if this was a 404 error
+          if (errorDetails.status === 404) {
+            try {
+              console.log(`[${requestId}] Trying alternate model name: gemini-pro`);
+              const fallbackModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+              
+              // Create a simple prompt for testing
+              const testResult = await fallbackModel.generateContent("Test");
+              console.log(`[${requestId}] Alternate model connected successfully`);
+              
+              // If we got here, the alternate model works - try the real extraction
+              const prompt = `Extract vocabulary from: ${text.substring(0, 100)}`;
+              const result = await fallbackModel.generateContent(prompt);
+              const response = await result.response;
+              const responseText = response.text();
+              
+              // Process the response
+              extractedVocabulary = processGeminiResponse(responseText);
+              apiMode = "live-fallback";
+              
+            } catch (fallbackError) {
+              console.error(`[${requestId}] Fallback model also failed:`, fallbackError);
+              // Continue to use demo data
+              const keyHash = hashCode(geminiApiKey);
+              extractedVocabulary = getVocabularyDemoData(keyHash);
+              apiMode = "fallback"; // Real API failed, using demo data
+            }
+          } else {
+            // For non-404 errors, just use demo data
+            const keyHash = hashCode(geminiApiKey);
+            extractedVocabulary = getVocabularyDemoData(keyHash);
+            apiMode = "fallback"; // Real API failed, using demo data
+          }
+          
           // Record the API error in metrics for analysis
           recordApiRequest('/api/vocabulary/extract/gemini-error', 
                           errorDetails.status === 'unknown' ? 500 : Number(errorDetails.status), 
@@ -601,15 +374,12 @@ export async function POST(request: NextRequest) {
                             errorMessage: errorDetails.message.substring(0, 100),
                             requestId 
                           });
-            // Fall back to demo data if API call fails
-          const keyHash = hashCode(geminiApiKey);
-          extractedVocabulary = getVocabularyDemoData(keyHash, extractionSource);
-          apiMode = "fallback"; // Real API failed, using demo data
-        }      } else {
-        // Use demo data with proper source
+        }
+      } else {
+        // Use demo data 
         const keyHash = hashCode(geminiApiKey);
-        extractedVocabulary = getVocabularyDemoData(keyHash, extractionSource);
-        console.log(`[${requestId}] Using Gemini API key (validated but using sample data for ${extractionSource})`);
+        extractedVocabulary = getVocabularyDemoData(keyHash);
+        console.log(`[${requestId}] Using Gemini API key (validated but using sample data)`);
       }
       
       // Calculate total processing time
@@ -644,7 +414,7 @@ export async function POST(request: NextRequest) {
       };
       
       return NextResponse.json(responseData);
-    } catch (error: any) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`[${requestId}] Error initializing Gemini API:`, error);
       
@@ -667,7 +437,7 @@ export async function POST(request: NextRequest) {
         }
       }, { status: 401 });
     }
-  } catch (error: any) {
+  } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`[${requestId}] Vocabulary extraction error:`, error);
     
