@@ -20,7 +20,10 @@ import {
   Calendar as CalendarIcon,
   ClipboardList,
   Layout,
-  Timer, // Import Timer icon
+  Timer,
+  Album,
+  Captions,
+  Table,       // Import Timer icon
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
@@ -123,6 +126,24 @@ export function Sidebar() {
       href: "/study-timer",
       icon: Timer,
       current: pathname === "/study-timer",
+    },
+    {
+      name: "Vocabulary",
+      href: "/vocabulary/study",
+      icon: Album,
+      current: pathname === "/vocabulary/study",
+    },
+    {
+      name: "Substitute Plan",
+      href: "/substitute-plan",
+      icon: Captions,
+      current: pathname === "/substitute-plan",
+    },
+    {
+      name: "Timetable",
+      href: "/timetable",
+      icon: Table,
+      current: pathname === "/timetable",
     },
     {
       name: "Profile",
