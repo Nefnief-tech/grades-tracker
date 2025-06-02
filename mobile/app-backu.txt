@@ -1,0 +1,529 @@
+import React, { useState } from 'react';
+import {
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+} from 'react-native';
+
+const App = () => {
+  const [currentTab, setCurrentTab] = useState('overview');
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Grade Tracker</Text>
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, currentTab === 'overview' && styles.activeTab]}
+            onPress={() => setCurrentTab('overview')}
+          >
+            <Text style={[styles.tabText, currentTab === 'overview' && styles.activeTabText]}>
+              📊 Overview
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, currentTab === 'settings' && styles.activeTab]}
+            onPress={() => setCurrentTab('settings')}
+          >
+            <Text style={[styles.tabText, currentTab === 'settings' && styles.activeTabText]}>
+              ⚙️ Settings
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Content */}
+      <ScrollView style={styles.content}>
+        {currentTab === 'overview' ? (
+          <View>
+            <Text style={styles.title}>📚 Grade Overview</Text>
+            
+            <View style={styles.summaryCards}>
+              <View style={styles.card}>
+                <Text style={styles.cardNumber}>0</Text>
+                <Text style={styles.cardLabel}>Subjects</Text>
+              </View>
+              <View style={styles.card}>
+                <Text style={styles.cardNumber}>0</Text>
+                <Text style={styles.cardLabel}>Grades</Text>
+              </View>
+              <View style={styles.card}>
+                <Text style={styles.cardNumber}>0.0</Text>
+                <Text style={styles.cardLabel}>Average</Text>
+              </View>
+            </View>
+
+            <View style={styles.messageCard}>
+              <Text style={styles.messageTitle}>Welcome to Grade Tracker!</Text>
+              <Text style={styles.messageText}>
+                Your enhanced grade tracking app is ready. Add some subjects and grades to get started.
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View>
+            <Text style={styles.title}>⚙️ Settings</Text>
+            
+            <View style={styles.settingsCard}>
+              <Text style={styles.settingsTitle}>App Information</Text>
+              <View style={styles.settingsRow}>
+                <Text style={styles.settingsLabel}>Version:</Text>
+                <Text style={styles.settingsValue}>2.0.0</Text>
+              </View>
+              <View style={styles.settingsRow}>
+                <Text style={styles.settingsLabel}>Platform:</Text>
+                <Text style={styles.settingsValue}>React Native</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>📊 Export Data</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>🔄 Sync Cloud</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+import React, { useState } from 'react';
+import {
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+} from 'react-native';
+
+const App = () => {
+  const [currentTab, setCurrentTab] = useState('overview');
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Grade Tracker</Text>
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, currentTab === 'overview' && styles.activeTab]}
+            onPress={() => setCurrentTab('overview')}
+          >
+            <Text style={[styles.tabText, currentTab === 'overview' && styles.activeTabText]}>
+              📊 Overview
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, currentTab === 'settings' && styles.activeTab]}
+            onPress={() => setCurrentTab('settings')}
+          >
+            <Text style={[styles.tabText, currentTab === 'settings' && styles.activeTabText]}>
+              ⚙️ Settings
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Content */}
+      <ScrollView style={styles.content}>
+        {currentTab === 'overview' ? (
+          <View>
+            <Text style={styles.title}>📚 Grade Overview</Text>
+            
+            <View style={styles.summaryCards}>
+              <View style={styles.card}>
+                <Text style={styles.cardNumber}>0</Text>
+                <Text style={styles.cardLabel}>Subjects</Text>
+              </View>
+              <View style={styles.card}>
+                <Text style={styles.cardNumber}>0</Text>
+                <Text style={styles.cardLabel}>Grades</Text>
+              </View>
+              <View style={styles.card}>
+                <Text style={styles.cardNumber}>0.0</Text>
+                <Text style={styles.cardLabel}>Average</Text>
+              </View>
+            </View>
+
+            <View style={styles.messageCard}>
+              <Text style={styles.messageTitle}>Welcome to Grade Tracker!</Text>
+              <Text style={styles.messageText}>
+                Your enhanced grade tracking app is ready. Add some subjects and grades to get started.
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View>
+            <Text style={styles.title}>⚙️ Settings</Text>
+            
+            <View style={styles.settingsCard}>
+              <Text style={styles.settingsTitle}>App Information</Text>
+              <View style={styles.settingsRow}>
+                <Text style={styles.settingsLabel}>Version:</Text>
+                <Text style={styles.settingsValue}>2.0.0</Text>
+              </View>
+              <View style={styles.settingsRow}>
+                <Text style={styles.settingsLabel}>Platform:</Text>
+                <Text style={styles.settingsValue}>React Native</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>📊 Export Data</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>🔄 Sync Cloud</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e1e1',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 8,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  tab: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#ecf0f1',
+  },
+  activeTab: {
+    backgroundColor: '#3498db',
+  },
+  tabText: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#fff',
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#2c3e50',
+  },
+  summaryCards: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  card: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 16,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3498db',
+    marginBottom: 4,
+  },
+  cardLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    textAlign: 'center',
+  },
+  messageCard: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  messageTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 8,
+  },
+  messageText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    lineHeight: 20,
+  },
+  settingsCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  settingsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#34495e',
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ecf0f1',
+  },
+  settingsLabel: {
+    fontSize: 14,
+    color: '#7f8c8d',
+  },
+  settingsValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2c3e50',
+  },
+  button: {
+    backgroundColor: '#3498db',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
+
+export default App;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#2c3e50',
+    fontWeight: '600',
+  },
+  header: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ecf0f1',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  headerButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#ecf0f1',
+  },
+  activeHeaderButton: {
+    backgroundColor: '#3498db',
+  },
+  headerButtonText: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontWeight: '600',
+  },
+  activeHeaderButtonText: {
+    color: '#fff',
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#2c3e50',
+  },
+  summaryCards: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 16,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  summaryNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3498db',
+    marginBottom: 4,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    textAlign: 'center',
+  },
+  subjectCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  subjectHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  subjectName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    flex: 1,
+  },
+  subjectAverage: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  gradeCount: {
+    fontSize: 12,
+    color: '#7f8c8d',
+  },
+  settingsCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#34495e',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ecf0f1',
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: '#7f8c8d',
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2c3e50',
+  },
+  actionButton: {
+    backgroundColor: '#3498db',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
+
+export default App;

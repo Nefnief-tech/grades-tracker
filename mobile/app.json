@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Grade Tracker",
+    "slug": "grade-tracker-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.gradetracker.mobile"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c509c86f-986d-425c-aa9d-91a6d6924836"
+      }
+    }
+  }
+}
