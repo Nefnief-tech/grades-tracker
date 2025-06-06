@@ -1,0 +1,23 @@
+# Railpack Dockerfile for static export with pnpm start
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json pnpm-lock.yaml ./
+
+# Install pnpm and dependencies
+RUN npm install -g pnpm
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Build static export
+RUN pnpm run build
+
+# Expose port
+EXPOSE 3000
+
+# Use pnpm start to serve static files
+CMD ["pnpm", "start"]

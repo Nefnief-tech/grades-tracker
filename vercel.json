@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "public": true,
+  "github": {
+    "silent": true
+  },
+  "builds": [],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "outputDirectory": "out"
+}

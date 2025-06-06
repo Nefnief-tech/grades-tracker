@@ -1,0 +1,16 @@
+# Alternative Dockerfile for Railway static hosting
+FROM node:18-alpine as static
+
+# Set working directory
+WORKDIR /app
+
+# Copy only the prebuilt files
+COPY out/ ./
+
+# Use a simple HTTP server for static files
+RUN npm install -g serve
+
+EXPOSE 3000
+
+# Serve the static files with SPA routing support
+CMD ["serve", "-s", ".", "-l", "3000"]

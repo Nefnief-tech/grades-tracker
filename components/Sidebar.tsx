@@ -20,7 +20,10 @@ import {
   Calendar as CalendarIcon,
   ClipboardList,
   Layout,
-  Timer, // Import Timer icon
+  Timer,
+  Album,
+  Captions,
+  Table,       // Import Timer icon
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
@@ -112,12 +115,35 @@ export function Sidebar() {
       href: "/kanban",
       icon: Layout,
       current: pathname === "/kanban",
+    },    {
+      name: "Flashcards", 
+      href: "/flashcards",
+      icon: BookOpenText,
+      current: pathname === "/flashcards" || pathname.startsWith("/flashcards/"),
     },
     {
-      name: "Study Timer", // Add Study Timer entry
+      name: "Study Timer",
       href: "/study-timer",
       icon: Timer,
       current: pathname === "/study-timer",
+    },
+    {
+      name: "Vocabulary",
+      href: "/vocabulary/study",
+      icon: Album,
+      current: pathname === "/vocabulary/study",
+    },
+    {
+      name: "Substitute Plan",
+      href: "/substitute-plan",
+      icon: Captions,
+      current: pathname === "/substitute-plan",
+    },
+    {
+      name: "Timetable",
+      href: "/timetable",
+      icon: Table,
+      current: pathname === "/timetable",
     },
     {
       name: "Profile",
@@ -130,7 +156,7 @@ export function Sidebar() {
       href: "/settings",
       icon: Settings,
       current: pathname === "/settings",
-    }
+    },
   ];
 
   return (

@@ -1,0 +1,36 @@
+<!-- Splash screen with logo and app name -->
+<svg width="1284" height="2778" viewBox="0 0 1284 2778" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1284" height="2778" fill="#2563eb"/>
+  
+  <!-- Logo centered -->
+  <g transform="translate(642, 1200)">
+    <!-- Book icon -->
+    <rect x="-128" y="-96" width="256" height="192" rx="16" fill="white" stroke="none"/>
+    <rect x="-128" y="-96" width="256" height="32" rx="16" fill="#1e40af"/>
+    
+    <!-- Pages -->
+    <line x1="0" y1="-64" x2="0" y2="96" stroke="#e5e7eb" stroke-width="2"/>
+    <line x1="-80" y1="-40" x2="-20" y2="-40" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-80" y1="-20" x2="-20" y2="-20" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-80" y1="0" x2="-35" y2="0" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-80" y1="20" x2="-20" y2="20" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-80" y1="40" x2="-30" y2="40" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-80" y1="60" x2="-20" y2="60" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    
+    <line x1="20" y1="-40" x2="80" y2="-40" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    <line x1="20" y1="-20" x2="80" y2="-20" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    <line x1="20" y1="0" x2="65" y2="0" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    <line x1="20" y1="20" x2="80" y2="20" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    <line x1="20" y1="40" x2="70" y2="40" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    <line x1="20" y1="60" x2="80" y2="60" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- AI spark effect -->
+    <circle cx="90" cy="-64" r="6" fill="#fbbf24"/>
+    <path d="M90 -74 L92 -68 L98 -68 L93 -63 L95 -57 L90 -60 L85 -57 L87 -63 L82 -68 L88 -68 Z" fill="#fbbf24"/>
+  </g>
+  
+  <!-- App name -->
+  <text x="642" y="1450" font-family="Arial, sans-serif" font-size="48" font-weight="600" fill="white" text-anchor="middle">Vocabulary Extractor</text>
+  <text x="642" y="1500" font-family="Arial, sans-serif" font-size="24" fill="rgba(255,255,255,0.8)" text-anchor="middle">AI-Powered Learning</text>
+</svg>

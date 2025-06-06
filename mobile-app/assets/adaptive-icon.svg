@@ -1,0 +1,26 @@
+<!-- Adaptive icon foreground (Android) -->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Book icon centered for adaptive icon -->
+  <rect x="312" y="312" width="400" height="300" rx="24" fill="white" stroke="none"/>
+  <rect x="312" y="312" width="400" height="48" rx="24" fill="#1e40af"/>
+  
+  <!-- Pages -->
+  <line x1="512" y1="360" x2="512" y2="612" stroke="#e5e7eb" stroke-width="3"/>
+  <line x1="360" y1="400" x2="480" y2="400" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  <line x1="360" y1="430" x2="480" y2="430" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  <line x1="360" y1="460" x2="450" y2="460" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  <line x1="360" y1="490" x2="480" y2="490" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  <line x1="360" y1="520" x2="470" y2="520" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  <line x1="360" y1="550" x2="480" y2="550" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  
+  <line x1="544" y1="400" x2="664" y2="400" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  <line x1="544" y1="430" x2="664" y2="430" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  <line x1="544" y1="460" x2="634" y2="460" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  <line x1="544" y1="490" x2="664" y2="490" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  <line x1="544" y1="520" x2="654" y2="520" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  <line x1="544" y1="550" x2="664" y2="550" stroke="#6b7280" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- AI spark effect -->
+  <circle cx="640" cy="360" r="8" fill="#fbbf24"/>
+  <path d="M640 348 L643 355 L650 355 L645 360 L648 367 L640 363 L632 367 L635 360 L630 355 L637 355 Z" fill="#fbbf24"/>
+</svg>

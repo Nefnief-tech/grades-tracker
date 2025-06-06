@@ -1,0 +1,18 @@
+# Deployment Configuration
+# 
+# This file instructs deployment platforms to use the prebuilt static files
+# instead of running the build process during deployment.
+#
+# For most static hosting platforms:
+# 1. Build locally: npm run build
+# 2. Deploy the 'out' directory contents
+# 3. Configure your platform to serve from the uploaded files
+
+# Build output directory
+BUILD_OUTPUT_DIR=out
+
+# Skip build during deployment
+SKIP_BUILD=true
+
+# Static export mode
+NEXT_EXPORT=true
