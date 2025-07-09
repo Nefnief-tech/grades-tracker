@@ -1,6 +1,6 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+// import { Inter } from "next/font/google"; // Temporarily commented for build
 import "./globals.css";
 import "@/styles/landing.css"; // Import landing styles
 import "@/styles/animations.css"; // Import animations
@@ -15,7 +15,7 @@ import { PLAUSIBLE_URL, PLAUSIBLE_DOMAIN } from "@/config/analytics";
 import { ClipboardList } from "lucide-react"; // Add this import for the icon
 import MaintenanceGuard from "@/components/MaintenanceGuard";
 
-const inter = Inter({ subsets: ["latin"] });
+// const inter = Inter({ subsets: ["latin"] }); // Temporarily commented for build
 
 export const metadata: Metadata = {
   title: "German Grade Tracker",
@@ -68,7 +68,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className={`${inter.className} overflow-hidden`}>
+      <body className="font-sans overflow-hidden"> {/* Use fallback font-sans */}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             <Providers>

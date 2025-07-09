@@ -21,6 +21,7 @@ import {
   ClipboardList,
   Layout,
   Timer, // Import Timer icon
+  FileText, // Import FileText icon for Notes
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
@@ -118,6 +119,12 @@ export function Sidebar() {
       href: "/study-timer",
       icon: Timer,
       current: pathname === "/study-timer",
+    },
+    {
+      name: "Notes", // Add Notes entry
+      href: "/notes",
+      icon: FileText,
+      current: pathname === "/notes",
     },
     {
       name: "Profile",
