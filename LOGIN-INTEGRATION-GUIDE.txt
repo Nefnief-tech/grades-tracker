@@ -1,0 +1,89 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Loader2 } from 'lucide-react';
+import { ForgotPassword } from '@/components/ForgotPassword';
+import { useAuth } from '@/context/AuthContext';
+
+const LoginPage = () => {
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      await login(email, password);
+      // The redirect is now handled in the login function
+    } catch (error: any) {
+      setError(error.message || 'Invalid email or password');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      {!showForgotPassword ? (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ...existing form fields... */}
+
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              'Sign In'
+            )}
+          </Button>
+
+          <div className="text-center">
+            <Button
+              type="button"
+              variant="link"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-sm text-muted-foreground hover:text-primary"
+            >
+              Forgot your password?
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <ForgotPassword onBack={() => setShowForgotPassword(false)} />
+      )}
+    </div>
+  );
+};
+
+export default LoginPage;
+
+// Make sure your login function in AuthContext includes redirect:
+const login = async (email: string, password: string) => {
+  setLoading(true);
+  try {
+    if (account) {
+      await account.createEmailPasswordSession(email, password);
+      const currentUser = await getCurrentUserWithCorrectId();
+      setUser(currentUser);
+      setRequires2FA(false);
+      setTwoFactorChallenge(null);
+
+      // Redirect to dashboard
+      router.push('/dashboard');
+    }
+  } catch (error: any) {
+    console.error('Login error:', error);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
+// ...existing code...

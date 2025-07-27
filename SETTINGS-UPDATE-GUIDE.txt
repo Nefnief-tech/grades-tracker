@@ -1,0 +1,20 @@
+import { updateUserSyncPreferenceWithCorrectId } from '@/lib/appwrite';
+
+// In the component, update the handleSyncToggle function:
+const handleSyncToggle = async (enabled: boolean) => {
+  if (!user?.id) return;
+  
+  try {
+    await updateUserSyncPreferenceWithCorrectId(user.id, enabled);
+    setSyncEnabled(enabled);
+    
+    // Update local user state if needed
+    if (setUser) {
+      setUser({ ...user, syncEnabled: enabled });
+    }
+  } catch (error) {
+    console.error('Failed to update sync setting:', error);
+    // Reset the toggle if update failed
+    setSyncEnabled(!enabled);
+  }
+};

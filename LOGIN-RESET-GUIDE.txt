@@ -1,0 +1,115 @@
+import React, { useState } from 'react';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from 'your-component-library';
+import { Loader2 } from 'lucide-react';
+import { account } from 'your-auth-library';
+
+const LoginPage = () => {
+  const [resetEmail, setResetEmail] = useState('');
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    setIsResettingPassword(true);
+    setError('');
+    setResetMessage('');
+
+    try {
+      await account.createRecovery(resetEmail, 'http://localhost:3000/reset-password');
+      setResetMessage('Password reset email sent! Check your inbox and follow the instructions.');
+      setShowResetForm(false);
+      setResetEmail('');
+    } catch (error: any) {
+      setError(error.message || 'Failed to send password reset email');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  return (
+    <div>
+      {/* ...existing login form code... */}
+
+      <div className="text-center">
+        <Button
+          type="button"
+          variant="link"
+          onClick={() => setShowResetForm(true)}
+          className="text-sm text-muted-foreground hover:text-primary"
+        >
+          Forgot your password?
+        </Button>
+      </div>
+
+      {showResetForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Reset Password</CardTitle>
+              <CardDescription>
+                Enter your email address and we'll send you a password reset link.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordReset} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="reset-email" className="text-sm font-medium">
+                    Email address
+                  </label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                    disabled={isResettingPassword}
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    type="submit"
+                    disabled={isResettingPassword}
+                    className="flex-1"
+                  >
+                    {isResettingPassword ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      'Send Reset Email'
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowResetForm(false);
+                      setResetEmail('');
+                      setError('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ...existing code... */}
+    </div>
+  );
+};
+
+export default LoginPage;

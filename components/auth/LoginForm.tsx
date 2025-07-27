@@ -1,9 +1,6 @@
 "use client";
 
-import type React from "react";
-
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,110 +12,142 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AlertCircle, Wifi, WifiOff } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, Mail, Lock } from "lucide-react";
 
 interface LoginFormProps {
   onToggleForm: () => void;
 }
 
 export function LoginForm({ onToggleForm }: LoginFormProps) {
-  const { login, isOffline = false } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    rememberMe: false,
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
-    // Check if offline
-    if (isOffline) {
-      setError(
-        "You are currently offline. Please check your internet connection and try again."
-      );
-      return;
-    }
-
     setIsLoading(true);
+    setError("");
 
     try {
-      await login(email, password);
-    } catch (err: any) {
-      setError(
-        err.message || "Failed to login. Please check your credentials."
-      );
+      // TODO: Replace with actual API call
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Mock login logic here
+      console.log("Login attempt:", formData);
+    } catch (err) {
+      setError("Invalid email or password. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, type, checked, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-2xl font-bold">Login</CardTitle>
-          {isOffline ? (
-            <div className="flex items-center text-destructive">
-              <WifiOff className="h-4 w-4 mr-1" />
-              <span className="text-xs">Offline</span>
-            </div>
-          ) : (
-            <div className="flex items-center text-green-500">
-              <Wifi className="h-4 w-4 mr-1" />
-              <span className="text-xs">Online</span>
-            </div>
-          )}
-        </div>
-        <CardDescription>
-          Enter your email and password to access your account
+    <Card className="w-full">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-center">Welcome Back</CardTitle>
+        <CardDescription className="text-center">
+          Sign in to your account to continue
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
           {error && (
             <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="your.email@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="pl-10"
+                required
+              />
+            </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="pl-10"
+                required
+              />
+            </div>
           </div>
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading || isOffline}
-          >
-            {isLoading ? "Logging in..." : "Login"}
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="rememberMe"
+                name="rememberMe"
+                checked={formData.rememberMe}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, rememberMe: checked as boolean }))
+                }
+              />
+              <Label htmlFor="rememberMe" className="text-sm">
+                Remember me
+              </Label>
+            </div>
+            <Button variant="link" className="px-0 text-sm">
+              Forgot password?
+            </Button>
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex flex-col space-y-2">
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
           </Button>
-        </form>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <Button variant="link" onClick={onToggleForm}>
-          Don't have an account? Sign up
-        </Button>
-      </CardFooter>
+
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onToggleForm}
+            className="w-full"
+          >
+            Don't have an account? Sign up
+          </Button>
+        </CardFooter>
+      </form>
     </Card>
   );
 }

@@ -1,0 +1,141 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { usePathname, redirect } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { Sidebar } from "@/components/Sidebar";
+import { MobileHeader } from "@/components/MobileHeader";
+import { Footer } from "@/components/Footer";
+import { Toaster } from "@/components/ui/toaster";
+import { TwoFactorChallenge } from "./TwoFactorChallenge";
+
+interface AppLayoutProps {
+  children: React.ReactNode;
+}
+
+export function AppLayout({ children }: AppLayoutProps) {
+  const { user, loading, requires2FA, twoFactorChallenge } = useAuth();
+  const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Move all hooks to the top before any conditional returns to fix Rules of Hooks
+  const memoizedChildren = React.useMemo(() => children, [children]);
+
+  // Check if current route is a public route that shouldn't have a sidebar
+  const isPublicRoute =
+    pathname === "/landing" ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/privacy-policy" ||
+    pathname === "/terms-of-service" ||
+    pathname === "/datenschutz" ||
+    pathname?.startsWith("/auth/");
+
+  // Check if current route should have a footer
+  const showFooter = isPublicRoute || pathname === "/";
+
+  // Determine if device is mobile
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768); // 768px is typical md breakpoint
+    };
+
+    // Check on initial load
+    checkIfMobile();
+
+    // Listen for resize events
+    window.addEventListener("resize", checkIfMobile);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
+
+  // Close mobile sidebar when path changes
+  useEffect(() => {
+    setIsMobileSidebarOpen(false);
+  }, [pathname]);  // Prevent hydration mismatch by ensuring client-side rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []); 
+
+  // Don't render anything until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
+  // Toggle the mobile sidebar
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+
+  // Add this check before the existing authentication logic  if (loading) {
+    // Skip loading state - render app directly
+  }
+
+  if (requires2FA && twoFactorChallenge) {
+    return (
+      <TwoFactorChallenge
+        challengeId={twoFactorChallenge}
+        onSuccess={() => {
+          /* handled by auth context */
+        }}
+        onBack={() => {
+          /* handle logout */
+        }}
+        userEmail={user?.email || ""}
+      />
+    );
+  }
+
+  // Only redirect to landing if user is null AND not already on auth pages
+  if (
+    !user &&
+    !requires2FA &&
+    !pathname?.includes("/landing") &&
+    !pathname?.includes("/login") &&
+    !pathname?.includes("/register")
+  ) {
+    redirect("/landing");
+  }
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      {/* Desktop Sidebar - only visible on desktop */}
+      {!isPublicRoute && !isMobile && <Sidebar />}
+
+      {/* Mobile Sidebar - conditionally rendered based on isMobileSidebarOpen */}
+      {!isPublicRoute && isMobile && isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+          onClick={toggleMobileSidebar}
+        >
+          <div
+            className="absolute left-0 top-0 h-full w-[75%] max-w-[300px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Sidebar />
+          </div>
+        </div>
+      )}
+
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile Header - only visible on mobile */}
+        {!isPublicRoute && isMobile && (
+          <MobileHeader onMenuClick={toggleMobileSidebar} />
+        )}
+
+        {/* Main scrollable content */}
+        <main className="flex-1 overflow-y-auto">
+          {memoizedChildren}
+
+          {/* Footer - only rendered on certain routes */}
+          {showFooter && <Footer />}
+        </main>
+      </div>
+
+      <Toaster />
+    </div>
+  );
+}

@@ -1622,3 +1622,5 @@ async function ensureNotInMaintenance() {
     );
   }
 }
+
+export { account };

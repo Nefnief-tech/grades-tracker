@@ -1,0 +1,259 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import { BookOpen, Plus, Users, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { getUserSubjects, createSampleSubjects } from "@/lib/subjects-service-fixed";
+
+// Simple placeholder component that redirects to the main dashboard
+export default function SubjectsPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadSubjects = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const userId = user.$id || (user as any).id || (user as any).userId;
+
+      if (userId) {        console.log('🔍 Fetching subjects from database...');
+        const userSubjects = await getUserSubjects(userId);
+        
+        if (userSubjects.length > 0) {
+          // Real subjects from database
+          setSubjects(userSubjects);
+          console.log('✅ Loaded real subjects from database:', userSubjects.length);
+          toast({
+            title: "Subjects Loaded",
+            description: `Found ${userSubjects.length} subject${userSubjects.length > 1 ? 's' : ''} in your database`,
+          });        } else {
+          // No subjects in database - show sample subjects for demo
+          console.log('ℹ️ No subjects in database, showing sample data');
+          const sampleSubjects = [
+            {
+              $id: "sample-1",
+              name: "Mathematics",
+              code: "MATH101",
+              description: "Introduction to Calculus",
+              color: "#3B82F6",
+              credits: 4,
+            },
+            {
+              $id: "sample-2",
+              name: "Computer Science",
+              code: "CS101",
+              description: "Programming Fundamentals",
+              color: "#10B981",
+              credits: 3,
+            },
+            {
+              $id: "sample-3",
+              name: "Physics",
+              code: "PHYS101",
+              description: "General Physics I",
+              color: "#F59E0B",
+              credits: 4,
+            },
+            {
+              $id: "sample-4",
+              name: "Chemistry",
+              code: "CHEM101",
+              description: "General Chemistry",
+              color: "#EF4444",
+              credits: 3,
+            },
+            {
+              $id: "sample-5",
+              name: "English Literature",
+              code: "ENG201",
+              description: "Modern Literature",
+              color: "#8B5CF6",
+              credits: 3,
+            },
+            {
+              $id: "sample-6",
+              name: "History",
+              code: "HIST101",
+              description: "World History",
+              color: "#F97316",
+              credits: 3,
+            },
+          ];
+          setSubjects(sampleSubjects);
+          console.log("📚 Showing sample subjects");
+        } else {
+          setSubjects(userSubjects);
+          console.log("📚 Loaded real subjects:", userSubjects.length);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading subjects:", error);
+      toast({
+        title: "Database not configured",
+        description: "Showing demo subjects for now",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSubjects();
+  }, [user]);
+
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <h2 className="text-xl font-semibold mb-2">Please log in</h2>
+            <p className="text-muted-foreground">
+              You need to be logged in to view subjects
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" asChild className="border-gray-600 text-gray-300 hover:bg-gray-700">
+              <Link href="/">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Home
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-white">My Subjects</h1>
+              <p className="text-gray-400">
+                Track your academic progress and manage your courses
+              </p>
+            </div>
+          </div>
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Subject
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
+            <span className="text-lg">Loading your subjects...</span>
+          </div>
+        ) : subjects.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {subjects.map((subject) => (
+              <Card
+                key={subject.$id}
+                className="hover:shadow-md transition-shadow"
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{
+                          backgroundColor: subject.color || "#3B82F6",
+                        }}
+                      ></div>
+                      <div>
+                        <CardTitle className="text-lg">
+                          {subject.name}
+                        </CardTitle>
+                        <CardDescription className="mt-1">
+                          {subject.code}
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <BookOpen className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                </CardHeader>
+
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      {subject.description || "No description provided"}
+                    </p>
+
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary">
+                        {subject.credits || 3} credits
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        Click to view details
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() =>
+                          toast({
+                            title: "Subject Details",
+                            description: `${subject.name} (${subject.code}) - ${subject.credits} credits`,
+                          })
+                        }
+                      >
+                        View Details
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() =>
+                          toast({
+                            title: "Grades",
+                            description: `Viewing grades for ${subject.name}`,
+                          })
+                        }
+                      >
+                        View Grades
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No subjects yet</h3>
+              <p className="text-muted-foreground mb-6">
+                Add your first subject to start tracking your academic progress
+              </p>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Your First Subject
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <Toaster />
+    </div>
+  );
+}

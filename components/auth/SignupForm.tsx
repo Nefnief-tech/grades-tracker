@@ -3,7 +3,6 @@
 import type React from "react";
 
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,48 +14,55 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AlertCircle, Wifi, WifiOff } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, User, Mail, Lock } from "lucide-react";
 
 interface SignupFormProps {
   onToggleForm: () => void;
+  onSignupSuccess?: (email: string) => void;
 }
 
-export function SignupForm({ onToggleForm }: SignupFormProps) {
-  const { register, isOffline } = useAuth();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+export function SignupForm({ onToggleForm, onSignupSuccess }: SignupFormProps) {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    // Check if offline
-    if (isOffline) {
-      setError(
-        "You are currently offline. Please check your internet connection and try again."
-      );
-      return;
-    }
-
     setIsLoading(true);
+    setError("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      await register(email, password, name);
-    } catch (err: any) {
-      setError(err.message || "Failed to create account. Please try again.");
+      // TODO: Replace with actual API call
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Mock success - trigger email verification
+      if (onSignupSuccess) {
+        onSignupSuccess(formData.email);
+      }
+    } catch (err) {
+      setError("Failed to create account. Please try again.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
   return (
@@ -66,89 +72,110 @@ export function SignupForm({ onToggleForm }: SignupFormProps) {
           <CardTitle className="text-2xl font-bold">
             Create an Account
           </CardTitle>
-          {isOffline ? (
-            <div className="flex items-center text-destructive">
-              <WifiOff className="h-4 w-4 mr-1" />
-              <span className="text-xs">Offline</span>
-            </div>
-          ) : (
-            <div className="flex items-center text-green-500">
-              <Wifi className="h-4 w-4 mr-1" />
-              <span className="text-xs">Online</span>
-            </div>
-          )}
         </div>
         <CardDescription>
           Sign up to save and sync your grades across devices
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
           {error && (
             <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              placeholder="Your Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
+            <Label htmlFor="name">Full Name</Label>
+            <div className="relative">
+              <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Enter your full name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="pl-10"
+                required
+              />
+            </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="your.email@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="pl-10"
+                required
+              />
+            </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Create a password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="pl-10"
+                required
+              />
+            </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                className="pl-10"
+                required
+              />
+            </div>
           </div>
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading || isOffline}
-          >
-            {isLoading ? "Creating account..." : "Sign Up"}
+        </CardContent>
+
+        <CardFooter className="flex flex-col space-y-2">
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Creating Account...
+              </>
+            ) : (
+              "Create Account"
+            )}
           </Button>
-        </form>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <Button variant="link" onClick={onToggleForm}>
-          Already have an account? Login
-        </Button>
-      </CardFooter>
+
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onToggleForm}
+            className="w-full"
+          >
+            Already have an account? Sign in
+          </Button>
+        </CardFooter>
+      </form>
     </Card>
   );
 }
