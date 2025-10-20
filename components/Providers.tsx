@@ -2,7 +2,6 @@
 
 import React from "react";
 import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { Toaster } from "@/components/ui/toaster";
 import { SWRConfigProvider } from "@/lib/swr-config";
@@ -21,10 +20,8 @@ export function Providers({ children }: ProvidersProps) {
         disableTransitionOnChange
       >
         <SettingsProvider>
-          <AuthProvider>
-            {children}
-            <Toaster />
-          </AuthProvider>
+          {children}
+          <Toaster />
         </SettingsProvider>
       </ThemeProvider>
     </SWRConfigProvider>

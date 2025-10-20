@@ -68,16 +68,14 @@ export default function RootLayout({
         </Script>
       </head>
       <body className={`${inter.className} overflow-hidden`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>
-            <Providers>
-              <AnalyticsProvider>
-                <AppLayout>{children}</AppLayout>
-                <CookieBanner />
-              </AnalyticsProvider>
-            </Providers>
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <Providers>
+            <AnalyticsProvider>
+              <AppLayout>{children}</AppLayout>
+              <CookieBanner />
+            </AnalyticsProvider>
+          </Providers>
+        </AuthProvider>
       </body>
     </html>
   );

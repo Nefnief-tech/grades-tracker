@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { account } from '@/lib/appwrite';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react';
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,8 +20,8 @@ export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const userId = searchParams.get('userId');
-  const secret = searchParams.get('secret');
+  const userId = searchParams?.get('userId');
+  const secret = searchParams?.get('secret');
 
   useEffect(() => {
     if (!userId || !secret) {
@@ -52,7 +52,10 @@ export default function ResetPasswordPage() {
     setMessage('');
 
     try {
-      await account.updateRecovery(userId, secret, newPassword, confirmPassword);
+      if (!account) {
+        throw new Error('Account service not available');
+      }
+      await account.updateRecovery(userId, secret, newPassword);
       setStatus('success');
       setMessage('Password reset successful! You can now log in with your new password.');
       
@@ -204,5 +207,13 @@ export default function ResetPasswordPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

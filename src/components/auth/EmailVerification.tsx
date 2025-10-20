@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { account } from '../../lib/appwrite';
+import { account } from '../../../lib/appwrite';
 import { useAuth } from '../../lib/auth';
 import { Mail, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 

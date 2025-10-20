@@ -1,10 +1,16 @@
+'use client';
+
 import React from 'react';
 import { useAuth } from '../lib/auth';
 import { EmailVerification } from '../components/auth/EmailVerification';
 import { TwoFactorSetup } from '../components/auth/TwoFactorSetup';
 import { User, Shield, Mail, Settings as SettingsIcon } from 'lucide-react';
 
-export function Settings() {
+export const getServerSideProps = async () => {
+  return { props: {} };
+};
+
+export default function Settings() {
   const { user } = useAuth();
 
   if (!user) {

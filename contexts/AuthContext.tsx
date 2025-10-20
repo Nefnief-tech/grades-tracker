@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Updated login function to properly handle 2FA
-  const loginWith2FA = async (email: string, password: string) => {
+  const login = async (email: string, password: string) => {
     if (loading) return;
     setLoading(true);
     try {
@@ -178,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setTwoFactorChallenge(null);
         
         // Redirect to dashboard after successful 2FA
-        router.push('/');
+        router.push('/dashboard');
       }
     } catch (error) {
       console.error('2FA verification error:', error);
@@ -254,28 +254,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   };
-  // Updated verifyTwoFactor function with redirect
-  const verifyTwoFactorComplete = async (challengeId: string, code: string) => {
-    if (loading) return;
-    setLoading(true);
-    try {
-      if (account) {
-        await account.updateMfaChallenge(challengeId, code);
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-        setRequires2FA(false);
-        setTwoFactorChallenge(null);
-        
-        // Redirect to dashboard after successful 2FA
-        router.push('/dashboard');
-      }
-    } catch (error: any) {
-      console.error('2FA verification error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const value = {
     user,
@@ -284,7 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     twoFactorChallenge,
     isOffline,
     mounted,
-    login: loginWith2FA,
+    login,
     register,
     logout,
     complete2FAChallenge,

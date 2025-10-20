@@ -1,21 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { account } from '@/lib/appwrite';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
-export default function VerifyEmailPage() {
+function VerifyEmailForm() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
   const searchParams = useSearchParams();
   const router = useRouter();
 
   useEffect(() => {
-    const userId = searchParams.get('userId');
-    const secret = searchParams.get('secret');
+    const userId = searchParams?.get('userId');
+    const secret = searchParams?.get('secret');
 
     if (!userId || !secret) {
       setStatus('error');
@@ -25,6 +25,9 @@ export default function VerifyEmailPage() {
 
     const verifyEmail = async () => {
       try {
+        if (!account) {
+          throw new Error('Account service not available');
+        }
         await account.updateVerification(userId, secret);
         setStatus('success');
         setMessage('Your email has been verified successfully!');
@@ -68,5 +71,13 @@ export default function VerifyEmailPage() {
         )}
       </Card>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VerifyEmailForm />
+    </Suspense>
   );
 }
