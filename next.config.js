@@ -29,11 +29,9 @@ const nextConfig = {
   },
   // Configure static generation to exclude problematic pages
   output: "standalone",
-  experimental: {
-    // Skip building the 404 page statically
-    skipTrailingSlashRedirect: true,
-    skipMiddlewareUrlNormalize: true,
-  },
+  // Skip URL normalization and trailing slash redirects
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
 };
 
 module.exports = nextConfig;
