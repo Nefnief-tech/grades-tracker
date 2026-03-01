@@ -1,5 +1,5 @@
 # Alternative Dockerfile for Railway static hosting
-FROM node:18-alpine as static
+FROM node:22-alpine as static
 
 # Set working directory
 WORKDIR /app
