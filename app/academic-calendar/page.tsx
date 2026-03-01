@@ -100,7 +100,7 @@ export default function AcademicCalendarPage() {
     subject: Subject;
   } | null>(null);
   const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>(
-    []
+    [],
   );
   const [addGradeOpen, setAddGradeOpen] = useState(false);
   const [addTestOpen, setAddTestOpen] = useState(false);
@@ -155,18 +155,18 @@ export default function AcademicCalendarPage() {
 
     window.addEventListener(
       "syncPreferenceChanged",
-      handleSyncPreferenceChanged
+      handleSyncPreferenceChanged,
     );
     window.addEventListener("timetableEntriesUpdated", handleTimetableUpdated);
 
     return () => {
       window.removeEventListener(
         "syncPreferenceChanged",
-        handleSyncPreferenceChanged
+        handleSyncPreferenceChanged,
       );
       window.removeEventListener(
         "timetableEntriesUpdated",
-        handleTimetableUpdated
+        handleTimetableUpdated,
       );
     };
   }, [toast, user]);
@@ -181,8 +181,8 @@ export default function AcademicCalendarPage() {
         settings?.dateFormat === "DD/MM/YYYY"
           ? "dd/MM/yyyy"
           : settings?.dateFormat === "MM/DD/YYYY"
-          ? "MM/dd/yyyy"
-          : "yyyy-MM-dd"; // Default to ISO format
+            ? "MM/dd/yyyy"
+            : "yyyy-MM-dd"; // Default to ISO format
 
       return format(date, dateFormat);
     } catch (e) {
@@ -271,7 +271,7 @@ export default function AcademicCalendarPage() {
     try {
       console.log("Deleting timetable entry with user:", user);
       const updatedEntries = timetableEntries.filter(
-        (entry) => entry.id !== selectedTimetableEntry.entry.id
+        (entry) => entry.id !== selectedTimetableEntry.entry.id,
       );
 
       await saveTimetableEntries(updatedEntries, user?.id, user?.syncEnabled);
@@ -538,7 +538,7 @@ export default function AcademicCalendarPage() {
                       </h3>
                       <p
                         className={`text-3xl font-bold ${getGradeColor(
-                          selectedGrade.grade.value
+                          selectedGrade.grade.value,
                         )}`}
                       >
                         {selectedGrade.grade.value.toFixed(1)}
@@ -829,7 +829,7 @@ export default function AcademicCalendarPage() {
                     variant="outline"
                     onClick={() => {
                       router.push(
-                        `/subjects/${selectedTimetableEntry.subject.id}`
+                        `/subjects/${selectedTimetableEntry.subject.id}`,
                       );
                       setSelectedTimetableEntry(null);
                     }}
@@ -1096,23 +1096,6 @@ export default function AcademicCalendarPage() {
     </div>
   );
 }
-
-// Helper function to format time with minutes
-const formatTimeDisplay = (time: string | number): string => {
-  // Handle string format with minutes (e.g., "09:30")
-  if (typeof time === "string" && time.includes(":")) {
-    const [hours, minutes] = time.split(":").map(Number);
-    const h = hours % 12 || 12;
-    const ampm = hours < 12 ? "AM" : "PM";
-    return `${h}:${minutes.toString().padStart(2, "0")} ${ampm}`;
-  }
-
-  // Handle numeric format (e.g., 9)
-  const hour = typeof time === "string" ? parseInt(time) : time;
-  const h = hour % 12 || 12;
-  const ampm = hour < 12 ? "AM" : "PM";
-  return `${h}:00 ${ampm}`;
-};
 
 // Weekly timetable display component
 function WeeklyTimetable({
