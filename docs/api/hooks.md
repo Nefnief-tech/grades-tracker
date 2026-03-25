@@ -1,0 +1,134 @@
+# Custom Hooks
+
+Grade Tracker provides several custom React hooks to encapsulate data-fetching and state management logic.
+
+---
+
+## `useSubjects`
+
+**File:** `hooks/useSubjects.ts`
+
+```typescript
+function useSubjects(): {
+  subjects: Subject[];
+  isLoading: boolean;
+  error: Error | null;
+  refresh: (forceRefresh?: boolean) => Promise<void>;
+}
+```
+
+Manages the subjects list with caching, throttling, and automatic cloud sync.
+
+**Throttling:** Fetches are limited to at most once per minute to prevent excessive API calls. Pass `forceRefresh = true` to bypass the throttle.
+
+**Example:**
+
+```typescript
+import { useSubjects } from "@/hooks/useSubjects";
+
+function Dashboard() {
+  const { subjects, isLoading, error, refresh } = useSubjects();
+
+  if (isLoading) return <Spinner />;
+  if (error)     return <ErrorMessage error={error} />;
+
+  return (
+    <>
+      {subjects.map(s => <SubjectCard key={s.id} subject={s} />)}
+      <button onClick={() => refresh(true)}>Refresh</button>
+    </>
+  );
+}
+```
+
+---
+
+## `useTests`
+
+**File:** `hooks/useTests.ts`
+
+```typescript
+function useTests(subjectId?: string): {
+  tests: Test[];
+  isLoading: boolean;
+  addTest: (test: Omit<Test, "id">) => Promise<void>;
+  updateTest: (id: string, updates: Partial<Test>) => Promise<void>;
+  deleteTest: (id: string) => Promise<void>;
+}
+```
+
+Manages scheduled tests/assignments, optionally filtered to a specific subject.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `subjectId` | `string` (optional) | Filter tests to a specific subject |
+
+---
+
+## `useStudySession`
+
+**File:** `hooks/useStudySession.ts`
+
+```typescript
+function useStudySession(): {
+  isRunning: boolean;
+  elapsed: number;          // seconds
+  sessionType: "focus" | "break";
+  start: () => void;
+  pause: () => void;
+  reset: () => void;
+  completeSession: () => Promise<void>;
+}
+```
+
+Controls a Pomodoro-style study timer and persists completed sessions to storage.
+
+---
+
+## `useSubjectDetails`
+
+**File:** `hooks/useSubjectDetails.ts`
+
+```typescript
+function useSubjectDetails(subjectId: string): {
+  subject: Subject | null;
+  grades: Grade[];
+  averageGrade: number;
+  isLoading: boolean;
+  addGrade: (grade: Omit<Grade, "id">) => Promise<void>;
+  updateGrade: (id: string, updates: Partial<Grade>) => Promise<void>;
+  deleteGrade: (id: string) => Promise<void>;
+}
+```
+
+Provides full CRUD access to a single subject's data.
+
+---
+
+## `useKanbanBoard`
+
+**File:** `hooks/useKanbanBoard.ts`
+
+```typescript
+function useKanbanBoard(): {
+  columns: KanbanColumn[];
+  addCard: (columnId: string, card: KanbanCard) => void;
+  moveCard: (cardId: string, targetColumnId: string) => void;
+  deleteCard: (cardId: string) => void;
+  reorderColumns: (columns: KanbanColumn[]) => void;
+}
+```
+
+Manages the Kanban board state with drag-and-drop support via `@dnd-kit`.
+
+---
+
+## `useMobile`
+
+**File:** `hooks/use-mobile.ts`
+
+```typescript
+function useMobile(): boolean
+```
+
+Returns `true` when the viewport width is below the mobile breakpoint (640 px).

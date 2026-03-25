@@ -1,0 +1,64 @@
+# Changelog
+
+All notable changes to Grade Tracker are recorded here.
+
+---
+
+## [Unreleased]
+
+### Added
+- MkDocs Material documentation website deployed via GitHub Pages
+- Comprehensive API reference, guides, and architecture documentation
+
+---
+
+## [0.1.0] — Initial Release
+
+### Added
+- **Subject Management**: Create, organise, and colour-code academic subjects
+- **Grade Tracking**: Record grades with type (Test, Oral Exam, Homework, Project) and automatic weight assignment
+- **Weighted Average Calculation**: Tests/Oral Exams weighted at 2.0×, Homework/Projects at 1.0×
+- **Grade History Charts**: Interactive Recharts visualisation of grade trends per subject
+- **Analytics Dashboard**: Cross-subject performance comparison and overall trends
+- **Dark / Light Mode**: Theme toggle with system-preference detection via `next-themes`
+- **Responsive Design**: Mobile-first layout using Tailwind CSS and shadcn/ui
+- **Local Storage Persistence**: All data stored in `localStorage` by default — no account required
+- **Cloud Sync**: Optional Appwrite integration for multi-device synchronisation
+- **AES-256-CBC Encryption**: Client-side encryption of all data before cloud upload
+- **Authentication**: Email/password registration and login via Appwrite Auth
+- **Two-Factor Authentication**: TOTP-based 2FA with QR code setup and backup codes
+- **Kanban Board**: Drag-and-drop study task management using `@dnd-kit`
+- **Study Timer**: Pomodoro-style focus timer with session persistence
+- **Academic Calendar / Timetable**: Weekly schedule with recurring entries
+- **Tests Tracker**: Upcoming tests/assignments with priority levels and reminders
+- **PDF Export**: Grade reports exported via `jsPDF`
+- **CSV Export**: Grade data exported as downloadable CSV
+- **Internationalisation**: UI translations for English, French, German, and Spanish
+- **Progressive Web App (PWA)**: Offline support via `next-pwa` service worker
+- **Docker Support**: Full containerisation with `Dockerfile` and `docker-compose.yml`
+- **Multi-platform Deployment**: Configuration for Railway, Fly.io, and Heroku
+- **Admin Panel**: User management, suspension, and maintenance mode controls
+- **Wiki/Knowledge Base**: In-app documentation pages
+
+---
+
+## Git History Summary
+
+The following is derived from the repository's git log:
+
+```
+Initial commit — project scaffolding (Next.js 15, TypeScript, Tailwind, shadcn/ui)
+feat: Appwrite integration (auth, database, cloud sync)
+feat: grade tracking with weighted averages
+feat: analytics dashboard with Recharts
+feat: two-factor authentication (TOTP)
+feat: Kanban board with dnd-kit
+feat: study timer / Pomodoro
+feat: academic calendar and timetable
+feat: i18n (en, fr, de, es)
+feat: PWA support
+feat: Docker and multi-platform deployment configs
+feat: admin panel
+fix: 2FA implementation improvements
+docs: README, CONFIG.md, 2FA guides
+```

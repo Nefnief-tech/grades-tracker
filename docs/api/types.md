@@ -1,0 +1,119 @@
+# Core Types
+
+All primary data structures live in `types/grades.ts`.
+
+---
+
+## `GradeType`
+
+```typescript
+type GradeType = "Test" | "Oral Exam" | "Homework" | "Project";
+```
+
+Represents the category of a grade entry. Tests and Oral Exams carry a weight of **2.0**; Homework and Projects carry **1.0** by default.
+
+---
+
+## `Grade`
+
+```typescript
+interface Grade {
+  id: string;       // UUID
+  value: number;    // Grade value (1 = best, 6 = worst)
+  type: GradeType;  // Category of the grade
+  date: string;     // ISO 8601 date string
+  weight: number;   // Multiplier: 1.0 or 2.0
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `string` | UUID uniquely identifying the grade |
+| `value` | `number` | Numeric grade (Swiss/German scale: 1–6) |
+| `type` | `GradeType` | Category determining the default weight |
+| `date` | `string` | Date the grade was received (ISO 8601) |
+| `weight` | `number` | Weight multiplier used in average calculation |
+
+---
+
+## `Subject`
+
+```typescript
+interface Subject {
+  id: string;
+  name: string;
+  grades: Grade[];
+  averageGrade: number;
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `string` | UUID uniquely identifying the subject |
+| `name` | `string` | Human-readable subject name (e.g., "Mathematics") |
+| `grades` | `Grade[]` | Array of all grade entries for this subject |
+| `averageGrade` | `number` | Pre-calculated weighted average |
+
+---
+
+## `TimetableEntry`
+
+```typescript
+interface TimetableEntry {
+  id: string;
+  subjectId: string;
+  day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+  startTime: string;   // "HH:MM"
+  endTime: string;     // "HH:MM"
+  room?: string;
+  notes?: string;
+  recurring?: boolean;
+  color?: string;
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | ✓ | UUID |
+| `subjectId` | `string` | ✓ | Reference to parent subject |
+| `day` | `string` | ✓ | Day of week (lowercase) |
+| `startTime` | `string` | ✓ | Start time in `HH:MM` format |
+| `endTime` | `string` | ✓ | End time in `HH:MM` format |
+| `room` | `string` | — | Optional room identifier |
+| `notes` | `string` | — | Optional free-text notes |
+| `recurring` | `boolean` | — | Whether this repeats weekly |
+| `color` | `string` | — | CSS colour override |
+
+---
+
+## `Test`
+
+```typescript
+interface Test {
+  id: string;
+  title: string;
+  description?: string;
+  date: string;
+  subjectId: string;
+  completed: boolean;
+  priority?: "high" | "medium" | "low";
+  reminderEnabled?: boolean;
+  reminderDate?: string;
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | ✓ | UUID |
+| `title` | `string` | ✓ | Test / assignment title |
+| `description` | `string` | — | Optional description |
+| `date` | `string` | ✓ | Scheduled date (ISO 8601) |
+| `subjectId` | `string` | ✓ | Reference to parent subject |
+| `completed` | `boolean` | ✓ | Whether this has been completed |
+| `priority` | `string` | — | `"high"`, `"medium"`, or `"low"` |
+| `reminderEnabled` | `boolean` | — | Whether a reminder is active |
+| `reminderDate` | `string` | — | Reminder date (ISO 8601) |

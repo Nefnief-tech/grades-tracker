@@ -1,0 +1,224 @@
+# Architecture
+
+This page describes the high-level structure of Grade Tracker, how the key components relate to each other, and how data flows through the system.
+
+---
+
+## Technology Overview
+
+```mermaid
+graph TD
+    Browser["Browser / PWA"]
+    NextApp["Next.js 15 App Router"]
+    ReactCtx["React Context\n(Auth, Settings, Onboarding)"]
+    LocalStorage["LocalStorage\n(grades, subjects)"]
+    AppwriteCloud["Appwrite Cloud\n(Auth + Database)"]
+    Encryption["AES-256-CBC\nEncryption Layer"]
+
+    Browser --> NextApp
+    NextApp --> ReactCtx
+    ReactCtx --> LocalStorage
+    ReactCtx --> Encryption
+    Encryption --> AppwriteCloud
+```
+
+---
+
+## Application Layers
+
+```mermaid
+graph LR
+    subgraph Client["Client (Browser)"]
+        Pages["Next.js Pages\n(app/ directory)"]
+        Components["React Components\n(components/)"]
+        Contexts["Contexts\n(AuthContext, SettingsContext)"]
+        Hooks["Custom Hooks\n(useSubjects, useTests…)"]
+        Utils["Utilities\n(storageUtils, exportUtils…)"]
+    end
+
+    subgraph Backend["Backend / BaaS"]
+        AppwriteAuth["Appwrite Auth"]
+        AppwriteDB["Appwrite Database"]
+    end
+
+    subgraph Storage["Persistence"]
+        LS["LocalStorage"]
+        Cookies["Cookies\n(session tokens)"]
+    end
+
+    Pages --> Components
+    Components --> Contexts
+    Contexts --> Hooks
+    Hooks --> Utils
+    Utils --> LS
+    Utils --> AppwriteDB
+    Contexts --> AppwriteAuth
+    AppwriteAuth --> Cookies
+```
+
+---
+
+## Directory Structure
+
+```
+grades-tracker/
+├── app/                    # Next.js App Router pages & API routes
+│   ├── api/                # Server-side API routes
+│   │   ├── admin/          # Admin management endpoints
+│   │   ├── auth/           # MFA / 2FA challenge endpoints
+│   │   └── mfa/            # MFA verification endpoints
+│   ├── analytics/          # Analytics dashboard page
+│   ├── dashboard/          # Main dashboard (subjects list)
+│   ├── subjects/           # Subject detail pages
+│   ├── kanban/             # Kanban board
+│   ├── study-tracker/      # Study session / Pomodoro timer
+│   ├── settings/           # User settings
+│   ├── register/ login/    # Authentication pages
+│   └── layout.tsx          # Root layout (providers, theme)
+│
+├── components/             # Reusable React components
+│   ├── ui/                 # shadcn/ui primitives (Button, Card…)
+│   ├── auth/               # Login, Signup, 2FA components
+│   └── *.tsx               # Feature components (GradeHistoryChart…)
+│
+├── contexts/               # React Context providers
+│   ├── AuthContext.tsx      # Authentication state
+│   ├── SettingsContext.tsx  # User preferences
+│   └── OnboardingContext.tsx
+│
+├── hooks/                  # Custom React hooks
+│   ├── useSubjects.ts      # Subject data fetching & caching
+│   ├── useTests.ts         # Test/assignment management
+│   └── useStudySession.ts  # Pomodoro session management
+│
+├── lib/                    # Core library modules
+│   ├── appwrite.ts         # Appwrite client + CRUD helpers
+│   └── constants.ts        # App-wide constants
+│
+├── utils/                  # Pure utility functions
+│   ├── storageUtils.ts     # LocalStorage CRUD + cloud sync
+│   ├── encryption.ts       # AES-256-CBC encrypt / decrypt
+│   ├── exportUtils.ts      # CSV / PDF export
+│   └── cloudSync.ts        # Cloud synchronisation logic
+│
+├── types/
+│   └── grades.ts           # Core TypeScript interfaces
+│
+├── messages/               # i18n translation files (en, fr, de, es)
+└── public/                 # Static assets
+```
+
+---
+
+## Data Model
+
+```mermaid
+erDiagram
+    User {
+        string id
+        string email
+        string name
+    }
+    Subject {
+        string id
+        string userId
+        string name
+        string color
+        number averageGrade
+    }
+    Grade {
+        string id
+        string subjectId
+        number value
+        GradeType type
+        string date
+        number weight
+    }
+    TimetableEntry {
+        string id
+        string subjectId
+        string day
+        string startTime
+        string endTime
+        string room
+        boolean recurring
+    }
+    Test {
+        string id
+        string subjectId
+        string title
+        string date
+        boolean completed
+        string priority
+    }
+
+    User ||--o{ Subject : owns
+    Subject ||--o{ Grade : contains
+    Subject ||--o{ TimetableEntry : scheduled_in
+    Subject ||--o{ Test : has
+```
+
+---
+
+## Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant App
+    participant Appwrite
+    participant TOTP
+
+    User->>App: Enter email + password
+    App->>Appwrite: createEmailPasswordSession()
+    Appwrite-->>App: Session token (or MFA required)
+
+    alt 2FA enabled
+        App->>User: Show TOTP prompt
+        User->>App: Enter TOTP code
+        App->>Appwrite: createMfaChallenge() + verifyMfaChallenge()
+        Appwrite-->>App: Verified session
+    end
+
+    App->>App: Store session in cookies
+    App->>User: Redirect to dashboard
+```
+
+---
+
+## Grade Calculation
+
+Grades use a **weighted average** system:
+
+| Grade Type | Default Weight |
+|---|---|
+| Test | 2.0× |
+| Oral Exam | 2.0× |
+| Homework | 1.0× |
+| Project | 1.0× |
+
+The formula:
+
+```
+averageGrade = Σ(grade.value × grade.weight) / Σ(grade.weight)
+```
+
+Grade scale: **1** (best) → **6** (worst), consistent with many European grading systems.
+
+---
+
+## Data Persistence Strategy
+
+```mermaid
+flowchart TD
+    A[User action] --> B{Logged in?}
+    B -- No --> C[Write to LocalStorage only]
+    B -- Yes --> D[Write to LocalStorage]
+    D --> E[Encrypt data]
+    E --> F[Sync to Appwrite cloud]
+    F --> G{Sync success?}
+    G -- Yes --> H[Update local cache]
+    G -- No --> I[Keep local data, retry later]
+```
+
+All cloud data is encrypted client-side with AES-256-CBC before transmission. The encryption key is never sent to the server.

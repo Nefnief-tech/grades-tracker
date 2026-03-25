@@ -1,0 +1,104 @@
+site_name: Grade Tracker
+site_description: A modern, intuitive grade management application for students — built with Next.js, React, TypeScript, and Appwrite.
+site_url: https://nefnief-tech.github.io/grades-tracker/
+repo_url: https://github.com/Nefnief-tech/grades-tracker
+repo_name: Nefnief-tech/grades-tracker
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  logo: https://raw.githubusercontent.com/Nefnief-tech/grades-tracker/main/public/grade-tracker-logo.png
+  favicon: https://raw.githubusercontent.com/Nefnief-tech/grades-tracker/main/public/grade-tracker-logo.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - mermaid2:
+      arguments:
+        theme: |
+          ^(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Configuration: configuration.md
+  - Architecture: architecture.md
+  - API Reference:
+    - Overview: api/index.md
+    - Core Types: api/types.md
+    - Storage Utilities: api/storage.md
+    - Encryption: api/encryption.md
+    - Export Utilities: api/export.md
+    - Appwrite Client: api/appwrite.md
+    - Custom Hooks: api/hooks.md
+    - API Routes: api/routes.md
+  - Guides:
+    - Adding & Managing Grades: guides/adding-grades.md
+    - Cloud Sync & Two-Factor Auth: guides/setting-up-2fa.md
+  - Testing: testing.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+  - FAQ & Troubleshooting: faq.md
+  - License: license.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Nefnief-tech/grades-tracker
+      name: Grade Tracker on GitHub
+  generator: false
+
+extra_css:
+  - stylesheets/extra.css

@@ -63,3 +63,4 @@ appwrite.json
 
 # Sound files
 /public/sounds/*.mp3
+site/
