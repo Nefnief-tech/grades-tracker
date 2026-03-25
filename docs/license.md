@@ -1,0 +1,56 @@
+# License
+
+Grade Tracker is released under the **MIT License**.
+
+---
+
+```
+MIT License
+
+Copyright (c) 2024 Nefnief-tech
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+---
+
+## Third-Party Acknowledgements
+
+Grade Tracker builds on the following open-source projects:
+
+| Project | License | Description |
+|---|---|---|
+| [Next.js](https://nextjs.org/) | MIT | React framework |
+| [React](https://react.dev/) | MIT | UI library |
+| [Tailwind CSS](https://tailwindcss.com/) | MIT | Utility-first CSS |
+| [shadcn/ui](https://ui.shadcn.com/) | MIT | Component system |
+| [Appwrite](https://appwrite.io/) | BSD-3 | Backend as a Service |
+| [Radix UI](https://www.radix-ui.com/) | MIT | Accessible primitives |
+| [Recharts](https://recharts.org/) | MIT | Charting library |
+| [Framer Motion](https://www.framer.com/motion/) | MIT | Animation library |
+| [dnd-kit](https://dndkit.com/) | MIT | Drag & drop toolkit |
+| [Lucide Icons](https://lucide.dev/) | ISC | Icon library |
+| [Zod](https://zod.dev/) | MIT | Schema validation |
+| [React Hook Form](https://react-hook-form.com/) | MIT | Form management |
+| [date-fns](https://date-fns.org/) | MIT | Date utilities |
+| [jsPDF](https://github.com/parallax/jsPDF) | MIT | PDF generation |
+| [html2canvas](https://html2canvas.hertzen.com/) | MIT | DOM screenshot |
+| [Zustand](https://zustand-demo.pmnd.rs/) | MIT | State management |
+| [next-themes](https://github.com/pacocoursey/next-themes) | MIT | Theme management |
+| [next-pwa](https://github.com/shadowwalker/next-pwa) | MIT | PWA support |
