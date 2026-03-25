@@ -1,0 +1,187 @@
+---
+title: Getting Started
+description: Install, configure, and run Grade Tracker on your local machine or in Docker
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+This guide walks you through installing, configuring, and running Grade Tracker on your local machine or in a Docker container.
+
+## Prerequisites
+
+| Requirement | Version | Notes |
+|---|---|---|
+| **Node.js** | ≥ 20.10.0 | Required |
+| **pnpm** | 8.15.3 | Preferred package manager |
+| **Docker** | Any recent | Optional — for containerised deployment |
+| **Appwrite** | ≥ 1.5 | Optional — required only for cloud sync |
+
+<Callout type="info" title="Installing pnpm">
+  If you don't have pnpm installed, run:
+  ```bash
+  npm install -g pnpm@8.15.3
+  # or use corepack (bundled with Node.js ≥ 16.9)
+  corepack enable && corepack prepare pnpm@8.15.3 --activate
+  ```
+</Callout>
+
+## Installation
+
+<Steps>
+<Step>
+
+### Clone the repository
+
+```bash
+git clone https://github.com/Nefnief-tech/grades-tracker.git
+cd grades-tracker
+```
+
+</Step>
+<Step>
+
+### Install dependencies
+
+```bash
+pnpm install
+```
+
+<Callout type="warn" title="SWR module not found?">
+  If you see `Module not found: Can't resolve 'swr'`, install it manually:
+  ```bash
+  pnpm add swr
+  ```
+</Callout>
+
+</Step>
+<Step>
+
+### Configure environment variables
+
+Copy the example env file and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your Appwrite credentials. For **local-only mode** (no cloud), you can leave the Appwrite values empty or set `NEXT_PUBLIC_ENABLE_CLOUD_FEATURES=false`.
+
+See [Configuration](/grades-tracker/docs/configuration) for a full reference of all variables.
+
+</Step>
+<Step>
+
+### Start the development server
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+</Step>
+</Steps>
+
+## First Run
+
+When you open the app for the first time:
+
+1. You will be taken to the **dashboard** (no login required for local mode).
+2. Click **"Add New Subject"** to create your first subject.
+3. Open a subject and click **"Add New Grade"** to record a grade.
+4. Navigate to **Analytics** to see your performance charts.
+
+<Callout type="info" title="Local-only mode">
+  In local-only mode all data is saved to `localStorage` in your browser. No account is required.
+</Callout>
+
+## Docker Deployment
+
+<Tabs items={["Docker Compose", "Manual Docker", "Local-only mode"]}>
+<Tab value="Docker Compose">
+
+```bash
+# 1. Copy the Docker-specific env template
+cp .env.docker .env
+# Edit .env with your Appwrite details
+
+# 2. Build and start
+docker-compose up -d
+```
+
+Access the application at [http://localhost:8080](http://localhost:8080).
+
+</Tab>
+<Tab value="Manual Docker">
+
+```bash
+docker build -t grades-tracker .
+docker run -p 8080:8080 \
+  -e NEXT_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1 \
+  -e NEXT_PUBLIC_APPWRITE_PROJECT_ID=your-project-id \
+  grades-tracker
+```
+
+</Tab>
+<Tab value="Local-only mode">
+
+If Appwrite is not available or you don't need cloud sync:
+
+```bash
+# Option 1: via env variable
+echo "NEXT_PUBLIC_FORCE_LOCAL_MODE=true" >> .env
+docker-compose up -d
+
+# Option 2: via helper script
+./run-local-mode.sh
+```
+
+In local-only Docker mode:
+- All data is persisted in the Docker volume.
+- Cloud synchronisation is disabled.
+- User registration / login will not connect to Appwrite.
+
+</Tab>
+</Tabs>
+
+## Production Deployment
+
+Grade Tracker includes configuration files for several hosting platforms:
+
+| Platform | Config file |
+|---|---|
+| **Railway** | `railway.json`, `railway.toml`, `nixpacks.toml` |
+| **Fly.io** | `fly.toml` |
+| **Heroku** | `heroku.yml`, `Procfile` |
+| **Docker Hub** | `docker-compose.yml`, `Dockerfile` |
+
+### Deploy to Railway
+
+```bash
+# Install the Railway CLI
+npm install -g @railway/cli
+
+# Login and deploy
+railway login
+railway link
+railway up
+```
+
+Set the required environment variables in the Railway dashboard before deploying.
+
+## Updating
+
+```bash
+git pull origin main
+pnpm install
+pnpm build
+```
+
+For Docker:
+
+```bash
+docker-compose pull
+docker-compose up -d
+```

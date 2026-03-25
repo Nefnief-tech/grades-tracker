@@ -1,0 +1,113 @@
+---
+title: Testing
+description: How to run checks, lint, and validate Grade Tracker
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+Grade Tracker is a Next.js application. This page describes how to run the existing checks and the test structure.
+
+## Available Scripts
+
+| Command | Description |
+|---|---|
+| `pnpm lint` | Run ESLint via `next lint` |
+| `pnpm build` | TypeScript type-check + production build |
+| `pnpm dev` | Start dev server with hot reload |
+
+<Callout type="info">
+  The project does not currently include a dedicated unit or integration test runner (e.g., Jest or Vitest).
+  Type safety is enforced by TypeScript, and functional correctness is validated through the production build.
+</Callout>
+
+## Type Checking
+
+```bash
+pnpm build
+```
+
+`next build` runs `tsc` as part of the build pipeline. Any TypeScript errors will cause the build to fail with a clear diagnostic message.
+
+## Linting
+
+```bash
+pnpm lint
+```
+
+Runs ESLint with the Next.js recommended ruleset (`eslint-config-next`). Fix auto-fixable issues with:
+
+```bash
+pnpm lint --fix
+```
+
+## Manual Testing Checklist
+
+Before submitting a PR, verify the following scenarios manually:
+
+### Local Mode
+- [ ] App loads without Appwrite credentials
+- [ ] Subject creation persists on page refresh
+- [ ] Grade entry updates the average correctly
+- [ ] Dark / light mode toggle works
+
+### Cloud Mode
+- [ ] Registration and login flow completes
+- [ ] Grades sync after login
+- [ ] Data is visible on a second device / browser
+- [ ] Logout clears local session
+
+### Two-Factor Authentication
+- [ ] 2FA setup generates a valid QR code
+- [ ] TOTP code is accepted on login
+- [ ] Backup codes can be used for recovery
+
+## Test Utilities
+
+The `utils/testUtils.ts` module provides helpers for constructing mock `Grade` and `Subject` objects:
+
+```typescript
+import { createMockGrade, createMockSubject } from "@/utils/testUtils";
+
+const grade = createMockGrade({ value: 2.5, type: "Test" });
+const subject = createMockSubject({ name: "Physics", grades: [grade] });
+```
+
+## Debug Pages
+
+The following routes are available in development builds for manual inspection:
+
+| Route | Description |
+|---|---|
+| `/debug` | Appwrite connection diagnostics |
+| `/charts-demo` | Recharts component sandbox |
+| `/wiki-demo` | Wiki/documentation component preview |
+| `/tests` | Test suite runner page |
+| `/admin-setup` | First-time admin initialisation |
+
+<Callout type="warn">
+  Debug routes should be **disabled in production**. The `/api/debug/test-appwrite` route returns sensitive
+  connection info and is gated behind `NODE_ENV !== "production"`.
+</Callout>
+
+## Adding Tests
+
+If you want to add unit tests to the project, the recommended setup is:
+
+```bash
+pnpm add -D vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/jest-dom
+```
+
+Then create a `vitest.config.ts`:
+
+```typescript
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./vitest.setup.ts"],
+  },
+});
+```

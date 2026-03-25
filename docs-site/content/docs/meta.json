@@ -1,0 +1,16 @@
+{
+  "title": "Grade Tracker",
+  "pages": [
+    "index",
+    "getting-started",
+    "configuration",
+    "architecture",
+    "api",
+    "guides",
+    "testing",
+    "contributing",
+    "changelog",
+    "faq",
+    "license"
+  ]
+}

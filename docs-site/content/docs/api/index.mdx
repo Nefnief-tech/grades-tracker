@@ -1,0 +1,72 @@
+---
+title: API Reference
+description: Overview of all public modules, utilities, hooks, and API routes in Grade Tracker
+---
+
+import { Cards, Card } from "fumadocs-ui/components/card";
+
+This section documents the public modules, utilities, hooks, and API routes available in Grade Tracker.
+
+## Module Index
+
+| Module | Location | Description |
+|---|---|---|
+| [Core Types](types) | `types/grades.ts` | TypeScript interfaces for Grade, Subject, etc. |
+| [Storage Utils](storage) | `utils/storageUtils.ts` | LocalStorage CRUD + cloud sync helpers |
+| [Encryption](encryption) | `utils/encryption.ts` | AES-256-CBC encrypt / decrypt |
+| [Export Utils](export) | `utils/exportUtils.ts` | CSV and PDF export functions |
+| [Appwrite Client](appwrite) | `lib/appwrite.ts` | Appwrite CRUD wrappers |
+| [Hooks](hooks) | `hooks/` | Custom React hooks |
+| [API Routes](routes) | `app/api/` | Next.js server-side API endpoints |
+
+## Quick Reference
+
+### Core Types
+
+```typescript
+// A single grade entry
+interface Grade {
+  id: string;
+  value: number;       // 1–6 (Swiss/German scale)
+  type: GradeType;     // "Test" | "Oral Exam" | "Homework" | "Project"
+  date: string;        // ISO 8601
+  weight: number;      // 1.0 or 2.0
+}
+
+// An academic subject
+interface Subject {
+  id: string;
+  name: string;
+  grades: Grade[];
+  averageGrade: number;
+}
+```
+
+### Most-used Utilities
+
+```typescript
+// Save subjects to storage (local + optional cloud)
+await saveSubjectsToStorage(subjects: Subject[]): Promise<void>
+
+// Load subjects from storage
+await getSubjectsFromStorage(): Promise<Subject[]>
+
+// Encrypt any value
+encrypt(data: any): string
+
+// Decrypt a previously encrypted string
+decrypt(encryptedData: string): any
+
+// Export subjects as CSV
+exportToCSV(data, headers, filename): void
+```
+
+<Cards>
+  <Card title="Core Types" href="/grades-tracker/docs/api/types" description="TypeScript interfaces and type definitions" />
+  <Card title="Storage Utils" href="/grades-tracker/docs/api/storage" description="LocalStorage CRUD and cloud sync" />
+  <Card title="Encryption" href="/grades-tracker/docs/api/encryption" description="AES-256-CBC encrypt / decrypt" />
+  <Card title="Export Utils" href="/grades-tracker/docs/api/export" description="CSV and PDF export functions" />
+  <Card title="Appwrite Client" href="/grades-tracker/docs/api/appwrite" description="Appwrite CRUD wrappers" />
+  <Card title="Custom Hooks" href="/grades-tracker/docs/api/hooks" description="React hooks for data management" />
+  <Card title="API Routes" href="/grades-tracker/docs/api/routes" description="Next.js server-side endpoints" />
+</Cards>
