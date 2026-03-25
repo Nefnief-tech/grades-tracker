@@ -1,0 +1,97 @@
+---
+title: API Routes
+description: Next.js server-side API endpoints for Grade Tracker
+---
+
+All server-side API routes live under `app/api/` and are implemented as Next.js Route Handlers.
+
+## Authentication / MFA
+
+### `GET /api/auth/get-challenge`
+
+Retrieves an active MFA challenge for the current session.
+
+**Response:**
+```json
+{ "challengeId": "...", "type": "totp" }
+```
+
+### `POST /api/auth/mfa/create-challenge`
+
+Creates a new MFA challenge.
+
+**Request body:**
+```json
+{ "factorId": "totp" }
+```
+
+**Response:**
+```json
+{ "challengeId": "...", "expire": "2024-01-01T00:05:00Z" }
+```
+
+### `POST /api/auth/mfa/verify-challenge`
+
+Verifies a TOTP code against an existing challenge.
+
+**Request body:**
+```json
+{ "challengeId": "...", "otp": "123456" }
+```
+
+**Response:** `200 OK` on success, `401 Unauthorized` on failure.
+
+## Admin
+
+All admin routes require an admin session cookie.
+
+### `GET /api/admin/users`
+
+Returns a paginated list of all registered users.
+
+**Query params:** `page`, `limit`
+
+### `GET /api/admin/summary`
+
+Returns aggregate statistics: total users, subjects, grades.
+
+### `POST /api/admin/users/toggle-suspension`
+
+Toggles the suspension status for a user.
+
+**Request body:**
+```json
+{ "userId": "..." }
+```
+
+### `GET /api/admin/maintenance`
+### `POST /api/admin/maintenance`
+
+Gets or sets the maintenance mode flag. When maintenance mode is active, non-admin users see a maintenance page.
+
+### `GET /api/admin/check`
+
+Checks if the current session has admin privileges.
+
+**Response:**
+```json
+{ "isAdmin": true }
+```
+
+## User
+
+### `GET /api/user/sessions`
+
+Returns all active sessions for the authenticated user.
+
+## Debug (Development Only)
+
+### `GET /api/debug/test-appwrite`
+
+Tests the Appwrite connection and returns connection status. Disabled in production.
+
+## Catch-all Handler
+
+### `ANY /api/[...route]`
+
+A wildcard handler for legacy API routes not yet migrated to the App Router pattern.

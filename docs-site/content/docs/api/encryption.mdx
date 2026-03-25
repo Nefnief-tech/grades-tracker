@@ -1,0 +1,81 @@
+---
+title: Encryption Utilities
+description: AES-256-CBC symmetric encryption for protecting grade data
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+**File:** `utils/encryption.ts`
+
+Provides AES-256-CBC symmetric encryption for protecting grade data before it is written to LocalStorage or synced to the cloud.
+
+## Configuration
+
+The encryption key is read from `process.env.ENCRYPTION_KEY`. In production this **must** be a 32-character secret.
+
+<Callout type="error" title="Production requirement">
+  Set a strong, random `ENCRYPTION_KEY` in your deployment environment.
+  Never use the development fallback key in production.
+</Callout>
+
+## `encrypt`
+
+```typescript
+function encrypt(data: any): string
+```
+
+Encrypts any JavaScript value using AES-256-CBC. Objects are automatically JSON-serialised before encryption.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `data` | `any` | Value to encrypt. Objects are `JSON.stringify`-ed. |
+
+**Returns:** A base64-encoded string in the format `<iv_hex>:<ciphertext_base64>`.
+
+**Example:**
+
+```typescript
+import { encrypt } from "@/utils/encryption";
+
+const encrypted = encrypt({ value: 5.5, type: "Test" });
+// "a1b2c3d4...:<base64 ciphertext>"
+```
+
+## `decrypt`
+
+```typescript
+function decrypt(encryptedData: string): any
+```
+
+Decrypts a string previously produced by `encrypt`. If the original value was an object, it is automatically parsed from JSON.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `encryptedData` | `string` | String in `<iv_hex>:<ciphertext_base64>` format |
+
+**Returns:** The original decrypted value (parsed from JSON if applicable).
+
+**Throws:** `Error` if the format is invalid or decryption fails.
+
+**Example:**
+
+```typescript
+import { decrypt } from "@/utils/encryption";
+
+const original = decrypt(encrypted);
+// { value: 5.5, type: "Test" }
+```
+
+## Internal Format
+
+The encrypted output is structured as:
+
+```
+<16-byte IV as hex>:<AES-256-CBC ciphertext as base64>
+```
+
+This allows the IV to be stored alongside the ciphertext without requiring a separate field, while still ensuring each encrypted value uses a unique IV.
+
+## Related Module
+
+`utils/dataProtection.ts` exports `encryptData` / `decryptData` wrappers that call these functions and are used by `storageUtils.ts` when `NEXT_PUBLIC_ENABLE_ENCRYPTION=true`.

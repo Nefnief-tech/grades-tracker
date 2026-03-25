@@ -1,0 +1,13 @@
+{
+  "title": "API Reference",
+  "pages": [
+    "index",
+    "types",
+    "storage",
+    "encryption",
+    "export",
+    "appwrite",
+    "hooks",
+    "routes"
+  ]
+}
