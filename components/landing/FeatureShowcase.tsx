@@ -86,7 +86,7 @@ export function FeatureShowcase() {
           Application Features
         </h2>
         <p className="text-lg text-muted-foreground">
-          Grade Tracker provides tools to help students monitor academic
+          GradeTracker provides tools to help students monitor academic
           performance accurately
         </p>
       </div>

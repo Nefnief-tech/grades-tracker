@@ -38,7 +38,7 @@ export function TestimonialSection() {
           User Experiences
         </h2>
         <p className="text-lg text-muted-foreground">
-          How students are using Grade Tracker in their academic life
+          How students are using GradeTracker in their academic life
         </p>
       </div>
 

@@ -12,7 +12,7 @@ export function ProductDemo() {
             Interface Overview
           </h2>
           <p className="text-lg text-muted-foreground">
-            Explore the main screens and functionality of Grade Tracker
+            Explore the main screens and functionality of GradeTracker
           </p>
         </div>
 

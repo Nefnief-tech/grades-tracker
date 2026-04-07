@@ -47,7 +47,7 @@ export function HeroSection() {
         <div className="relative z-10 rounded-xl shadow-2xl shadow-primary/20 border border-border overflow-hidden">
           <Image
             src="/screenshots/dashboard-hero.png"
-            alt="Grade Tracker Dashboard"
+            alt="GradeTracker Dashboard"
             width={600}
             height={400}
             className="w-full h-auto"

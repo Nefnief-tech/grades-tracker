@@ -11,10 +11,10 @@ export function OverviewSection() {
 
         <div className="relative z-10 max-w-3xl">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
-            About Grade Tracker
+            About GradeTracker
           </h2>
           <p className="text-xl mb-8 text-muted-foreground">
-            Grade Tracker was developed as an educational project to provide
+            GradeTracker was developed as an educational project to provide
             students with a simple tool for tracking academic performance.
           </p>
 
@@ -35,7 +35,7 @@ export function OverviewSection() {
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/register">
               <Button size="lg" className="w-full sm:w-auto">
-                Start Using Grade Tracker
+                Start Using GradeTracker
               </Button>
             </Link>
             <Link href="https://github.com/Nefnief-tech/grades-tracker.git">

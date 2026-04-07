@@ -13,7 +13,7 @@ export function CTASection() {
             Ready to take control of your academic journey?
           </h2>
           <p className="text-xl mb-8 text-muted-foreground">
-            Join thousands of students who are using Grade Tracker to monitor
+            Join thousands of students who are using GradeTracker to monitor
             their progress and improve their performance.
           </p>
 
