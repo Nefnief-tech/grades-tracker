@@ -159,6 +159,8 @@ export default function LandingPage() {
             <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
               {/* Left column - Text content */}
               <div className="w-full lg:w-1/2 text-center lg:text-left">
+                <p className="text-xl text-muted-foreground mb-6 reveal-on-scroll">Hello! Welcome to GradeTracker.</p>
+
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary mb-8 reveal-on-scroll">
                   <Zap className="h-3.5 w-3.5" />
                   <span className="text-xs font-medium tracking-wide">
